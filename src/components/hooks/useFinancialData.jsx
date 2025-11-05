@@ -82,7 +82,7 @@ export const useTransactionsData = (startDate, endDate) => {
 
 // Hook for fetching budget goals
 export const useBudgetGoals = (user) => {
-  return useUserFilteredQuery(
+  const { data: goals = [], isLoading } = useUserFilteredQuery(
     ['goals'],
     async (user) => {
       const allGoals = await base44.entities.BudgetGoal.list();
@@ -90,6 +90,8 @@ export const useBudgetGoals = (user) => {
     },
     { user }
   );
+
+  return { goals, isLoading };
 };
 
 // Hook for fetching all mini budgets
@@ -223,7 +225,7 @@ export const useSystemBudgetManagement = (
         monthEnd
       });
     }
-  }, [user, selectedMonth, selectedYear, goals.length, systemBudgets?.length, monthStart, monthEnd, transactions]);
+  }, [user, selectedMonth, selectedYear, goals.length, systemBudgets?.length, monthStart, monthEnd, transactions, synchronizeBudgetsMutation]);
 };
 
 // Hook for computing active budgets for the selected month
@@ -948,7 +950,8 @@ export const useBudgetsData = (user, selectedMonth, selectedYear) => {
     return customBudgets.reduce((acc, budget) => {
       const status = budget.status || 'active';
       if (status === 'archived') return acc; // Exclude archived budgets from grouping
-      if (!acc[status]) acc[status] = [];
+      if (!acc[status]) acc = { ...acc }; // Ensure acc is treated as an object for mutation
+      if (!acc[status]) acc[status] = []; // Initialize if not present
       acc[status].push(budget);
       return acc;
     }, {});
