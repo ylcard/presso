@@ -215,6 +215,7 @@ export const useSystemBudgetManagement = (
   });
 
   useEffect(() => {
+    // Only run if we have all the required data and mutation is not pending
     if (user && goals.length > 0 && Array.isArray(systemBudgets) && !synchronizeBudgetsMutation.isPending) {
       const currentMonthIncome = getCurrentMonthTransactions(transactions, selectedMonth, selectedYear)
         .filter(t => t.type === 'income')
@@ -229,7 +230,11 @@ export const useSystemBudgetManagement = (
         monthEnd
       });
     }
-  }, [user, selectedMonth, selectedYear, goals.length, systemBudgets?.length, monthStart, monthEnd, transactions, synchronizeBudgetsMutation]);
+  }, [user, selectedMonth, selectedYear, goals.length, systemBudgets?.length, monthStart, monthEnd]);
+  // CRITICAL: Removed 'transactions' and 'synchronizeBudgetsMutation' from dependencies
+  // - 'transactions' changes frequently but we only need its value when the effect runs
+  // - 'synchronizeBudgetsMutation' is stable from useMutation and shouldn't trigger re-runs
+  // This prevents duplicate system budget creation by avoiding rapid re-triggers
 };
 
 // Hook for computing active budgets for the selected month
