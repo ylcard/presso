@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -242,7 +243,7 @@ export const useActiveBudgets = (allMiniBudgets, allSystemBudgets, selectedMonth
 };
 
 // Hook for transaction mutations
-export const useTransactionMutations = () => {
+export const useTransactionMutations = (setShowQuickAdd, setShowQuickAddIncome) => {
   const queryClient = useQueryClient();
 
   const createMutation = useMutation({
@@ -250,6 +251,8 @@ export const useTransactionMutations = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['systemBudgets'] });
+      setShowQuickAdd(false);
+      setShowQuickAddIncome(false);
     },
   });
 
@@ -260,7 +263,7 @@ export const useTransactionMutations = () => {
 };
 
 // Hook for budget mutations
-export const useBudgetMutations = (user) => {
+export const useBudgetMutations = (user, transactions, allMiniBudgets, setShowQuickAddBudget) => {
   const queryClient = useQueryClient();
 
   const createBudgetMutation = useMutation({
@@ -271,11 +274,13 @@ export const useBudgetMutations = (user) => {
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['miniBudgets'] });
+      setShowQuickAddBudget(false);
     },
   });
 
   const deleteBudgetMutation = useMutation({
-    mutationFn: async ({ id, transactions }) => {
+    mutationFn: async (id) => {
+      // Use transactions from closure
       const budgetTransactions = transactions.filter(t => t.miniBudgetId === id);
       
       for (const transaction of budgetTransactions) {
@@ -291,7 +296,8 @@ export const useBudgetMutations = (user) => {
   });
 
   const completeBudgetMutation = useMutation({
-    mutationFn: async ({ id, allMiniBudgets, transactions }) => {
+    mutationFn: async (id) => {
+      // Use allMiniBudgets and transactions from closure
       const budget = allMiniBudgets.find(mb => mb.id === id);
       if (!budget) return;
       

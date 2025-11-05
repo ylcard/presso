@@ -69,35 +69,14 @@ export default function Dashboard() {
     selectedYear
   );
 
-  // Mutations
-  const { createTransaction, isCreating } = useTransactionMutations();
-  const { createBudget, deleteBudget, completeBudget } = useBudgetMutations(user);
-
-  // Event handlers
-  const handleCreateTransaction = (data) => {
-    createTransaction(data, {
-      onSuccess: () => {
-        setShowQuickAdd(false);
-        setShowQuickAddIncome(false);
-      }
-    });
-  };
-
-  const handleCreateBudget = (data) => {
-    createBudget(data, {
-      onSuccess: () => {
-        setShowQuickAddBudget(false);
-      }
-    });
-  };
-
-  const handleDeleteBudget = (id) => {
-    deleteBudget({ id, transactions });
-  };
-
-  const handleCompleteBudget = (id) => {
-    completeBudget({ id, allMiniBudgets, transactions });
-  };
+  // Mutations with state setters passed to hooks
+  const { createTransaction, isCreating } = useTransactionMutations(setShowQuickAdd, setShowQuickAddIncome);
+  const { createBudget, deleteBudget, completeBudget } = useBudgetMutations(
+    user,
+    transactions,
+    allMiniBudgets,
+    setShowQuickAddBudget
+  );
 
   const displayDate = new Date(selectedYear, selectedMonth);
 
@@ -155,8 +134,8 @@ export default function Dashboard() {
             settings={settings}
             goals={goals}
             monthlyIncome={currentMonthIncome}
-            onDeleteBudget={handleDeleteBudget}
-            onCompleteBudget={handleCompleteBudget}
+            onDeleteBudget={deleteBudget}
+            onCompleteBudget={completeBudget}
             onCreateBudget={() => setShowQuickAddBudget(true)}
           />
 
@@ -175,21 +154,21 @@ export default function Dashboard() {
           onOpenChange={setShowQuickAdd}
           categories={categories}
           miniBudgets={allActiveBudgets}
-          onSubmit={handleCreateTransaction}
+          onSubmit={createTransaction}
           isSubmitting={isCreating}
         />
 
         <QuickAddIncome
           open={showQuickAddIncome}
           onOpenChange={setShowQuickAddIncome}
-          onSubmit={handleCreateTransaction}
+          onSubmit={createTransaction}
           isSubmitting={isCreating}
         />
 
         <QuickAddBudget
           open={showQuickAddBudget}
           onOpenChange={setShowQuickAddBudget}
-          onSubmit={handleCreateBudget}
+          onSubmit={createBudget}
           isSubmitting={isCreating}
           selectedMonth={selectedMonth}
           selectedYear={selectedYear}
