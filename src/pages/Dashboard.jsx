@@ -1,279 +1,105 @@
-
-import React, { useState, useMemo, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import React, { useState } from "react";
 import { Plus, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { calculateRemainingBudget, getCurrentMonthTransactions, getFirstDayOfMonth, getLastDayOfMonth, getUnpaidExpensesForMonth } from "../components/utils/budgetCalculations";
 import { useSettings } from "../components/utils/SettingsContext";
+import {
+  useMonthNavigation,
+  useTransactionsData,
+  useBudgetGoals,
+  useAllMiniBudgets,
+  useAllSystemBudgets,
+  useSystemBudgets,
+  useSystemBudgetManagement,
+  useActiveBudgets,
+  useTransactionMutations,
+  useBudgetMutations,
+  useDashboardSummary,
+} from "../components/hooks/useFinancialData";
 
 import RemainingBudgetCard from "../components/dashboard/RemainingBudgetCard";
 import BudgetBars from "../components/dashboard/BudgetBars";
 import RecentTransactions from "../components/dashboard/RecentTransactions";
 import QuickAddTransaction from "../components/transactions/QuickAddTransaction";
 import QuickAddIncome from "../components/transactions/QuickAddIncome";
-import QuickAddBudget from "../components/dashboard/QuickAddBudget"; // Added import
+import QuickAddBudget from "../components/dashboard/QuickAddBudget";
 import MonthNavigator from "../components/ui/MonthNavigator";
 
 export default function Dashboard() {
   const { settings, user } = useSettings();
-  const queryClient = useQueryClient();
+  
+  // UI state
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [showQuickAddIncome, setShowQuickAddIncome] = useState(false);
-  const [showQuickAddBudget, setShowQuickAddBudget] = useState(false); // Added state
-  
-  const now = new Date();
-  const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
-  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
+  const [showQuickAddBudget, setShowQuickAddBudget] = useState(false);
+  const [isTransactionsCollapsed, setIsTransactionsCollapsed] = useState(false);
 
-  const { data: transactions = [] } = useQuery({
-    queryKey: ['transactions'],
-    queryFn: () => base44.entities.Transaction.list('-date'),
-    initialData: [],
-  });
+  // Month navigation
+  const { selectedMonth, selectedYear, setSelectedMonth, setSelectedYear } = useMonthNavigation();
 
-  const { data: categories = [] } = useQuery({
-    queryKey: ['categories'],
-    queryFn: () => base44.entities.Category.list(),
-    initialData: [],
-  });
+  // Data fetching
+  const { transactions, categories } = useTransactionsData();
+  const { goals } = useBudgetGoals(user);
+  const { allMiniBudgets } = useAllMiniBudgets(user);
+  const { allSystemBudgets } = useAllSystemBudgets(user);
+  const { systemBudgets, monthStart, monthEnd } = useSystemBudgets(user, selectedMonth, selectedYear);
 
-  const { data: goals = [] } = useQuery({
-    queryKey: ['goals'],
-    queryFn: async () => {
-      if (!user) return [];
-      const allGoals = await base44.entities.BudgetGoal.list();
-      return allGoals.filter(g => g.user_email === user.email);
-    },
-    initialData: [],
-    enabled: !!user,
-  });
+  // System budget management (auto-create/update)
+  useSystemBudgetManagement(
+    user,
+    selectedMonth,
+    selectedYear,
+    goals,
+    transactions,
+    systemBudgets,
+    monthStart,
+    monthEnd
+  );
 
-  const { data: allMiniBudgets = [] } = useQuery({
-    queryKey: ['miniBudgets'],
-    queryFn: async () => {
-      if (!user) return [];
-      const all = await base44.entities.MiniBudget.list('-startDate');
-      return all.filter(mb => mb.user_email === user.email);
-    },
-    initialData: [],
-    enabled: !!user,
-  });
+  // Computed data
+  const { activeMiniBudgets, allActiveBudgets } = useActiveBudgets(
+    allMiniBudgets,
+    allSystemBudgets,
+    selectedMonth,
+    selectedYear
+  );
 
-  const { data: allSystemBudgets = [] } = useQuery({
-    queryKey: ['allSystemBudgets'],
-    queryFn: async () => {
-      if (!user) return [];
-      const all = await base44.entities.SystemBudget.list();
-      return all.filter(sb => sb.user_email === user.email);
-    },
-    initialData: [],
-    enabled: !!user,
-  });
+  const { remainingBudget, currentMonthIncome, currentMonthExpenses } = useDashboardSummary(
+    transactions,
+    selectedMonth,
+    selectedYear
+  );
 
-  // Query system budgets filtered by current month
-  const monthStart = useMemo(() => getFirstDayOfMonth(selectedMonth, selectedYear), [selectedMonth, selectedYear]);
-  const monthEnd = useMemo(() => getLastDayOfMonth(selectedMonth, selectedYear), [selectedMonth, selectedYear]);
+  // Mutations
+  const { createTransaction, isCreating } = useTransactionMutations();
+  const { createBudget, deleteBudget, completeBudget } = useBudgetMutations(user);
 
-  const { data: systemBudgets = [] } = useQuery({
-    queryKey: ['systemBudgets', selectedMonth, selectedYear],
-    queryFn: async () => {
-      if (!user) return [];
-      const all = await base44.entities.SystemBudget.list();
-      // Filter to only this month's budgets
-      return all.filter(sb => 
-        sb.user_email === user.email &&
-        sb.startDate === monthStart && 
-        sb.endDate === monthEnd
-      );
-    },
-    initialData: [],
-    enabled: !!user,
-  });
-
-  // Create or update system budgets for the selected month
-  useEffect(() => {
-    const ensureSystemBudgets = async () => {
-      if (!user || goals.length === 0) return;
-      
-      try {
-        const systemTypes = ['needs', 'wants', 'savings'];
-        const colors = { needs: '#EF4444', wants: '#F59E0B', savings: '#10B981' };
-        
-        // Calculate monthly income
-        const currentMonthIncome = getCurrentMonthTransactions(transactions, selectedMonth, selectedYear)
-          .filter(t => t.type === 'income')
-          .reduce((sum, t) => sum + t.amount, 0);
-
-        const goalMap = goals.reduce((acc, goal) => {
-          acc[goal.priority] = goal.target_percentage;
-          return acc;
-        }, {});
-        
-        let needsInvalidation = false;
-
-        for (const type of systemTypes) {
-          // Check if budget exists for this type
-          const existingBudget = systemBudgets.find(sb => sb.systemBudgetType === type);
-          const percentage = goalMap[type] || 0;
-          const amount = parseFloat(((currentMonthIncome * percentage) / 100).toFixed(2));
-          
-          if (existingBudget) {
-            // Update if amount changed
-            if (Math.abs(existingBudget.budgetAmount - amount) > 0.01) {
-              await base44.entities.SystemBudget.update(existingBudget.id, {
-                budgetAmount: amount
-              });
-              needsInvalidation = true;
-            }
-          } else {
-            // Double-check no budget exists before creating (防止race conditions)
-            const allSystemBudgetsCheck = await base44.entities.SystemBudget.list();
-            const duplicateCheck = allSystemBudgetsCheck.find(sb => 
-              sb.user_email === user.email &&
-              sb.systemBudgetType === type &&
-              sb.startDate === monthStart &&
-              sb.endDate === monthEnd
-            );
-            
-            if (!duplicateCheck) {
-              // Create new system budget
-              await base44.entities.SystemBudget.create({
-                name: type.charAt(0).toUpperCase() + type.slice(1),
-                budgetAmount: amount,
-                startDate: monthStart,
-                endDate: monthEnd,
-                color: colors[type],
-                user_email: user.email,
-                systemBudgetType: type
-              });
-              needsInvalidation = true;
-            }
-          }
-        }
-        
-        if (needsInvalidation) {
-          queryClient.invalidateQueries({ queryKey: ['systemBudgets'] });
-          queryClient.invalidateQueries({ queryKey: ['allSystemBudgets'] }); // Invalidate the new query as well
-        }
-      } catch (error) {
-        console.error('Error in ensureSystemBudgets:', error);
+  // Event handlers
+  const handleCreateTransaction = (data) => {
+    createTransaction(data, {
+      onSuccess: () => {
+        setShowQuickAdd(false);
+        setShowQuickAddIncome(false);
       }
-    };
-    
-    if (user && goals.length > 0 && systemBudgets !== undefined) {
-      ensureSystemBudgets();
-    }
-  }, [user, selectedMonth, selectedYear, goals, systemBudgets, monthStart, monthEnd, queryClient, transactions]);
-
-  const activeMiniBudgets = useMemo(() => {
-    const monthStart = getFirstDayOfMonth(selectedMonth, selectedYear);
-    const monthEnd = getLastDayOfMonth(selectedMonth, selectedYear);
-    
-    return allMiniBudgets.filter(mb => {
-      if (mb.status !== 'active' && mb.status !== 'completed') return false;
-      return mb.startDate <= monthEnd && mb.endDate >= monthStart;
     });
-  }, [allMiniBudgets, selectedMonth, selectedYear]);
+  };
 
-  const allActiveBudgets = useMemo(() => {
-    const monthStart = getFirstDayOfMonth(selectedMonth, selectedYear);
-    const monthEnd = getLastDayOfMonth(selectedMonth, selectedYear);
-    
-    const activeMini = allMiniBudgets.filter(mb => {
-      if (mb.status !== 'active' && mb.status !== 'completed') return false;
-      return mb.startDate <= monthEnd && mb.endDate >= monthStart;
-    });
-    
-    const activeSystem = allSystemBudgets
-      .filter(sb => sb.startDate === monthStart && sb.endDate === monthEnd)
-      .map(sb => ({ ...sb, id: sb.id, name: sb.name, allocatedAmount: sb.budgetAmount, color: sb.color, isSystemBudget: true, startDate: sb.startDate, endDate: sb.endDate, user_email: sb.user_email, systemBudgetType: sb.systemBudgetType, status: 'active' }));
-    
-    return [...activeSystem, ...activeMini];
-  }, [allMiniBudgets, allSystemBudgets, selectedMonth, selectedYear]);
-
-  const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Transaction.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['systemBudgets'] });
-      setShowQuickAdd(false);
-      setShowQuickAddIncome(false);
-    },
-  });
-
-  const createBudgetMutation = useMutation({
-    mutationFn: (data) => base44.entities.MiniBudget.create({
-      ...data,
-      user_email: user.email,
-      isSystemBudget: false
-    }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['miniBudgets'] });
-      setShowQuickAddBudget(false);
-    },
-  });
-
-  const deleteBudgetMutation = useMutation({
-    mutationFn: async (id) => {
-      const budgetTransactions = transactions.filter(t => t.miniBudgetId === id);
-      
-      for (const transaction of budgetTransactions) {
-        await base44.entities.Transaction.delete(transaction.id);
+  const handleCreateBudget = (data) => {
+    createBudget(data, {
+      onSuccess: () => {
+        setShowQuickAddBudget(false);
       }
-      
-      await base44.entities.MiniBudget.delete(id);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['miniBudgets'] });
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-    },
-  });
+    });
+  };
 
-  const completeBudgetMutation = useMutation({
-    mutationFn: async (id) => {
-      const budget = allMiniBudgets.find(mb => mb.id === id);
-      if (!budget) return;
-      
-      const budgetTransactions = transactions.filter(t => t.miniBudgetId === id && t.isPaid);
-      const actualSpent = budgetTransactions.reduce((sum, t) => sum + t.amount, 0);
-      
-      await base44.entities.MiniBudget.update(id, { 
-        status: 'completed',
-        allocatedAmount: actualSpent,
-        originalAllocatedAmount: budget.originalAllocatedAmount || budget.allocatedAmount
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['miniBudgets'] });
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-    },
-  });
+  const handleDeleteBudget = (id) => {
+    deleteBudget({ id, transactions });
+  };
 
-  const remainingBudget = useMemo(() => {
-    return calculateRemainingBudget(transactions, selectedMonth, selectedYear);
-  }, [transactions, selectedMonth, selectedYear]);
-
-  const currentMonthIncome = useMemo(() => {
-    return getCurrentMonthTransactions(transactions, selectedMonth, selectedYear)
-      .filter(t => t.type === 'income')
-      .reduce((sum, t) => sum + t.amount, 0);
-  }, [transactions, selectedMonth, selectedYear]);
-
-  const currentMonthExpenses = useMemo(() => {
-    const paidExpenses = getCurrentMonthTransactions(transactions, selectedMonth, selectedYear)
-      .filter(t => t.type === 'expense')
-      .reduce((sum, t) => sum + t.amount, 0);
-    
-    const unpaidExpenses = getUnpaidExpensesForMonth(transactions, selectedMonth, selectedYear)
-      .reduce((sum, t) => sum + t.amount, 0);
-    
-    return paidExpenses + unpaidExpenses;
-  }, [transactions, selectedMonth, selectedYear]);
+  const handleCompleteBudget = (id) => {
+    completeBudget({ id, allMiniBudgets, transactions });
+  };
 
   const displayDate = new Date(selectedYear, selectedMonth);
-
-  const [isTransactionsCollapsed, setIsTransactionsCollapsed] = useState(false);
 
   return (
     <div className="min-h-screen p-4 md:p-8">
@@ -329,8 +155,8 @@ export default function Dashboard() {
             settings={settings}
             goals={goals}
             monthlyIncome={currentMonthIncome}
-            onDeleteBudget={(id) => deleteBudgetMutation.mutate(id)}
-            onCompleteBudget={(id) => completeBudgetMutation.mutate(id)}
+            onDeleteBudget={handleDeleteBudget}
+            onCompleteBudget={handleCompleteBudget}
             onCreateBudget={() => setShowQuickAddBudget(true)}
           />
 
@@ -349,22 +175,22 @@ export default function Dashboard() {
           onOpenChange={setShowQuickAdd}
           categories={categories}
           miniBudgets={allActiveBudgets}
-          onSubmit={(data) => createMutation.mutate(data)}
-          isSubmitting={createMutation.isPending}
+          onSubmit={handleCreateTransaction}
+          isSubmitting={isCreating}
         />
 
         <QuickAddIncome
           open={showQuickAddIncome}
           onOpenChange={setShowQuickAddIncome}
-          onSubmit={(data) => createMutation.mutate(data)}
-          isSubmitting={createMutation.isPending}
+          onSubmit={handleCreateTransaction}
+          isSubmitting={isCreating}
         />
 
         <QuickAddBudget
           open={showQuickAddBudget}
           onOpenChange={setShowQuickAddBudget}
-          onSubmit={(data) => createBudgetMutation.mutate(data)}
-          isSubmitting={createBudgetMutation.isPending}
+          onSubmit={handleCreateBudget}
+          isSubmitting={isCreating}
           selectedMonth={selectedMonth}
           selectedYear={selectedYear}
         />
