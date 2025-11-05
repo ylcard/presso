@@ -152,7 +152,8 @@ export const useSystemBudgetManagement = (
   transactions,
   systemBudgets,
   monthStart,
-  monthEnd
+  monthEnd,
+  isSystemBudgetsLoading
 ) => {
   const queryClient = useQueryClient();
   
@@ -227,6 +228,11 @@ export const useSystemBudgetManagement = (
   });
 
   useEffect(() => {
+    // CRITICAL: Wait for systemBudgets to finish loading before making any decisions
+    if (isSystemBudgetsLoading) {
+      return;
+    }
+
     // Exit early if already synced this period
     if (syncedPeriod === currentPeriodKey) {
       return;
@@ -277,7 +283,7 @@ export const useSystemBudgetManagement = (
       // All budgets exist and are up-to-date, mark as synced without mutation
       setSyncedPeriod(currentPeriodKey);
     }
-  }, [user, selectedMonth, selectedYear, goals.length, systemBudgets?.length, monthStart, monthEnd, syncedPeriod, currentPeriodKey, synchronizeBudgetsMutation.isPending, transactions]);
+  }, [user, selectedMonth, selectedYear, goals.length, systemBudgets?.length, monthStart, monthEnd, syncedPeriod, currentPeriodKey, synchronizeBudgetsMutation.isPending, transactions, isSystemBudgetsLoading]);
 };
 
 // Hook for computing active budgets for the selected month

@@ -42,7 +42,7 @@ export default function Dashboard() {
   const { goals } = useBudgetGoals(user);
   const { allMiniBudgets } = useAllMiniBudgets(user);
   const { allSystemBudgets } = useAllSystemBudgets(user);
-  const { systemBudgets, monthStart, monthEnd } = useSystemBudgets(user, selectedMonth, selectedYear);
+  const { systemBudgets, monthStart, monthEnd, isLoading: isSystemBudgetsLoading } = useSystemBudgets(user, selectedMonth, selectedYear);
 
   // System budget management (auto-create/update)
   useSystemBudgetManagement(
@@ -53,7 +53,8 @@ export default function Dashboard() {
     transactions,
     systemBudgets,
     monthStart,
-    monthEnd
+    monthEnd,
+    isSystemBudgetsLoading
   );
 
   // Computed data
