@@ -96,7 +96,7 @@ export const useBudgetGoals = (user) => {
 
 // Hook for fetching all mini budgets
 export const useAllMiniBudgets = (user) => {
-  return useUserFilteredQuery(
+  const { data: allMiniBudgets = [], isLoading } = useUserFilteredQuery(
     ['miniBudgets'],
     async (user) => {
       const all = await base44.entities.MiniBudget.list('-startDate');
@@ -104,11 +104,13 @@ export const useAllMiniBudgets = (user) => {
     },
     { user }
   );
+
+  return { allMiniBudgets, isLoading };
 };
 
 // Hook for fetching all system budgets
 export const useAllSystemBudgets = (user) => {
-  return useUserFilteredQuery(
+  const { data: allSystemBudgets = [], isLoading } = useUserFilteredQuery(
     ['allSystemBudgets'],
     async (user) => {
       const all = await base44.entities.SystemBudget.list();
@@ -116,6 +118,8 @@ export const useAllSystemBudgets = (user) => {
     },
     { user }
   );
+
+  return { allSystemBudgets, isLoading };
 };
 
 // Hook for fetching system budgets for a specific month
