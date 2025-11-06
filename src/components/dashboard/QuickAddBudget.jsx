@@ -5,7 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import MiniBudgetForm from "../minibudgets/MiniBudgetForm";
+import CustomBudgetForm from "../custombudgets/CustomBudgetForm";
 
 export default function QuickAddBudget({ 
   open, 
@@ -19,7 +19,7 @@ export default function QuickAddBudget({
         <DialogHeader>
           <DialogTitle>Create Custom Budget</DialogTitle>
         </DialogHeader>
-        <MiniBudgetForm
+        <CustomBudgetForm
           onSubmit={onSubmit}
           onCancel={() => onOpenChange(false)}
           isSubmitting={isSubmitting}
