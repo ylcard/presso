@@ -1,9 +1,14 @@
+
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, DollarSign, Wallet } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatCurrency } from "../utils/formatCurrency";
+import { useSettings } from "../utils/SettingsContext";
 
 export default function QuickStats({ income, expenses, balance, isLoading }) {
+  const { settings } = useSettings();
+
   const stats = [
     {
       title: "Monthly Income",
@@ -45,7 +50,7 @@ export default function QuickStats({ income, expenses, balance, isLoading }) {
                   <Skeleton className="h-8 w-32" />
                 ) : (
                   <h3 className="text-3xl font-bold text-gray-900">
-                    ${stat.value.toFixed(2)}
+                    {formatCurrency(stat.value, settings)}
                   </h3>
                 )}
               </div>
