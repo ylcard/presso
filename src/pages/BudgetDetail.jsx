@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -11,6 +12,7 @@ import { useSettings } from "../components/utils/SettingsContext";
 import { formatCurrency } from "../components/utils/formatCurrency";
 import { formatDate } from "../components/utils/formatDate";
 import { getCustomBudgetStats, getSystemBudgetStats, getCustomBudgetAllocationStats } from "../components/utils/budgetCalculations";
+import { useCustomBudgetActions } from "../components/hooks/useActions";
 import QuickAddTransaction from "../components/transactions/QuickAddTransaction";
 import TransactionCard from "../components/transactions/TransactionCard";
 import TransactionForm from "../components/transactions/TransactionForm";
@@ -18,7 +20,7 @@ import AllocationManager from "../components/custombudgets/AllocationManager";
 import CustomBudgetCard from "../components/custombudgets/CustomBudgetCard";
 
 export default function BudgetDetail() {
-    const { settings } = useSettings();
+    const { settings, user } = useSettings();
     const queryClient = useQueryClient();
     const [showQuickAdd, setShowQuickAdd] = useState(false);
     const [editingTransaction, setEditingTransaction] = useState(null);
@@ -96,6 +98,9 @@ export default function BudgetDetail() {
         initialData: [],
         enabled: !!budgetId && budget && !budget.isSystemBudget,
     });
+
+    // Add custom budget actions for handling complete/edit/delete of embedded custom budgets
+    const customBudgetActions = useCustomBudgetActions(user, transactions);
 
     const createTransactionMutation = useMutation({
         mutationFn: (data) => base44.entities.Transaction.create(data),
@@ -486,9 +491,9 @@ export default function BudgetDetail() {
                                             }}
                                             transactions={transactions}
                                             settings={settings}
-                                            onEdit={() => {}}
-                                            onDelete={() => {}}
-                                            onStatusChange={() => {}}
+                                            onEdit={customBudgetActions.handleEditBudget}
+                                            onDelete={customBudgetActions.handleDeleteBudget}
+                                            onStatusChange={customBudgetActions.handleStatusChange}
                                         />
                                     );
                                 })}
