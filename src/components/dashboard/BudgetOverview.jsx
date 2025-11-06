@@ -1,27 +1,49 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+// import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Circle, Home, ShoppingCart, Coffee, Car, Plane, Utensils, Shirt, Heart, Zap, Gift, Music, Dumbbell, Book, Briefcase, DollarSign, CreditCard, Wallet, PiggyBank, Laptop, Smartphone, Tv, Pizza, Fuel, Bus, TrendingUp } from "lucide-react";
+import { Circle } from "lucide-react";
+import { iconMap } from "../utils/iconMapConfig";
+import { formatCurrency } from "../utils/formatCurrency";
+import { useSettings } from "../utils/SettingsContext";
 
-const iconMap = {
-  Circle, Home, ShoppingCart, Coffee, Car, Plane, Utensils, Shirt, Heart, Zap, Gift, Music, 
-  Dumbbell, Book, Briefcase, DollarSign, CreditCard, Wallet, PiggyBank, Laptop, Smartphone, 
-  Tv, Pizza, Fuel, Bus, TrendingUp
-};
+/*
+ * ⚠️ DEPRECATION NOTICE ⚠️
+ * This component is currently DEPRECATED and scheduled for removal.
+ * 
+ * Reason: 
+ * - Uses pie charts which are obsolete in this app (we use bars/progress bars)
+ * - NOT rendered in Dashboard.js or any other active page
+ * - Functionality duplicated by MonthlyBreakdown.jsx (used in Reports page)
+ * - Uses undefined `calculateMonthlyAmount` prop that doesn't exist anywhere
+ * 
+ * MonthlyBreakdown.jsx should be used instead - it uses:
+ * - Progress bars (correct visualization)
+ * - Direct t.amount (no undefined functions)
+ * - Proper currency formatting with user settings
+ * - iconMap from utils (no duplication)
+ * 
+ * TODO: Verify no pages use this component, then delete this file entirely.
+ * Date commented: 2025-11-06
+ */
 
-export default function BudgetOverview({ transactions, categories, calculateMonthlyAmount, isLoading }) {
+export default function BudgetOverview({ transactions, categories, /* calculateMonthlyAmount, */ isLoading }) {
+  const { settings } = useSettings();
+
   const categoryMap = categories.reduce((acc, cat) => {
     acc[cat.id] = cat;
     return acc;
   }, {});
 
+  // DEPRECATED: This logic should use t.amount directly, not calculateMonthlyAmount
+  // const monthlyAmount = calculateMonthlyAmount(t); // ❌ UNDEFINED FUNCTION
   const expensesByCategory = transactions
     .filter(t => t.type === 'expense')
     .reduce((acc, t) => {
       const categoryId = t.category_id || 'uncategorized';
-      const monthlyAmount = calculateMonthlyAmount(t);
-      acc[categoryId] = (acc[categoryId] || 0) + monthlyAmount;
+      // Using t.amount directly instead of calculateMonthlyAmount(t)
+      const amount = t.amount; // ✅ FIXED: Direct amount usage
+      acc[categoryId] = (acc[categoryId] || 0) + amount;
       return acc;
     }, {});
 
@@ -38,7 +60,10 @@ export default function BudgetOverview({ transactions, categories, calculateMont
     return (
       <Card className="border-none shadow-lg">
         <CardHeader>
-          <CardTitle>Spending by Category</CardTitle>
+          <CardTitle>
+            ⚠️ DEPRECATED: Spending by Category
+            <span className="text-xs text-red-600 ml-2">(Use MonthlyBreakdown instead)</span>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <Skeleton className="h-64 w-full" />
@@ -51,7 +76,10 @@ export default function BudgetOverview({ transactions, categories, calculateMont
     return (
       <Card className="border-none shadow-lg">
         <CardHeader>
-          <CardTitle>Spending by Category</CardTitle>
+          <CardTitle>
+            ⚠️ DEPRECATED: Spending by Category
+            <span className="text-xs text-red-600 ml-2">(Use MonthlyBreakdown instead)</span>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-64 flex items-center justify-center text-gray-400">
@@ -63,14 +91,18 @@ export default function BudgetOverview({ transactions, categories, calculateMont
   }
 
   return (
-    <Card className="border-none shadow-lg">
+    <Card className="border-none shadow-lg opacity-50">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          Spending by Category
-          <span className="text-sm font-normal text-gray-500">This Month</span>
+          ⚠️ DEPRECATED: Spending by Category
+          <span className="text-sm font-normal text-red-600">
+            (Component not in use - see MonthlyBreakdown.jsx)
+          </span>
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {/* DEPRECATED: Pie chart removed - app uses progress bars */}
+        {/* 
         <div className="grid md:grid-cols-2 gap-6">
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
@@ -88,33 +120,34 @@ export default function BudgetOverview({ transactions, categories, calculateMont
                 ))}
               </Pie>
               <Tooltip 
-                formatter={(value) => `$${value.toFixed(2)}`}
+                formatter={(value) => formatCurrency(value, settings)}
                 contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
               />
             </PieChart>
           </ResponsiveContainer>
+        */}
 
-          <div className="space-y-3">
-            {chartData.slice(0, 6).map((item, index) => {
-              const category = Object.values(categoryMap).find(c => c.name === item.name);
-              const IconComponent = category?.icon && iconMap[category.icon] ? iconMap[category.icon] : Circle;
-              
-              return (
-                <div key={index} className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div 
-                      className="w-10 h-10 rounded-lg flex items-center justify-center"
-                      style={{ backgroundColor: `${item.color}20` }}
-                    >
-                      <IconComponent className="w-5 h-5" style={{ color: item.color }} />
-                    </div>
-                    <span className="font-medium text-gray-900">{item.name}</span>
+        {/* Only showing list view - pie chart commented out */}
+        <div className="space-y-3">
+          {chartData.slice(0, 6).map((item, index) => {
+            const category = Object.values(categoryMap).find(c => c.name === item.name);
+            const IconComponent = category?.icon && iconMap[category.icon] ? iconMap[category.icon] : Circle;
+            
+            return (
+              <div key={index} className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div 
+                    className="w-10 h-10 rounded-lg flex items-center justify-center"
+                    style={{ backgroundColor: `${item.color}20` }}
+                  >
+                    <IconComponent className="w-5 h-5" style={{ color: item.color }} />
                   </div>
-                  <span className="font-bold text-gray-900">${item.value.toFixed(2)}</span>
+                  <span className="font-medium text-gray-900">{item.name}</span>
                 </div>
-              );
-            })}
-          </div>
+                <span className="font-bold text-gray-900">{formatCurrency(item.value, settings)}</span>
+              </div>
+            );
+          })}
         </div>
       </CardContent>
     </Card>
