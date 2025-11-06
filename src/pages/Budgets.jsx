@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -8,7 +7,7 @@ import { usePeriod } from "../components/hooks/usePeriod";
 import {
   useTransactions,
   useCategories,
-  useMiniBudgetsAll,
+  useCustomBudgetsAll,
   useSystemBudgetsForPeriod,
 } from "../components/hooks/useBase44Entities";
 import { useBudgetsAggregates } from "../components/hooks/useDerivedData";
@@ -24,8 +23,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-import MiniBudgetForm from "../components/minibudgets/MiniBudgetForm";
-import MiniBudgetCard from "../components/minibudgets/MiniBudgetCard";
+import CustomBudgetForm from "../components/custombudgets/CustomBudgetForm";
+import CustomBudgetCard from "../components/custombudgets/CustomBudgetCard";
 import MonthNavigator from "../components/ui/MonthNavigator";
 
 const statusConfig = {
@@ -43,14 +42,14 @@ export default function Budgets() {
   // Data fetching
   const { transactions } = useTransactions();
   const { categories } = useCategories();
-  const { allMiniBudgets } = useMiniBudgetsAll(user);
+  const { allCustomBudgets } = useCustomBudgetsAll(user);
   const { systemBudgets, isLoading: loadingSystemBudgets } = useSystemBudgetsForPeriod(user, monthStart, monthEnd);
 
   // Aggregated data
   const { customBudgets, systemBudgetsWithStats, groupedCustomBudgets } = useBudgetsAggregates(
     transactions,
     categories,
-    allMiniBudgets,
+    allCustomBudgets,
     systemBudgets,
     selectedMonth,
     selectedYear
@@ -107,7 +106,7 @@ export default function Budgets() {
         />
 
         {showForm && (
-          <MiniBudgetForm
+          <CustomBudgetForm
             budget={editingBudget}
             onSubmit={handleSubmit}
             onCancel={() => {
@@ -135,7 +134,7 @@ export default function Budgets() {
             <CardContent>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {systemBudgetsWithStats.map((budget) => (
-                  <MiniBudgetCard
+                  <CustomBudgetCard
                     key={budget.id}
                     budget={budget}
                     transactions={transactions}
@@ -184,7 +183,7 @@ export default function Budgets() {
                 <CardContent>
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {statusBudgets.map((budget) => (
-                      <MiniBudgetCard
+                      <CustomBudgetCard
                         key={budget.id}
                         budget={budget}
                         transactions={transactions}
