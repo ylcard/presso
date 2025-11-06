@@ -1,13 +1,12 @@
+
 // Centralized query keys for React Query
 export const QUERY_KEYS = {
   TRANSACTIONS: 'transactions',
   CATEGORIES: 'categories',
   GOALS: 'goals',
-  MINI_BUDGETS: 'miniBudgets',
-  SYSTEM_BUDGETS: 'systemBudgets',
+  CUSTOM_BUDGETS: 'customBudgets',
   ALL_SYSTEM_BUDGETS: 'allSystemBudgets',
-  ALL_BUDGETS: 'allBudgets',
-  ALL_MINI_BUDGETS: 'allMiniBudgets',
+  SYSTEM_BUDGETS: 'systemBudgets',
   ALLOCATIONS: 'allocations',
-  BUDGET: 'budget',
+  ALL_BUDGETS: 'allBudgets',
 };

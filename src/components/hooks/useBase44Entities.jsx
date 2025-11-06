@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -43,20 +42,20 @@ export const useGoals = (user) => {
   return { goals, isLoading };
 };
 
-// Hook for fetching all mini budgets for a user
-export const useMiniBudgetsAll = (user) => {
-  const { data: allMiniBudgets = [], isLoading } = useQuery({
-    queryKey: [QUERY_KEYS.MINI_BUDGETS],
+// Hook for fetching all custom budgets for a user
+export const useCustomBudgetsAll = (user) => {
+  const { data: allCustomBudgets = [], isLoading } = useQuery({
+    queryKey: [QUERY_KEYS.CUSTOM_BUDGETS],
     queryFn: async () => {
       if (!user) return [];
-      const all = await base44.entities.MiniBudget.list('-startDate');
-      return all.filter(mb => mb.user_email === user.email);
+      const all = await base44.entities.CustomBudget.list('-startDate');
+      return all.filter(cb => cb.user_email === user.email);
     },
     initialData: [],
     enabled: !!user,
   });
 
-  return { allMiniBudgets, isLoading };
+  return { allCustomBudgets, isLoading };
 };
 
 // Hook for fetching all system budgets for a user
@@ -100,8 +99,8 @@ export const useAllocations = (budgetId) => {
   const { data: allocations = [], isLoading } = useQuery({
     queryKey: [QUERY_KEYS.ALLOCATIONS, budgetId],
     queryFn: async () => {
-      const all = await base44.entities.MiniBudgetAllocation.list();
-      return all.filter(a => a.miniBudgetId === budgetId);
+      const all = await base44.entities.CustomBudgetAllocation.list();
+      return all.filter(a => a.customBudgetId === budgetId);
     },
     initialData: [],
     enabled: !!budgetId,
@@ -110,17 +109,17 @@ export const useAllocations = (budgetId) => {
   return { allocations, isLoading };
 };
 
-// Hook for fetching all budgets (mini + system) for a user
+// Hook for fetching all budgets (custom + system) for a user
 export const useAllBudgets = (user) => {
   const { data: allBudgets = [], isLoading } = useQuery({
     queryKey: [QUERY_KEYS.ALL_BUDGETS],
     queryFn: async () => {
       if (!user) return [];
       
-      const miniBudgets = await base44.entities.MiniBudget.list();
+      const customBudgets = await base44.entities.CustomBudget.list();
       const systemBudgets = await base44.entities.SystemBudget.list();
       
-      const userMiniBudgets = miniBudgets.filter(mb => mb.user_email === user.email && mb.status === 'active');
+      const userCustomBudgets = customBudgets.filter(cb => cb.user_email === user.email && cb.status === 'active');
       const userSystemBudgets = systemBudgets
         .filter(sb => sb.user_email === user.email)
         .map(sb => ({
@@ -129,7 +128,7 @@ export const useAllBudgets = (user) => {
           allocatedAmount: sb.budgetAmount
         }));
       
-      return [...userSystemBudgets, ...userMiniBudgets];
+      return [...userSystemBudgets, ...userCustomBudgets];
     },
     initialData: [],
     enabled: !!user,
