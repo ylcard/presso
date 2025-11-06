@@ -11,17 +11,17 @@ export const createEntityMap = (entities, keyField = 'id', valueExtractor = null
     }, {});
 };
 
-// Filter mini budgets by status
-export const filterActiveMiniBudgets = (miniBudgets) => {
-    return miniBudgets.filter(mb => mb.status === 'active');
+// Filter custom budgets by status
+export const filterActiveCustomBudgets = (customBudgets) => {
+    return customBudgets.filter(cb => cb.status === 'active');
 };
 
-export const filterCompletedMiniBudgets = (miniBudgets) => {
-    return miniBudgets.filter(mb => mb.status === 'completed');
+export const filterCompletedCustomBudgets = (customBudgets) => {
+    return customBudgets.filter(cb => cb.status === 'completed');
 };
 
-export const filterActiveOrCompletedMiniBudgets = (miniBudgets) => {
-    return miniBudgets.filter(mb => mb.status === 'active' || mb.status === 'completed');
+export const filterActiveOrCompletedCustomBudgets = (customBudgets) => {
+    return customBudgets.filter(cb => cb.status === 'active' || cb.status === 'completed');
 };
 
 // Normalize amount input by removing non-numeric characters except decimal separators
@@ -107,13 +107,13 @@ export const calculateRemainingBudget = (transactions, month, year) => {
     return income - paidExpenses - unpaidExpenseAmount;
 };
 
-export const getMiniBudgetStats = (miniBudget, transactions) => {
-    const budgetStart = parseDate(miniBudget.startDate);
-    const budgetEnd = parseDate(miniBudget.endDate);
+export const getCustomBudgetStats = (customBudget, transactions) => {
+    const budgetStart = parseDate(customBudget.startDate);
+    const budgetEnd = parseDate(customBudget.endDate);
 
     // Only include transactions within the budget period
     const budgetTransactions = transactions.filter(t => {
-        if (t.miniBudgetId !== miniBudget.id) return false;
+        if (t.customBudgetId !== customBudget.id) return false;
 
         // For paid transactions, check if paid date is within budget period
         if (t.isPaid && t.paidDate) {
@@ -138,9 +138,9 @@ export const getMiniBudgetStats = (miniBudget, transactions) => {
         .filter(t => t.type === 'expense' && !t.isPaid)
         .reduce((sum, t) => sum + t.amount, 0);
 
-    const remaining = miniBudget.allocatedAmount - totalSpent;
-    const percentageUsed = miniBudget.allocatedAmount > 0
-        ? (totalSpent / miniBudget.allocatedAmount) * 100
+    const remaining = customBudget.allocatedAmount - totalSpent;
+    const percentageUsed = customBudget.allocatedAmount > 0
+        ? (totalSpent / customBudget.allocatedAmount) * 100
         : 0;
 
     return {
@@ -153,12 +153,11 @@ export const getMiniBudgetStats = (miniBudget, transactions) => {
     };
 };
 
-export const getSystemBudgetStats = (systemBudget, transactions, categories, allMiniBudgets = []) => {
+export const getSystemBudgetStats = (systemBudget, transactions, categories, allCustomBudgets = []) => {
     const budgetStart = parseDate(systemBudget.startDate);
     const budgetEnd = parseDate(systemBudget.endDate);
 
     // Create a map of category_id to priority
-    // (This map is no longer directly used for filtering but might be useful for other potential debug/logic in the future, keeping for now)
     const categoryPriorityMap = {};
     if (categories && categories.length > 0) {
         categories.forEach(cat => {
@@ -171,7 +170,7 @@ export const getSystemBudgetStats = (systemBudget, transactions, categories, all
         if (t.type !== 'expense' || !t.category_id) return false;
 
         // Use effective priority to determine if transaction belongs to this system budget
-        const effectivePriority = getTransactionEffectivePriority(t, categories, allMiniBudgets);
+        const effectivePriority = getTransactionEffectivePriority(t, categories, allCustomBudgets);
         if (effectivePriority !== systemBudget.systemBudgetType) return false;
 
         // For paid transactions, check if paid date is within budget period
@@ -210,9 +209,9 @@ export const getSystemBudgetStats = (systemBudget, transactions, categories, all
 };
 
 // Helper function to get direct unpaid expenses (not linked to any custom budget)
-// This function needs to be updated similarly if it also needs to respect effective priority based on miniBudget links.
+// This function needs to be updated similarly if it also needs to respect effective priority based on customBudget links.
 // For now, keeping it as is, assuming 'direct' means solely based on category.
-export const getDirectUnpaidExpenses = (systemBudget, transactions, categories, allMiniBudgets = []) => {
+export const getDirectUnpaidExpenses = (systemBudget, transactions, categories, allCustomBudgets = []) => {
     const budgetStart = parseDate(systemBudget.startDate);
     const budgetEnd = parseDate(systemBudget.endDate);
 
@@ -225,7 +224,7 @@ export const getDirectUnpaidExpenses = (systemBudget, transactions, categories, 
     }
 
     // Get IDs of ALL custom budgets to exclude their transactions
-    const allCustomBudgetIds = allMiniBudgets.map(mb => mb.id);
+    const allCustomBudgetIds = allCustomBudgets.map(cb => cb.id);
 
     // Get unpaid transactions for this system budget type, excluding those in custom budgets
     const directUnpaidTransactions = transactions.filter(t => {
@@ -237,7 +236,7 @@ export const getDirectUnpaidExpenses = (systemBudget, transactions, categories, 
         if (categoryPriority !== systemBudget.systemBudgetType) return false;
 
         // Exclude transactions tied to ANY custom budget
-        if (t.miniBudgetId && allCustomBudgetIds.includes(t.miniBudgetId)) {
+        if (t.customBudgetId && allCustomBudgetIds.includes(t.customBudgetId)) {
             return false;
         }
 
@@ -249,13 +248,13 @@ export const getDirectUnpaidExpenses = (systemBudget, transactions, categories, 
     return directUnpaidTransactions.reduce((sum, t) => sum + t.amount, 0);
 };
 
-export const getMiniBudgetAllocationStats = (miniBudget, allocations, transactions) => {
-    const budgetStart = parseDate(miniBudget.startDate);
-    const budgetEnd = parseDate(miniBudget.endDate);
+export const getCustomBudgetAllocationStats = (customBudget, allocations, transactions) => {
+    const budgetStart = parseDate(customBudget.startDate);
+    const budgetEnd = parseDate(customBudget.endDate);
 
-    // Filter transactions for this mini budget within date range
+    // Filter transactions for this custom budget within date range
     const budgetTransactions = transactions.filter(t => {
-        if (t.miniBudgetId !== miniBudget.id) return false;
+        if (t.customBudgetId !== customBudget.id) return false;
 
         if (t.isPaid && t.paidDate) {
             const paidDate = parseDate(t.paidDate);
@@ -268,7 +267,7 @@ export const getMiniBudgetAllocationStats = (miniBudget, allocations, transactio
 
     // Calculate total allocated
     const totalAllocated = allocations.reduce((sum, a) => sum + a.allocatedAmount, 0);
-    const unallocated = miniBudget.allocatedAmount - totalAllocated;
+    const unallocated = customBudget.allocatedAmount - totalAllocated;
 
     // Calculate spending per category
     const categorySpending = {};
@@ -304,22 +303,22 @@ export const getMiniBudgetAllocationStats = (miniBudget, allocations, transactio
 
 // Helper function to get effective priority of a transaction
 // Handles cases where a "Needs" category expense is linked to a "Wants" custom budget
-export const getTransactionEffectivePriority = (transaction, categories, allMiniBudgets = []) => {
+export const getTransactionEffectivePriority = (transaction, categories, allCustomBudgets = []) => {
     if (transaction.type === 'income') return 'income';
     if (transaction.type !== 'expense') return 'uncategorized';
 
-    // NEW LOGIC: If the transaction is linked to ANY mini-budget (that is NOT a system budget itself),
+    // If the transaction is linked to ANY custom budget (that is NOT a system budget itself),
     // then its effective priority is 'wants'.
-    if (transaction.miniBudgetId) {
-        const miniBudget = allMiniBudgets.find(mb => mb.id === transaction.miniBudgetId);
-        // Crucial check: Ensure it's a *custom* mini-budget, not one of the system-generated mini-budgets.
-        // System mini-budgets have isSystemBudget: true.
-        if (miniBudget && !miniBudget.isSystemBudget) {
-            return 'wants'; // Any expense in a custom mini-budget is a 'wants'
+    if (transaction.customBudgetId) {
+        const customBudget = allCustomBudgets.find(cb => cb.id === transaction.customBudgetId);
+        // Crucial check: Ensure it's a *custom* budget, not one of the system-generated budgets.
+        // System custom budgets have isSystemBudget: true.
+        if (customBudget && !customBudget.isSystemBudget) {
+            return 'wants'; // Any expense in a custom budget is a 'wants'
         }
     }
 
-    // If not linked to a custom mini-budget, then use its category's priority.
+    // If not linked to a custom budget, then use its category's priority.
     if (transaction.category_id) {
         const category = categories.find(c => c.id === transaction.category_id);
         if (category && category.priority) {
