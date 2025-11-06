@@ -1,14 +1,12 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSettings } from "../components/utils/SettingsContext";
-import {
-  useMiniBudgetsData,
-  useMiniBudgetsPeriod,
-  useMiniBudgetActions,
-  useTransactionsData,
-} from "../components/hooks/useFinancialData";
+import { usePeriod } from "../components/hooks/usePeriod";
+import { useTransactions, useMiniBudgetsAll } from "../components/hooks/useBase44Entities";
+import { useMiniBudgetsFiltered } from "../components/hooks/useDerivedData";
+import { useMiniBudgetActions } from "../components/hooks/useActions";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,16 +22,22 @@ import MiniBudgetForm from "../components/minibudgets/MiniBudgetForm";
 import MiniBudgetCard from "../components/minibudgets/MiniBudgetCard";
 import MonthNavigator from "../components/ui/MonthNavigator";
 
+const statusConfig = {
+  active: { label: "Active", color: "text-green-600", bg: "bg-green-50" },
+  completed: { label: "Completed", color: "text-blue-600", bg: "bg-blue-50" }
+};
+
 export default function MiniBudgets() {
   const { user, settings } = useSettings();
   const [budgetToDelete, setBudgetToDelete] = useState(null);
 
   // Period management
-  const { selectedMonth, setSelectedMonth, selectedYear, setSelectedYear, displayDate } = useMiniBudgetsPeriod();
+  const { selectedMonth, setSelectedMonth, selectedYear, setSelectedYear, displayDate } = usePeriod();
 
   // Data fetching
-  const { transactions } = useTransactionsData();
-  const { miniBudgets, isLoading } = useMiniBudgetsData(user, selectedMonth, selectedYear);
+  const { transactions } = useTransactions();
+  const { allMiniBudgets, isLoading } = useMiniBudgetsAll(user);
+  const miniBudgets = useMiniBudgetsFiltered(allMiniBudgets, selectedMonth, selectedYear);
 
   // Actions (CRUD operations)
   const {
@@ -57,21 +61,15 @@ export default function MiniBudgets() {
   };
 
   // Group custom budgets by status - excluding archived
-  const groupedCustomBudgets = useMemo(() => {
+  const groupedCustomBudgets = React.useMemo(() => {
     return miniBudgets.reduce((acc, budget) => {
       const status = budget.status || 'active';
-      // Skip archived budgets
       if (status === 'archived') return acc;
       if (!acc[status]) acc[status] = [];
       acc[status].push(budget);
       return acc;
     }, {});
   }, [miniBudgets]);
-
-  const statusConfig = {
-    active: { label: "Active", color: "text-green-600", bg: "bg-green-50" },
-    completed: { label: "Completed", color: "text-blue-600", bg: "bg-blue-50" }
-  };
 
   return (
     <div className="min-h-screen p-4 md:p-8">
@@ -118,7 +116,6 @@ export default function MiniBudgets() {
           />
         )}
 
-        {/* Custom Budgets Section */}
         {miniBudgets.length === 0 && !isLoading ? (
           <Card className="border-none shadow-lg">
             <CardHeader>
@@ -169,7 +166,6 @@ export default function MiniBudgets() {
           })
         )}
 
-        {/* Delete Confirmation Dialog */}
         <AlertDialog open={!!budgetToDelete} onOpenChange={(open) => !open && setBudgetToDelete(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>

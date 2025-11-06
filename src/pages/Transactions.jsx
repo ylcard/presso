@@ -1,11 +1,9 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import {
-  useTransactionsData,
-  useTransactionFiltering,
-  useTransactionActions,
-} from "../components/hooks/useFinancialData";
+import { useTransactions, useCategories } from "../components/hooks/useBase44Entities";
+import { useTransactionFiltering } from "../components/hooks/useDerivedData";
+import { useTransactionActions } from "../components/hooks/useActions";
 
 import TransactionForm from "../components/transactions/TransactionForm";
 import TransactionList from "../components/transactions/TransactionList";
@@ -17,7 +15,8 @@ export default function Transactions() {
   const [editingTransaction, setEditingTransaction] = useState(null);
 
   // Data fetching
-  const { transactions, categories, isLoading } = useTransactionsData();
+  const { transactions, isLoading } = useTransactions();
+  const { categories } = useCategories();
 
   // Filtering logic
   const { filters, setFilters, filteredTransactions } = useTransactionFiltering(transactions);

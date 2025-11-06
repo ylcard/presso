@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -5,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSettings } from "../components/utils/SettingsContext";
-import { useSettingsForm } from "../components/hooks/useFinancialData";
+import { useSettingsForm } from "../components/hooks/useActions";
 import { formatCurrency } from "../components/utils/formatCurrency";
 import { Settings as SettingsIcon, Check } from "lucide-react";
 

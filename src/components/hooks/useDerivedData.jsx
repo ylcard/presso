@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+
+import { useMemo, useState } from "react";
 import {
   calculateRemainingBudget,
   getCurrentMonthTransactions,
@@ -166,7 +167,7 @@ export const useTransactionFiltering = (transactions) => {
   const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
   const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
   
-  const [filters, setFilters] = React.useState({ 
+  const [filters, setFilters] = useState({ 
     type: 'all', 
     category: [],
     paymentStatus: 'all',

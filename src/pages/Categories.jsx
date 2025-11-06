@@ -1,10 +1,8 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import {
-  useCategoryData,
-  useCategoryActions,
-} from "../components/hooks/useFinancialData";
+import { useCategories } from "../components/hooks/useBase44Entities";
+import { useCategoryActions } from "../components/hooks/useActions";
 
 import CategoryForm from "../components/categories/CategoryForm";
 import CategoryGrid from "../components/categories/CategoryGrid";
@@ -15,7 +13,7 @@ export default function Categories() {
   const [editingCategory, setEditingCategory] = useState(null);
 
   // Data fetching
-  const { categories, isLoading } = useCategoryData();
+  const { categories, isLoading } = useCategories();
 
   // Actions (mutations and handlers)
   const { handleSubmit, handleEdit, handleDelete, isSubmitting } = useCategoryActions(

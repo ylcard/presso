@@ -2,19 +2,24 @@ import React, { useState } from "react";
 import { Plus, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSettings } from "../components/utils/SettingsContext";
+import { usePeriod } from "../components/hooks/usePeriod";
 import {
-  useMonthNavigation,
-  useTransactionsData,
-  useBudgetGoals,
-  useAllMiniBudgets,
-  useAllSystemBudgets,
-  useSystemBudgets,
+  useTransactions,
+  useCategories,
+  useGoals,
+  useMiniBudgetsAll,
+  useSystemBudgetsAll,
+  useSystemBudgetsForPeriod,
   useSystemBudgetManagement,
+} from "../components/hooks/useBase44Entities";
+import {
   useActiveBudgets,
-  useTransactionMutations,
-  useBudgetMutations,
   useDashboardSummary,
-} from "../components/hooks/useFinancialData";
+} from "../components/hooks/useDerivedData";
+import {
+  useTransactionMutationsDashboard,
+  useBudgetMutationsDashboard,
+} from "../components/hooks/useActions";
 
 import RemainingBudgetCard from "../components/dashboard/RemainingBudgetCard";
 import BudgetBars from "../components/dashboard/BudgetBars";
@@ -33,15 +38,16 @@ export default function Dashboard() {
   const [showQuickAddBudget, setShowQuickAddBudget] = useState(false);
   const [isTransactionsCollapsed, setIsTransactionsCollapsed] = useState(false);
 
-  // Month navigation
-  const { selectedMonth, selectedYear, setSelectedMonth, setSelectedYear } = useMonthNavigation();
+  // Period management
+  const { selectedMonth, selectedYear, setSelectedMonth, setSelectedYear, displayDate, monthStart, monthEnd } = usePeriod();
 
   // Data fetching
-  const { transactions, categories } = useTransactionsData();
-  const { goals } = useBudgetGoals(user);
-  const { allMiniBudgets } = useAllMiniBudgets(user);
-  const { allSystemBudgets } = useAllSystemBudgets(user);
-  const { systemBudgets, monthStart, monthEnd } = useSystemBudgets(user, selectedMonth, selectedYear);
+  const { transactions } = useTransactions();
+  const { categories } = useCategories();
+  const { goals } = useGoals(user);
+  const { allMiniBudgets } = useMiniBudgetsAll(user);
+  const { allSystemBudgets } = useSystemBudgetsAll(user);
+  const { systemBudgets } = useSystemBudgetsForPeriod(user, monthStart, monthEnd);
 
   // System budget management (auto-create/update)
   useSystemBudgetManagement(
@@ -69,16 +75,14 @@ export default function Dashboard() {
     selectedYear
   );
 
-  // Mutations with state setters passed to hooks
-  const { createTransaction, isCreating } = useTransactionMutations(setShowQuickAdd, setShowQuickAddIncome);
-  const { createBudget, deleteBudget, completeBudget } = useBudgetMutations(
+  // Mutations
+  const { createTransaction, isCreating } = useTransactionMutationsDashboard(setShowQuickAdd, setShowQuickAddIncome);
+  const { createBudget, deleteBudget, completeBudget } = useBudgetMutationsDashboard(
     user,
     transactions,
     allMiniBudgets,
     setShowQuickAddBudget
   );
-
-  const displayDate = new Date(selectedYear, selectedMonth);
 
   return (
     <div className="min-h-screen p-4 md:p-8">

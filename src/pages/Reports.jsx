@@ -1,10 +1,9 @@
 import React from "react";
 import { useSettings } from "../components/utils/SettingsContext";
-import {
-  useReportData,
-  useReportPeriodState,
-  useGoalActions,
-} from "../components/hooks/useFinancialData";
+import { usePeriod } from "../components/hooks/usePeriod";
+import { useTransactions, useCategories, useGoals } from "../components/hooks/useBase44Entities";
+import { useMonthlyTransactions, useMonthlyIncome } from "../components/hooks/useDerivedData";
+import { useGoalActions } from "../components/hooks/useActions";
 
 import MonthlyBreakdown from "../components/reports/MonthlyBreakdown";
 import PriorityChart from "../components/reports/PriorityChart";
@@ -14,22 +13,22 @@ import MonthNavigator from "../components/ui/MonthNavigator";
 export default function Reports() {
   const { user } = useSettings();
 
-  // Data fetching
-  const { transactions, categories, goals, isLoading } = useReportData(user);
+  // Period management
+  const { selectedMonth, setSelectedMonth, selectedYear, setSelectedYear, displayDate } = usePeriod();
 
-  // Period management and aggregated data
-  const { 
-    selectedMonth, 
-    setSelectedMonth, 
-    selectedYear, 
-    setSelectedYear, 
-    monthlyTransactions, 
-    monthlyIncome, 
-    displayDate 
-  } = useReportPeriodState(transactions);
+  // Data fetching
+  const { transactions, isLoading: loadingTransactions } = useTransactions();
+  const { categories, isLoading: loadingCategories } = useCategories();
+  const { goals, isLoading: loadingGoals } = useGoals(user);
+
+  // Derived data
+  const monthlyTransactions = useMonthlyTransactions(transactions, selectedMonth, selectedYear);
+  const monthlyIncome = useMonthlyIncome(monthlyTransactions);
 
   // Goal mutations and actions
   const { handleGoalUpdate, isSaving } = useGoalActions(user, goals);
+
+  const isLoading = loadingTransactions || loadingCategories || loadingGoals;
 
   return (
     <div className="min-h-screen p-4 md:p-8">

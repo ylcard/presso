@@ -3,11 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSettings } from "../components/utils/SettingsContext";
+import { usePeriod } from "../components/hooks/usePeriod";
 import {
-  useMiniBudgetsPeriod,
-  useBudgetsData,
-  useBudgetActions,
-} from "../components/hooks/useFinancialData";
+  useTransactions,
+  useCategories,
+  useMiniBudgetsAll,
+  useSystemBudgetsForPeriod,
+} from "../components/hooks/useBase44Entities";
+import { useBudgetsAggregates } from "../components/hooks/useDerivedData";
+import { useBudgetActions } from "../components/hooks/useActions";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,16 +37,23 @@ export default function Budgets() {
   const [budgetToDelete, setBudgetToDelete] = useState(null);
 
   // Period management
-  const { selectedMonth, setSelectedMonth, selectedYear, setSelectedYear, displayDate } = useMiniBudgetsPeriod();
+  const { selectedMonth, setSelectedMonth, selectedYear, setSelectedYear, displayDate, monthStart, monthEnd } = usePeriod();
 
-  // Data fetching and processing
-  const {
+  // Data fetching
+  const { transactions } = useTransactions();
+  const { categories } = useCategories();
+  const { allMiniBudgets } = useMiniBudgetsAll(user);
+  const { systemBudgets, isLoading: loadingSystemBudgets } = useSystemBudgetsForPeriod(user, monthStart, monthEnd);
+
+  // Aggregated data
+  const { customBudgets, systemBudgetsWithStats, groupedCustomBudgets } = useBudgetsAggregates(
     transactions,
-    systemBudgetsWithStats,
-    customBudgets,
-    groupedCustomBudgets,
-    isLoading,
-  } = useBudgetsData(user, selectedMonth, selectedYear);
+    categories,
+    allMiniBudgets,
+    systemBudgets,
+    selectedMonth,
+    selectedYear
+  );
 
   // Actions (CRUD operations and form state)
   const {
@@ -191,7 +202,6 @@ export default function Budgets() {
           })
         )}
 
-        {/* Delete Confirmation Dialog */}
         <AlertDialog open={!!budgetToDelete} onOpenChange={(open) => !open && setBudgetToDelete(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
