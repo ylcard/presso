@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -33,7 +32,6 @@ export default function BudgetDetail() {
         queryFn: async () => {
             if (!budgetId) return null;
 
-            // Try to find in CustomBudget first
             const allCustomBudgets = await base44.entities.CustomBudget.list();
             const customBudget = allCustomBudgets.find(cb => cb.id === budgetId);
 
@@ -41,7 +39,6 @@ export default function BudgetDetail() {
                 return { ...customBudget, isSystemBudget: customBudget.isSystemBudget || false };
             }
 
-            // If not found, try SystemBudget
             const allSystemBudgets = await base44.entities.SystemBudget.list();
             const systemBudget = allSystemBudgets.find(sb => sb.id === budgetId);
 
@@ -145,12 +142,6 @@ export default function BudgetDetail() {
         },
     });
 
-    const { data: customBudgets = [] } = useQuery({
-        queryKey: ['customBudgets'],
-        queryFn: () => base44.entities.CustomBudget.list(),
-        initialData: [],
-    });
-
     const budgetTransactions = useMemo(() => {
         if (!budget) return [];
 
@@ -158,22 +149,18 @@ export default function BudgetDetail() {
             const budgetStart = new Date(budget.startDate);
             const budgetEnd = new Date(budget.endDate);
 
-            // Get IDs of ALL custom budgets (regardless of status) to exclude their transactions
             const allCustomBudgetIds = allCustomBudgets.map(cb => cb.id);
 
-            // Filter transactions: exclude those from ANY custom budgets
             return transactions.filter(t => {
                 if (t.type !== 'expense' || !t.category_id) return false;
 
                 const category = categories.find(c => c.id === t.category_id);
                 if (!category || category.priority !== budget.systemBudgetType) return false;
 
-                // Exclude transactions from ANY custom budget (active, completed, or archived)
                 if (t.customBudgetId && allCustomBudgetIds.includes(t.customBudgetId)) {
                     return false;
                 }
 
-                // Check date range
                 if (t.isPaid && t.paidDate) {
                     const paidDate = new Date(t.paidDate);
                     return paidDate >= budgetStart && paidDate <= budgetEnd;
@@ -187,7 +174,6 @@ export default function BudgetDetail() {
                 return false;
             });
         } else {
-            // For custom budgets, filter by customBudgetId
             return transactions.filter(t => t.customBudgetId === budgetId);
         }
     }, [transactions, budgetId, budget, categories, allCustomBudgets]);
@@ -195,25 +181,19 @@ export default function BudgetDetail() {
     const relatedCustomBudgetsForDisplay = useMemo(() => {
         if (!budget || !budget.isSystemBudget) return [];
 
-        // NEW LOGIC: If it's a 'needs' system budget, no custom budgets should be shown.
-        // Custom budgets are inherently 'wants'.
         if (budget.systemBudgetType === 'needs') {
             return [];
         }
 
-        // If it's a 'wants' system budget, then we should display relevant custom budgets.
         if (budget.systemBudgetType === 'wants') {
             const budgetStart = new Date(budget.startDate);
             const budgetEnd = new Date(budget.endDate);
 
             return allCustomBudgets.filter(cb => {
-                // Only consider active or completed custom budgets
                 if (cb.status !== 'active' && cb.status !== 'completed') return false;
 
-                // Crucially, filter out any actual SystemBudgets from this list
                 if (cb.isSystemBudget) return false;
 
-                // Check date overlap
                 const cbStart = new Date(cb.startDate);
                 const cbEnd = new Date(cb.endDate);
                 return cbStart <= budgetEnd && cbEnd >= budgetStart;
@@ -407,72 +387,55 @@ export default function BudgetDetail() {
                     </div>
                 </div>
 
-                <div className="grid md:grid-cols-5 gap-4">
-                    <Card className="border-none shadow-lg" style={{ backgroundColor: '#EFF6FF' }}>
-                        <CardContent className="p-6 flex flex-col items-center justify-center text-center h-full">
-                            <div className="flex items-center gap-2 mb-2">
-                                <DollarSign className="w-5 h-5 text-blue-600" />
-                                <p className="text-sm font-medium text-gray-600">Total Budget</p>
+                <div className="grid md:grid-cols-4 gap-4">
+                    <Card className="border-none shadow-lg">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium text-gray-500">Budget</CardTitle>
+                            <DollarSign className="w-4 h-4 text-blue-500" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-gray-900">
+                                {formatCurrency(budget.allocatedAmount || budget.budgetAmount, settings)}
                             </div>
-                            <p className="text-2xl font-bold text-gray-900">
-                                {formatCurrency(budget.allocatedAmount, settings)}
-                            </p>
                         </CardContent>
                     </Card>
 
-                    <Card className="border-none shadow-lg" style={{ backgroundColor: '#FEF2F2' }}>
-                        <CardContent className="p-6 flex flex-col items-center justify-center text-center h-full">
-                            <div className="flex items-center gap-2 mb-2">
-                                <TrendingDown className="w-5 h-5 text-red-600" />
-                                <p className="text-sm font-medium text-gray-600">Total Expenses</p>
-                            </div>
-                            <p className="text-2xl font-bold text-gray-900">
+                    <Card className="border-none shadow-lg">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium text-gray-500">Spent</CardTitle>
+                            <TrendingDown className="w-4 h-4 text-red-500" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-red-600">
                                 {formatCurrency(stats.totalSpent, settings)}
-                            </p>
+                            </div>
                             <p className="text-xs text-gray-500 mt-1">
-                                {((stats.totalSpent / budget.allocatedAmount) * 100).toFixed(1)}% of budget
+                                {((stats.totalSpent / (budget.allocatedAmount || budget.budgetAmount)) * 100).toFixed(1)}% used
                             </p>
                         </CardContent>
                     </Card>
 
-                    <Card className="border-none shadow-lg" style={{ backgroundColor: '#F0FDF4' }}>
-                        <CardContent className="p-6 flex flex-col items-center justify-center text-center h-full">
-                            <div className="flex items-center gap-2 mb-2">
-                                <CheckCircle className="w-5 h-5 text-green-600" />
-                                <p className="text-sm font-medium text-gray-600">Paid</p>
-                            </div>
-                            <p className="text-2xl font-bold text-green-600">
-                                {formatCurrency(stats.paidAmount, settings)}
-                            </p>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="border-none shadow-lg" style={{ backgroundColor: '#FFFBEB' }}>
-                        <CardContent className="p-6 flex flex-col items-center justify-center text-center h-full">
-                            <div className="flex items-center gap-2 mb-2">
-                                <Clock className="w-5 h-5 text-orange-600" />
-                                <p className="text-sm font-medium text-gray-600">Expected</p>
-                            </div>
-                            <p className="text-2xl font-bold text-orange-600">
-                                {formatCurrency(stats.unpaidAmount, settings)}
-                            </p>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="border-none shadow-lg" style={{ backgroundColor: '#F9FAFB' }}>
-                        <CardContent className="p-6 flex flex-col items-center justify-center text-center h-full">
-                            <div className="flex items-center gap-2 mb-2">
-                                <Badge
-                                    variant={stats.percentageUsed > 100 ? "destructive" : stats.percentageUsed > 80 ? "warning" : "default"}
-                                    className="text-xs"
-                                >
-                                    {stats.percentageUsed.toFixed(0)}%
-                                </Badge>
-                                <p className="text-sm font-medium text-gray-600">Remaining</p>
-                            </div>
-                            <p className={`text-2xl font-bold ${stats.remaining < 0 ? 'text-red-600' : 'text-gray-900'}`}>
+                    <Card className="border-none shadow-lg">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium text-gray-500">Remaining</CardTitle>
+                            <CheckCircle className="w-4 h-4 text-green-500" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className={`text-2xl font-bold ${stats.remaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                 {formatCurrency(stats.remaining, settings)}
-                            </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="border-none shadow-lg">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium text-gray-500">Unpaid</CardTitle>
+                            <Clock className="w-4 h-4 text-orange-500" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-orange-600">
+                                {formatCurrency(stats.unpaidAmount, settings)}
+                            </div>
                         </CardContent>
                     </Card>
                 </div>
