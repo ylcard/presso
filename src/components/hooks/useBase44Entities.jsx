@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -107,6 +108,34 @@ export const useAllocations = (budgetId) => {
   });
 
   return { allocations, isLoading };
+};
+
+// Hook for fetching all budgets (mini + system) for a user
+export const useAllBudgets = (user) => {
+  const { data: allBudgets = [], isLoading } = useQuery({
+    queryKey: [QUERY_KEYS.ALL_BUDGETS],
+    queryFn: async () => {
+      if (!user) return [];
+      
+      const miniBudgets = await base44.entities.MiniBudget.list();
+      const systemBudgets = await base44.entities.SystemBudget.list();
+      
+      const userMiniBudgets = miniBudgets.filter(mb => mb.user_email === user.email && mb.status === 'active');
+      const userSystemBudgets = systemBudgets
+        .filter(sb => sb.user_email === user.email)
+        .map(sb => ({
+          ...sb,
+          isSystemBudget: true,
+          allocatedAmount: sb.budgetAmount
+        }));
+      
+      return [...userSystemBudgets, ...userMiniBudgets];
+    },
+    initialData: [],
+    enabled: !!user,
+  });
+
+  return { allBudgets, isLoading };
 };
 
 // Hook for managing system budgets (create/update logic)

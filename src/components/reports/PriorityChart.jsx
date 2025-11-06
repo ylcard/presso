@@ -1,51 +1,12 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
-
-const priorityConfig = {
-  needs: { label: "Needs", color: "#EF4444" },
-  wants: { label: "Wants", color: "#F59E0B" },
-  savings: { label: "Savings", color: "#10B981" }
-};
+import { usePriorityChartData } from "../hooks/useDerivedData";
 
 export default function PriorityChart({ transactions, categories, goals, monthlyIncome, isLoading }) {
-  const categoryMap = categories.reduce((acc, cat) => {
-    acc[cat.id] = cat;
-    return acc;
-  }, {});
-
-  const goalMap = goals.reduce((acc, goal) => {
-    acc[goal.priority] = goal.target_percentage;
-    return acc;
-  }, {});
-
-  const expensesByPriority = transactions
-    .filter(t => t.type === 'expense' && t.category_id)
-    .reduce((acc, t) => {
-      const category = categoryMap[t.category_id];
-      if (category) {
-        const priority = category.priority;
-        acc[priority] = (acc[priority] || 0) + t.amount; // Changed from calculateMonthlyAmount(t) to t.amount
-      }
-      return acc;
-    }, {});
-
-  const chartData = Object.entries(priorityConfig)
-    .map(([key, config]) => {
-      const amount = expensesByPriority[key] || 0;
-      const actual = monthlyIncome > 0 ? (amount / monthlyIncome) * 100 : 0;
-      const target = goalMap[key] || 0;
-      
-      return {
-        name: config.label,
-        actual,
-        target,
-        color: config.color
-      };
-    })
-    .filter(item => item.actual > 0 || item.target > 0); // Filter out priorities with $0
+  // Use the extracted hook for calculations
+  const chartData = usePriorityChartData(transactions, categories, goals, monthlyIncome);
 
   if (isLoading) {
     return (

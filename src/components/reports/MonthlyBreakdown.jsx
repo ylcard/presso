@@ -1,45 +1,19 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { Circle } from "lucide-react";
 import { useSettings } from "../utils/SettingsContext";
+import { useMonthlyBreakdown } from "../hooks/useDerivedData";
 import { formatCurrency } from "../utils/formatCurrency";
 import { iconMap } from "../utils/iconMapConfig";
 import { getProgressBarColor } from "../utils/progressBarColor";
 
 export default function MonthlyBreakdown({ transactions, categories, monthlyIncome, isLoading }) {
   const { settings } = useSettings();
-  const categoryMap = categories.reduce((acc, cat) => {
-    acc[cat.id] = cat;
-    return acc;
-  }, {});
-
-  const expensesByCategory = transactions
-    .filter(t => t.type === 'expense')
-    .reduce((acc, t) => {
-      const categoryId = t.category_id || 'uncategorized';
-      acc[categoryId] = (acc[categoryId] || 0) + t.amount;
-      return acc;
-    }, {});
-
-  const totalExpenses = Object.values(expensesByCategory).reduce((sum, val) => sum + val, 0);
-
-  const categoryBreakdown = Object.entries(expensesByCategory)
-    .filter(([_, amount]) => amount > 0) // Filter out categories with $0
-    .map(([categoryId, amount]) => {
-      const category = categoryMap[categoryId];
-      return {
-        name: category?.name || 'Uncategorized',
-        icon: category?.icon,
-        color: category?.color || '#94A3B8',
-        amount,
-        percentage: monthlyIncome > 0 ? (amount / monthlyIncome) * 100 : 0,
-        expensePercentage: totalExpenses > 0 ? (amount / totalExpenses) * 100 : 0
-      };
-    })
-    .sort((a, b) => b.amount - a.amount);
+  
+  // Use the extracted hook for calculations
+  const { categoryBreakdown, totalExpenses } = useMonthlyBreakdown(transactions, categories, monthlyIncome);
 
   if (isLoading) {
     return (

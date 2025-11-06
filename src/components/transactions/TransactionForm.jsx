@@ -9,9 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { X } from "lucide-react";
 import { motion } from "framer-motion";
-import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
 import { useSettings } from "../utils/SettingsContext";
+import { useAllBudgets } from "../hooks/useBase44Entities"; // New import
 import AmountInput from "../ui/AmountInput";
 import DatePicker from "../ui/DatePicker";
 import CategorySelect from "../ui/CategorySelect";
@@ -20,28 +19,8 @@ import { formatDateString } from "../utils/budgetCalculations";
 export default function TransactionForm({ transaction, categories, onSubmit, onCancel, isSubmitting }) {
   const { user } = useSettings();
   
-  const { data: allBudgets = [] } = useQuery({
-    queryKey: ['allBudgets'],
-    queryFn: async () => {
-      if (!user) return [];
-      
-      const miniBudgets = await base44.entities.MiniBudget.list();
-      const systemBudgets = await base44.entities.SystemBudget.list();
-      
-      const userMiniBudgets = miniBudgets.filter(mb => mb.user_email === user.email && mb.status === 'active');
-      const userSystemBudgets = systemBudgets
-        .filter(sb => sb.user_email === user.email)
-        .map(sb => ({
-          ...sb,
-          isSystemBudget: true,
-          allocatedAmount: sb.budgetAmount
-        }));
-      
-      return [...userSystemBudgets, ...userMiniBudgets];
-    },
-    initialData: [],
-    enabled: !!user,
-  });
+  // Use the extracted hook for fetching budgets
+  const { allBudgets } = useAllBudgets(user);
 
   const [formData, setFormData] = useState({
     title: '',

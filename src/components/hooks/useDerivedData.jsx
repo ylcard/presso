@@ -7,6 +7,8 @@ import {
   getLastDayOfMonth,
   getUnpaidExpensesForMonth,
   getSystemBudgetStats,
+  getMiniBudgetStats, // Added for new hooks
+  getDirectUnpaidExpenses, // Added for new hooks
 } from "../utils/budgetCalculations";
 
 // Hook for filtering transactions by current month
@@ -207,4 +209,212 @@ export const useTransactionFiltering = (transactions) => {
     setFilters,
     filteredTransactions,
   };
+};
+
+// Hook for budget bars data calculations
+export const useBudgetBarsData = (
+  systemBudgets,
+  miniBudgets,
+  allMiniBudgets,
+  transactions,
+  categories,
+  goals,
+  monthlyIncome
+) => {
+  return useMemo(() => {
+    const system = systemBudgets.sort((a, b) => {
+      const order = { needs: 0, wants: 1, savings: 2 };
+      return order[a.systemBudgetType] - order[b.systemBudgetType];
+    });
+    
+    const custom = miniBudgets.filter(mb => mb.status === 'active' || mb.status === 'completed');
+    
+    const goalMap = goals.reduce((acc, goal) => {
+      acc[goal.priority] = goal.target_percentage;
+      return acc;
+    }, {});
+    
+    const activeCustom = custom.filter(mb => mb.status === 'active');
+        
+    // Process system budgets
+    const systemBudgetsData = system.map(sb => {
+      const budgetForStats = {
+        ...sb,
+        allocatedAmount: sb.budgetAmount
+      };
+      
+      const stats = getSystemBudgetStats(budgetForStats, transactions, categories, allMiniBudgets);
+      const targetPercentage = goalMap[sb.systemBudgetType] || 0;
+      const targetAmount = sb.budgetAmount;
+      
+      let expectedAmount = 0;
+      
+      if (sb.systemBudgetType === 'wants') {
+        const directUnpaid = getDirectUnpaidExpenses(budgetForStats, transactions, categories, allMiniBudgets);
+        
+        const activeCustomExpected = activeCustom.reduce((sum, cb) => {
+          const cbStats = getMiniBudgetStats(cb, transactions);
+          return sum + (cb.allocatedAmount - cbStats.paidAmount);
+        }, 0);
+        
+        expectedAmount = directUnpaid + activeCustomExpected;
+      } else if (sb.systemBudgetType === 'needs') {
+        expectedAmount = getDirectUnpaidExpenses(budgetForStats, transactions, categories, allMiniBudgets);
+      } else if (sb.systemBudgetType === 'savings') {
+        expectedAmount = 0;
+      }
+      
+      const actualTotal = expectedAmount + stats.paidAmount;
+      const maxHeight = Math.max(targetAmount, actualTotal);
+      const isOverBudget = actualTotal > targetAmount;
+      const overBudgetAmount = isOverBudget ? actualTotal - targetAmount : 0;
+      
+      return {
+        ...sb,
+        stats,
+        targetAmount,
+        targetPercentage,
+        expectedAmount,
+        maxHeight,
+        isOverBudget,
+        overBudgetAmount
+      };
+    });
+    
+    // Process custom budgets
+    const customBudgetsData = custom.map(mb => {
+      const stats = getMiniBudgetStats(mb, transactions);
+      const maxHeight = Math.max(mb.allocatedAmount, stats.totalSpent);
+      const isOverBudget = stats.totalSpent > mb.allocatedAmount;
+      const overBudgetAmount = isOverBudget ? stats.totalSpent - mb.allocatedAmount : 0;
+      
+      return {
+        ...mb,
+        originalAllocatedAmount: mb.originalAllocatedAmount || mb.allocatedAmount,
+        stats,
+        maxHeight,
+        isOverBudget,
+        overBudgetAmount
+      };
+    });
+    
+    // Calculate savings
+    const savingsBudget = systemBudgetsData.find(sb => sb.systemBudgetType === 'savings');
+    const savingsTargetAmount = savingsBudget ? savingsBudget.targetAmount : 0;
+    
+    const needsBudget = systemBudgetsData.find(sb => sb.systemBudgetType === 'needs');
+    const wantsBudget = systemBudgetsData.find(sb => sb.systemBudgetType === 'wants');
+    
+    const totalSpent = 
+      (needsBudget ? needsBudget.stats.paidAmount + needsBudget.expectedAmount : 0) +
+      (wantsBudget ? wantsBudget.stats.paidAmount + wantsBudget.expectedAmount : 0);
+    
+    const automaticSavings = Math.max(0, monthlyIncome - totalSpent);
+    const manualSavings = savingsBudget ? savingsBudget.stats.paidAmount : 0;
+    const totalActualSavings = automaticSavings + manualSavings;
+    const savingsShortfall = Math.max(0, savingsTargetAmount - totalActualSavings);
+    
+    if (savingsBudget) {
+      savingsBudget.actualSavings = totalActualSavings;
+      savingsBudget.savingsTarget = savingsTargetAmount;
+      savingsBudget.maxHeight = Math.max(savingsTargetAmount, totalActualSavings);
+    }
+    
+    return { 
+      systemBudgetsData, 
+      customBudgetsData,
+      totalActualSavings,
+      savingsTarget: savingsTargetAmount,
+      savingsShortfall
+    };
+  }, [systemBudgets, miniBudgets, allMiniBudgets, transactions, categories, goals, monthlyIncome]);
+};
+
+// Hook for monthly breakdown calculations
+export const useMonthlyBreakdown = (transactions, categories, monthlyIncome) => {
+  return useMemo(() => {
+    const categoryMap = categories.reduce((acc, cat) => {
+      acc[cat.id] = cat;
+      return acc;
+    }, {});
+
+    const expensesByCategory = transactions
+      .filter(t => t.type === 'expense')
+      .reduce((acc, t) => {
+        const categoryId = t.category_id || 'uncategorized';
+        acc[categoryId] = (acc[categoryId] || 0) + t.amount;
+        return acc;
+      }, {});
+
+    const totalExpenses = Object.values(expensesByCategory).reduce((sum, val) => sum + val, 0);
+
+    const categoryBreakdown = Object.entries(expensesByCategory)
+      .filter(([_, amount]) => amount > 0)
+      .map(([categoryId, amount]) => {
+        const category = categoryMap[categoryId];
+        return {
+          name: category?.name || 'Uncategorized',
+          icon: category?.icon,
+          color: category?.color || '#94A3B8',
+          amount,
+          percentage: monthlyIncome > 0 ? (amount / monthlyIncome) * 100 : 0,
+          expensePercentage: totalExpenses > 0 ? (amount / totalExpenses) * 100 : 0
+        };
+      })
+      .sort((a, b) => b.amount - a.amount);
+
+    return {
+      categoryBreakdown,
+      totalExpenses
+    };
+  }, [transactions, categories, monthlyIncome]);
+};
+
+// Hook for priority chart data calculations
+export const usePriorityChartData = (transactions, categories, goals, monthlyIncome) => {
+  return useMemo(() => {
+    const categoryMap = categories.reduce((acc, cat) => {
+      acc[cat.id] = cat;
+      return acc;
+    }, {});
+
+    const goalMap = goals.reduce((acc, goal) => {
+      acc[goal.priority] = goal.target_percentage;
+      return acc;
+    }, {});
+
+    const expensesByPriority = transactions
+      .filter(t => t.type === 'expense' && t.category_id)
+      .reduce((acc, t) => {
+        const category = categoryMap[t.category_id];
+        if (category) {
+          const priority = category.priority;
+          acc[priority] = (acc[priority] || 0) + t.amount;
+        }
+        return acc;
+      }, {});
+
+    const priorityConfig = {
+      needs: { label: "Needs", color: "#EF4444" },
+      wants: { label: "Wants", color: "#F59E0B" },
+      savings: { label: "Savings", color: "#10B981" }
+    };
+
+    const chartData = Object.entries(priorityConfig)
+      .map(([key, config]) => {
+        const amount = expensesByPriority[key] || 0;
+        const actual = monthlyIncome > 0 ? (amount / monthlyIncome) * 100 : 0;
+        const target = goalMap[key] || 0;
+        
+        return {
+          name: config.label,
+          actual,
+          target,
+          color: config.color
+        };
+      })
+      .filter(item => item.actual > 0 || item.target > 0);
+
+    return chartData;
+  }, [transactions, categories, goals, monthlyIncome]);
 };
