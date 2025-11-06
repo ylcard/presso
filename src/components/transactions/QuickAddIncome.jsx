@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import {
   Dialog,
@@ -10,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import AmountInput from "../ui/AmountInput";
 import DatePicker from "../ui/DatePicker";
-import { formatDateString } from "../utils/budgetCalculations";
+import { formatDateString, normalizeAmount } from "../utils/budgetCalculations";
 
 export default function QuickAddIncome({ 
   open, 
@@ -27,7 +28,7 @@ export default function QuickAddIncome({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const normalizedAmount = formData.amount.toString().replace(/[^\d.,]/g, '').replace(',', '.');
+    const normalizedAmount = normalizeAmount(formData.amount);
     
     onSubmit({
       ...formData,

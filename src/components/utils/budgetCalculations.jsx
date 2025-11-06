@@ -24,6 +24,13 @@ export const filterActiveOrCompletedMiniBudgets = (miniBudgets) => {
     return miniBudgets.filter(mb => mb.status === 'active' || mb.status === 'completed');
 };
 
+// Normalize amount input by removing non-numeric characters except decimal separators
+// Converts comma to period for standardization
+export const normalizeAmount = (amount) => {
+    if (!amount) return '';
+    return amount.toString().replace(/[^\d.,]/g, '').replace(',', '.');
+};
+
 // Utility function to create timezone-agnostic date from YYYY-MM-DD string
 export const parseDate = (dateString) => {
     if (!dateString) return null;

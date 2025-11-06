@@ -1,3 +1,4 @@
+
 // Priority order for sorting (lower number = higher priority in display)
 export const PRIORITY_ORDER = {
   needs: 0,
@@ -26,3 +27,9 @@ export const PRIORITY_CONFIG = {
     order: 2 
   }
 };
+
+// Preset color palette for budgets and visual elements
+export const PRESET_COLORS = [
+  '#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6',
+  '#EC4899', '#14B8A6', '#F97316', '#06B6D4', '#6366F1'
+];

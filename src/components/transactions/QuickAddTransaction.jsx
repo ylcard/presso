@@ -14,7 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import AmountInput from "../ui/AmountInput";
 import DatePicker from "../ui/DatePicker";
 import CategorySelect from "../ui/CategorySelect";
-import { formatDateString } from "../utils/budgetCalculations";
+import { formatDateString, normalizeAmount } from "../utils/budgetCalculations";
 
 export default function QuickAddTransaction({ 
   open, 
@@ -44,7 +44,7 @@ export default function QuickAddTransaction({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const normalizedAmount = formData.amount.toString().replace(/[^\d.,]/g, '').replace(',', '.');
+    const normalizedAmount = normalizeAmount(formData.amount);
     
     onSubmit({
       ...formData,
