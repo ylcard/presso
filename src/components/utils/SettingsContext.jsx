@@ -31,7 +31,7 @@ export const SettingsProvider = ({ children }) => {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        // Ensure we have all required fields
+        console.log('Loaded settings from localStorage:', parsed);
         return { ...defaultSettings, ...parsed };
       }
     } catch (error) {
@@ -55,26 +55,27 @@ export const SettingsProvider = ({ children }) => {
       const allSettings = await base44.entities.UserSettings.list();
       const userSettings = allSettings.find(s => s.user_email === currentUser.email);
       
+      console.log('User settings from database:', userSettings);
+      
       if (userSettings) {
-        // Only use the fallback defaults if the field is truly undefined/null, not if it's an empty string
         const newSettings = {
-          currencySymbol: userSettings.currencySymbol !== undefined && userSettings.currencySymbol !== null ? userSettings.currencySymbol : defaultSettings.currencySymbol,
-          currencyCode: userSettings.currencyCode !== undefined && userSettings.currencyCode !== null ? userSettings.currencyCode : defaultSettings.currencyCode,
-          currencyPosition: userSettings.currencyPosition !== undefined && userSettings.currencyPosition !== null ? userSettings.currencyPosition : defaultSettings.currencyPosition,
-          thousandSeparator: userSettings.thousandSeparator !== undefined && userSettings.thousandSeparator !== null ? userSettings.thousandSeparator : defaultSettings.thousandSeparator,
-          decimalSeparator: userSettings.decimalSeparator !== undefined && userSettings.decimalSeparator !== null ? userSettings.decimalSeparator : defaultSettings.decimalSeparator,
-          decimalPlaces: userSettings.decimalPlaces !== undefined && userSettings.decimalPlaces !== null ? userSettings.decimalPlaces : defaultSettings.decimalPlaces,
-          hideTrailingZeros: userSettings.hideTrailingZeros !== undefined && userSettings.hideTrailingZeros !== null ? userSettings.hideTrailingZeros : defaultSettings.hideTrailingZeros,
-          dateFormat: userSettings.dateFormat !== undefined && userSettings.dateFormat !== null ? userSettings.dateFormat : defaultSettings.dateFormat
+          currencySymbol: userSettings.currencySymbol ?? '$',
+          currencyCode: userSettings.currencyCode ?? 'USD',
+          currencyPosition: userSettings.currencyPosition ?? 'before',
+          thousandSeparator: userSettings.thousandSeparator ?? ',',
+          decimalSeparator: userSettings.decimalSeparator ?? '.',
+          decimalPlaces: userSettings.decimalPlaces ?? 2,
+          hideTrailingZeros: userSettings.hideTrailingZeros ?? false,
+          dateFormat: userSettings.dateFormat ?? 'MMM dd, yyyy'
         };
         
-        console.log('Loaded user settings from database:', newSettings);
+        console.log('Processed settings to apply:', newSettings);
         
         // Update state and localStorage
         setSettings(newSettings);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings));
       } else {
-        console.log('No user settings found in database, using defaults');
+        console.log('No user settings found in database, using defaults/localStorage');
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -89,30 +90,29 @@ export const SettingsProvider = ({ children }) => {
         throw new Error('User not logged in');
       }
       
+      console.log('Updating settings with:', newSettings);
+      
       // Update localStorage immediately
       const updatedSettings = { ...settings, ...newSettings };
       setSettings(updatedSettings);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedSettings));
-      
-      console.log('Updating settings to:', updatedSettings);
       
       // Then sync to database
       const allSettings = await base44.entities.UserSettings.list();
       const userSettings = allSettings.find(s => s.user_email === user.email);
       
       if (userSettings) {
+        console.log('Updating existing UserSettings record:', userSettings.id);
         await base44.entities.UserSettings.update(userSettings.id, newSettings);
-        console.log('Settings updated in database');
       } else {
+        console.log('Creating new UserSettings record');
         await base44.entities.UserSettings.create({
           ...newSettings,
           user_email: user.email
         });
-        console.log('Settings created in database');
       }
       
-      // Reload settings to ensure consistency
-      await loadSettings();
+      console.log('Settings successfully saved to database');
     } catch (error) {
       console.error('Error updating settings:', error);
       throw error;

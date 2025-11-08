@@ -20,7 +20,7 @@ import CurrencySelect from "../ui/CurrencySelect";
 import { formatDateString } from "../utils/budgetCalculations";
 
 export default function TransactionForm({ transaction, categories, onSubmit, onCancel, isSubmitting }) {
-  const { user, settings } = useSettings();
+  const { user, settings, isLoading: settingsLoading } = useSettings();
   const { toast } = useToast();
   const { isRefreshing, refreshRates } = useCurrencyRefresh(user);
   
@@ -57,9 +57,23 @@ export default function TransactionForm({ transaction, categories, onSubmit, onC
     }
   }, [transaction, settings.currencyCode]);
 
+  // Update form currency when settings load/change
+  useEffect(() => {
+    if (!settingsLoading && settings.currencyCode && !transaction) {
+      setFormData(prev => ({
+        ...prev,
+        originalCurrency: settings.currencyCode
+      }));
+    }
+  }, [settings.currencyCode, settingsLoading, transaction]);
+
   const isForeignCurrency = useMemo(() => {
+    // Ensure we have valid settings before checking
+    if (settingsLoading || !settings.currencyCode) {
+      return false;
+    }
     return formData.type === 'expense' && formData.originalCurrency !== settings.currencyCode;
-  }, [formData.type, formData.originalCurrency, settings.currencyCode]);
+  }, [formData.type, formData.originalCurrency, settings.currencyCode, settingsLoading]);
 
   const handleResetCurrency = useCallback(() => {
     setFormData(prev => ({ ...prev, originalCurrency: settings.currencyCode }));
@@ -83,6 +97,12 @@ export default function TransactionForm({ transaction, categories, onSubmit, onC
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Log current state for debugging
+    console.log('Form submission - settings.currencyCode:', settings.currencyCode);
+    console.log('Form submission - formData.originalCurrency:', formData.originalCurrency);
+    console.log('Form submission - isForeignCurrency:', isForeignCurrency);
+    
     const inputAmount = parseFloat(formData.amount);
     
     let finalAmount = inputAmount;
@@ -93,6 +113,8 @@ export default function TransactionForm({ transaction, categories, onSubmit, onC
     // Convert currency if needed for expenses
     if (isForeignCurrency) {
       try {
+        console.log(`Converting ${inputAmount} from ${formData.originalCurrency} to ${settings.currencyCode}`);
+        
         const { convertedAmount, exchangeRate } = await convertCurrency(
           inputAmount,
           formData.originalCurrency,
@@ -100,11 +122,14 @@ export default function TransactionForm({ transaction, categories, onSubmit, onC
           formData.date
         );
         
+        console.log(`Conversion result: ${convertedAmount} ${settings.currencyCode} (rate: ${exchangeRate})`);
+        
         finalAmount = convertedAmount;
         exchangeRateUsed = exchangeRate;
         originalCurrency = formData.originalCurrency;
         originalAmountValue = inputAmount;
       } catch (error) {
+        console.error('Conversion error:', error);
         toast({
           title: "Conversion Error",
           description: "Please refresh exchange rates for this date and currency before submitting.",
@@ -112,6 +137,8 @@ export default function TransactionForm({ transaction, categories, onSubmit, onC
         });
         return;
       }
+    } else {
+      console.log(`No conversion needed - amount is already in base currency (${settings.currencyCode})`);
     }
 
     const submitData = {
@@ -140,8 +167,20 @@ export default function TransactionForm({ transaction, categories, onSubmit, onC
       submitData.exchangeRateUsed = null;
     }
     
+    console.log('Final submit data:', submitData);
     onSubmit(submitData);
   };
+
+  // Don't render form until settings are loaded
+  if (settingsLoading) {
+    return (
+      <Card className="border-none shadow-lg">
+        <CardContent className="p-6">
+          <div className="text-center text-gray-500">Loading settings...</div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <motion.div
@@ -231,7 +270,7 @@ export default function TransactionForm({ transaction, categories, onSubmit, onC
                 </div>
                 {isForeignCurrency && (
                   <p className="text-xs text-gray-500">
-                    Amount will be converted to {settings.currencyCode}
+                    Amount will be converted to {settings.currencyCode} ({settings.currencySymbol})
                   </p>
                 )}
               </div>

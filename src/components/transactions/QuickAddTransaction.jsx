@@ -30,7 +30,7 @@ export default function QuickAddTransaction({
   onSubmit, 
   isSubmitting 
 }) {
-  const { settings, user } = useSettings();
+  const { settings, user, isLoading: settingsLoading } = useSettings();
   const { toast } = useToast();
   const { isRefreshing, refreshRates } = useCurrencyRefresh(user);
   
@@ -52,15 +52,20 @@ export default function QuickAddTransaction({
     }
   }, [defaultCustomBudgetId]);
 
+  // Update form currency when settings load/change
   useEffect(() => {
-    if (settings.currencyCode && !formData.originalCurrency) {
+    if (!settingsLoading && settings.currencyCode) {
       setFormData(prev => ({ ...prev, originalCurrency: settings.currencyCode }));
     }
-  }, [settings.currencyCode, formData.originalCurrency]);
+  }, [settings.currencyCode, settingsLoading]);
 
   const isForeignCurrency = useMemo(() => {
+    // Ensure we have valid settings before checking
+    if (settingsLoading || !settings.currencyCode) {
+      return false;
+    }
     return formData.originalCurrency !== settings.currencyCode;
-  }, [formData.originalCurrency, settings.currencyCode]);
+  }, [formData.originalCurrency, settings.currencyCode, settingsLoading]);
 
   const handleResetCurrency = useCallback(() => {
     setFormData(prev => ({ ...prev, originalCurrency: settings.currencyCode }));
@@ -84,6 +89,12 @@ export default function QuickAddTransaction({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Log current state for debugging
+    console.log('QuickAdd submission - settings.currencyCode:', settings.currencyCode);
+    console.log('QuickAdd submission - formData.originalCurrency:', formData.originalCurrency);
+    console.log('QuickAdd submission - isForeignCurrency:', isForeignCurrency);
+    
     const normalizedAmount = normalizeAmount(formData.amount);
     const inputAmount = parseFloat(normalizedAmount);
     
@@ -95,6 +106,8 @@ export default function QuickAddTransaction({
     // Convert currency if needed
     if (isForeignCurrency) {
       try {
+        console.log(`Converting ${inputAmount} from ${formData.originalCurrency} to ${settings.currencyCode}`);
+        
         const { convertedAmount, exchangeRate } = await convertCurrency(
           inputAmount,
           formData.originalCurrency,
@@ -102,11 +115,14 @@ export default function QuickAddTransaction({
           formData.date
         );
         
+        console.log(`Conversion result: ${convertedAmount} ${settings.currencyCode} (rate: ${exchangeRate})`);
+        
         finalAmount = convertedAmount;
         exchangeRateUsed = exchangeRate;
         originalCurrency = formData.originalCurrency;
         originalAmountValue = inputAmount;
       } catch (error) {
+        console.error('Conversion error:', error);
         toast({
           title: "Conversion Error",
           description: "Please refresh exchange rates for this date and currency before submitting.",
@@ -114,6 +130,8 @@ export default function QuickAddTransaction({
         });
         return;
       }
+    } else {
+      console.log(`No conversion needed - amount is already in base currency (${settings.currencyCode})`);
     }
     
     onSubmit({
@@ -197,7 +215,7 @@ export default function QuickAddTransaction({
             </div>
             {isForeignCurrency && (
               <p className="text-xs text-gray-500">
-                Amount will be converted to {settings.currencyCode}
+                Amount will be converted to {settings.currencyCode} ({settings.currencySymbol})
               </p>
             )}
           </div>
