@@ -34,6 +34,7 @@ export default function QuickAddTransaction({
   const { toast } = useToast();
   const { isRefreshing, refreshRates } = useCurrencyRefresh(user);
   
+  // Initialize formData with user's currency directly
   const [formData, setFormData] = useState({
     title: '',
     amount: '',
@@ -43,15 +44,15 @@ export default function QuickAddTransaction({
     isPaid: false,
     paidDate: '',
     customBudgetId: defaultCustomBudgetId || '',
-    originalCurrency: null // Start as null until settings load
+    originalCurrency: settings.currencyCode // Initialize directly from settings
   });
 
-  // Initialize originalCurrency only after settings are loaded
+  // Update originalCurrency when settings change (but only if form was just opened)
   useEffect(() => {
-    if (!settingsLoading && settings.currencyCode && formData.originalCurrency === null) {
+    if (open && !settingsLoading && settings.currencyCode) {
       setFormData(prev => ({ ...prev, originalCurrency: settings.currencyCode }));
     }
-  }, [settingsLoading, settings.currencyCode, formData.originalCurrency]);
+  }, [open, settingsLoading, settings.currencyCode]);
 
   useEffect(() => {
     if (defaultCustomBudgetId) {
@@ -90,10 +91,6 @@ export default function QuickAddTransaction({
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    console.log('QuickAdd submission - settings.currencyCode:', settings.currencyCode);
-    console.log('QuickAdd submission - formData.originalCurrency:', formData.originalCurrency);
-    console.log('QuickAdd submission - isForeignCurrency:', isForeignCurrency);
-    
     const normalizedAmount = normalizeAmount(formData.amount);
     const inputAmount = parseFloat(normalizedAmount);
     
@@ -105,16 +102,12 @@ export default function QuickAddTransaction({
     // Convert currency if needed - comparing form currency to user's base currency
     if (isForeignCurrency) {
       try {
-        console.log(`Converting ${inputAmount} from ${formData.originalCurrency} to ${settings.currencyCode}`);
-        
         const { convertedAmount, exchangeRate } = await convertCurrency(
           inputAmount,
           formData.originalCurrency,
           settings.currencyCode,
           formData.date
         );
-        
-        console.log(`Conversion result: ${convertedAmount} ${settings.currencyCode} (rate: ${exchangeRate})`);
         
         finalAmount = convertedAmount;
         exchangeRateUsed = exchangeRate;
@@ -129,8 +122,6 @@ export default function QuickAddTransaction({
         });
         return;
       }
-    } else {
-      console.log(`No conversion needed - amount is already in base currency (${settings.currencyCode})`);
     }
     
     onSubmit({
@@ -162,7 +153,7 @@ export default function QuickAddTransaction({
   };
 
   // Show loading state while settings are being fetched
-  if (settingsLoading || formData.originalCurrency === null) {
+  if (settingsLoading) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-md">

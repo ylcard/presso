@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,23 +28,12 @@ export default function TransactionForm({ transaction, categories, onSubmit, onC
   // Use the extracted hook for fetching budgets
   const { allBudgets } = useAllBudgets(user);
 
-  const [formData, setFormData] = useState({
-    title: '',
-    amount: '',
-    type: 'expense',
-    category_id: '',
-    date: formatDateString(new Date()),
-    isPaid: false,
-    paidDate: '',
-    customBudgetId: '',
-    notes: '',
-    originalCurrency: null // Start as null until settings load
-  });
-
-  // Initialize form data when editing an existing transaction
-  useEffect(() => {
+  // Initialize formData with proper currency handling
+  const [formData, setFormData] = useState(() => {
+    // For editing: use transaction's currency or user's base currency
+    // For new: use user's base currency
     if (transaction) {
-      setFormData({
+      return {
         title: transaction.title || '',
         amount: transaction.originalAmount?.toString() || transaction.amount?.toString() || '',
         type: transaction.type || 'expense',
@@ -53,17 +43,31 @@ export default function TransactionForm({ transaction, categories, onSubmit, onC
         paidDate: transaction.paidDate || '',
         customBudgetId: transaction.customBudgetId || '',
         notes: transaction.notes || '',
-        originalCurrency: transaction.originalCurrency || settings.currencyCode || null
-      });
+        originalCurrency: transaction.originalCurrency || settings.currencyCode
+      };
     }
-  }, [transaction, settings.currencyCode]);
+    
+    // For new transactions, initialize with user's base currency
+    return {
+      title: '',
+      amount: '',
+      type: 'expense',
+      category_id: '',
+      date: formatDateString(new Date()),
+      isPaid: false,
+      paidDate: '',
+      customBudgetId: '',
+      notes: '',
+      originalCurrency: settings.currencyCode
+    };
+  });
 
-  // Initialize originalCurrency only after settings are loaded (for new transactions)
+  // Update currency only for NEW transactions when settings load/change
   useEffect(() => {
-    if (!transaction && !settingsLoading && settings.currencyCode && formData.originalCurrency === null) {
+    if (!transaction && !settingsLoading && settings.currencyCode) {
       setFormData(prev => ({ ...prev, originalCurrency: settings.currencyCode }));
     }
-  }, [transaction, settingsLoading, settings.currencyCode, formData.originalCurrency]);
+  }, [transaction, settingsLoading, settings.currencyCode]);
 
   const isForeignCurrency = useMemo(() => {
     // Don't show foreign currency UI if settings are still loading or currency not set
@@ -96,10 +100,6 @@ export default function TransactionForm({ transaction, categories, onSubmit, onC
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    console.log('Form submission - settings.currencyCode:', settings.currencyCode);
-    console.log('Form submission - formData.originalCurrency:', formData.originalCurrency);
-    console.log('Form submission - isForeignCurrency:', isForeignCurrency);
-    
     const inputAmount = parseFloat(formData.amount);
     
     let finalAmount = inputAmount;
@@ -110,16 +110,12 @@ export default function TransactionForm({ transaction, categories, onSubmit, onC
     // Convert currency if needed for expenses - comparing form currency to user's base currency
     if (isForeignCurrency) {
       try {
-        console.log(`Converting ${inputAmount} from ${formData.originalCurrency} to ${settings.currencyCode}`);
-        
         const { convertedAmount, exchangeRate } = await convertCurrency(
           inputAmount,
           formData.originalCurrency,
           settings.currencyCode,
           formData.date
         );
-        
-        console.log(`Conversion result: ${convertedAmount} ${settings.currencyCode} (rate: ${exchangeRate})`);
         
         finalAmount = convertedAmount;
         exchangeRateUsed = exchangeRate;
@@ -134,8 +130,6 @@ export default function TransactionForm({ transaction, categories, onSubmit, onC
         });
         return;
       }
-    } else {
-      console.log(`No conversion needed - amount is already in base currency (${settings.currencyCode})`);
     }
 
     const submitData = {
@@ -164,12 +158,11 @@ export default function TransactionForm({ transaction, categories, onSubmit, onC
       submitData.exchangeRateUsed = null;
     }
     
-    console.log('Final submit data:', submitData);
     onSubmit(submitData);
   };
 
-  // Show loading state while settings are being fetched
-  if (settingsLoading || (!transaction && formData.originalCurrency === null)) {
+  // Show loading state while settings are being fetched (only for new transactions)
+  if (!transaction && settingsLoading) {
     return (
       <motion.div
         initial={{ opacity: 0, y: -20 }}
