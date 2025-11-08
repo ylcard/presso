@@ -10,9 +10,15 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RefreshCw } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 import AmountInput from "../ui/AmountInput";
 import DatePicker from "../ui/DatePicker";
 import CategorySelect from "../ui/CategorySelect";
+import CurrencySelect from "../ui/CurrencySelect";
+import { useSettings } from "../utils/SettingsContext";
+import { useCurrencyRefresh } from "../hooks/useCurrencyRefresh";
+import { convertCurrency } from "../utils/currencyConversion";
 import { formatDateString, normalizeAmount } from "../utils/budgetCalculations";
 
 export default function QuickAddTransaction({ 
@@ -24,6 +30,10 @@ export default function QuickAddTransaction({
   onSubmit, 
   isSubmitting 
 }) {
+  const { settings, user } = useSettings();
+  const { toast } = useToast();
+  const { isRefreshing, refreshRates } = useCurrencyRefresh(user);
+  
   const [formData, setFormData] = useState({
     title: '',
     amount: '',
@@ -32,7 +42,8 @@ export default function QuickAddTransaction({
     date: formatDateString(new Date()),
     isPaid: false,
     paidDate: '',
-    customBudgetId: defaultCustomBudgetId || ''
+    customBudgetId: defaultCustomBudgetId || '',
+    originalCurrency: settings.currencyCode || 'USD'
   });
 
   useEffect(() => {
@@ -41,13 +52,70 @@ export default function QuickAddTransaction({
     }
   }, [defaultCustomBudgetId]);
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    if (settings.currencyCode) {
+      setFormData(prev => ({ ...prev, originalCurrency: settings.currencyCode }));
+    }
+  }, [settings.currencyCode]);
+
+  const isForeignCurrency = formData.originalCurrency !== settings.currencyCode;
+
+  const handleRefreshRates = async () => {
+    if (!user) return;
+    
+    const result = await refreshRates(
+      formData.date,
+      settings.currencyCode,
+      formData.originalCurrency
+    );
+    
+    toast({
+      title: result.success ? "Success" : "Error",
+      description: result.message,
+      variant: result.success ? "default" : "destructive"
+    });
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const normalizedAmount = normalizeAmount(formData.amount);
+    const originalAmount = parseFloat(normalizedAmount);
+    
+    let finalAmount = originalAmount;
+    let exchangeRateUsed = null;
+    let originalCurrency = null;
+    let originalAmountValue = null;
+
+    // Convert currency if needed
+    if (isForeignCurrency) {
+      try {
+        const { convertedAmount, exchangeRate } = await convertCurrency(
+          originalAmount,
+          formData.originalCurrency,
+          settings.currencyCode,
+          formData.date
+        );
+        
+        finalAmount = convertedAmount;
+        exchangeRateUsed = exchangeRate;
+        originalCurrency = formData.originalCurrency;
+        originalAmountValue = originalAmount;
+      } catch (error) {
+        toast({
+          title: "Conversion Error",
+          description: "Please refresh exchange rates before submitting.",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
     
     onSubmit({
       ...formData,
-      amount: parseFloat(normalizedAmount),
+      amount: finalAmount,
+      originalAmount: originalAmountValue,
+      originalCurrency: originalCurrency,
+      exchangeRateUsed: exchangeRateUsed,
       paidDate: formData.isPaid ? (formData.paidDate || formData.date) : null,
       customBudgetId: formData.customBudgetId || null
     });
@@ -60,7 +128,8 @@ export default function QuickAddTransaction({
       date: formatDateString(new Date()),
       isPaid: false,
       paidDate: '',
-      customBudgetId: defaultCustomBudgetId || ''
+      customBudgetId: defaultCustomBudgetId || '',
+      originalCurrency: settings.currencyCode || 'USD'
     });
   };
 
@@ -81,6 +150,35 @@ export default function QuickAddTransaction({
               required
               autoFocus
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="currency">Currency *</Label>
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <CurrencySelect
+                  value={formData.originalCurrency}
+                  onValueChange={(value) => setFormData({ ...formData, originalCurrency: value })}
+                />
+              </div>
+              {isForeignCurrency && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={handleRefreshRates}
+                  disabled={isRefreshing}
+                  title="Refresh exchange rates"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                </Button>
+              )}
+            </div>
+            {isForeignCurrency && (
+              <p className="text-xs text-gray-500">
+                Amount will be converted to {settings.currencyCode}
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
