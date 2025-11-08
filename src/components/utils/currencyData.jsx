@@ -1,5 +1,5 @@
 // Common currencies with their codes, symbols, and names
-export const REFERENCE_CURRENCY = 'USD';
+export const REFERENCE_CURRENCY = 'JPY';
 
 export const SUPPORTED_CURRENCIES = [
   { code: 'USD', symbol: '$', name: 'US Dollar' },
