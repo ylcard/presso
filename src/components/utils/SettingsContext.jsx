@@ -6,7 +6,7 @@ const SettingsContext = createContext();
 const STORAGE_KEY = 'budgetwise_settings';
 
 const defaultSettings = {
-  currencySymbol: '$',
+  currencySymbol: '₽',
   currencyCode: 'GBP',
   currencyPosition: 'before',
   thousandSeparator: ',',
