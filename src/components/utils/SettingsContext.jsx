@@ -7,6 +7,7 @@ const STORAGE_KEY = 'budgetwise_settings';
 
 const defaultSettings = {
   currencySymbol: '$',
+  currencyCode: 'USD',
   currencyPosition: 'before',
   thousandSeparator: ',',
   decimalSeparator: '.',
@@ -55,6 +56,7 @@ export const SettingsProvider = ({ children }) => {
       if (userSettings) {
         const newSettings = {
           currencySymbol: userSettings.currencySymbol || '$',
+          currencyCode: userSettings.currencyCode || 'USD',
           currencyPosition: userSettings.currencyPosition || 'before',
           thousandSeparator: userSettings.thousandSeparator || ',',
           decimalSeparator: userSettings.decimalSeparator || '.',
