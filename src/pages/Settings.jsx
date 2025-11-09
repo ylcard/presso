@@ -28,6 +28,15 @@ export default function Settings() {
     updateSettings
   );
 
+  const handleCurrencyChange = (code) => {
+    const selectedCurrency = CURRENCY_OPTIONS.find(c => c.code === code);
+    if (selectedCurrency) {
+      // Update both baseCurrency and currencySymbol
+      handleFormChange('baseCurrency', code);
+      handleFormChange('currencySymbol', selectedCurrency.symbol);
+    }
+  };
+
   const previewAmount = 1234567.89;
 
   return (
@@ -53,15 +62,15 @@ export default function Settings() {
               <div className="space-y-2">
                 <Label htmlFor="currency">Currency</Label>
                 <Select
-                  value={formData.currencySymbol}
-                  onValueChange={(value) => handleFormChange('currencySymbol', value)}
+                  value={formData.baseCurrency || 'USD'}
+                  onValueChange={handleCurrencyChange}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {CURRENCY_OPTIONS.map((currency) => (
-                      <SelectItem key={currency.code} value={currency.symbol}>
+                      <SelectItem key={currency.code} value={currency.code}>
                         {currency.symbol} - {currency.name} ({currency.code})
                       </SelectItem>
                     ))}
