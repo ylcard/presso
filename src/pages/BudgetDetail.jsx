@@ -20,12 +20,12 @@ import TransactionForm from "../components/transactions/TransactionForm";
 import AllocationManager from "../components/custombudgets/AllocationManager";
 import CustomBudgetCard from "../components/custombudgets/CustomBudgetCard";
 import CustomBudgetForm from "../components/custombudgets/CustomBudgetForm";
-import { QUERY_KEYS } from "@/lib/queryKeys"; // Assuming QUERY_KEYS is defined somewhere, adding it for safety as it's used in createTransactionMutation
+import { QUERY_KEYS } from "../components/hooks/queryKeys"; // Changed import path for QUERY_KEYS
 
 export default function BudgetDetail() {
     const { settings, user } = useSettings();
     const queryClient = useQueryClient();
-    const location = useLocation(); // Add location hook to detect URL changes
+    const location = useLocation();
     const [showQuickAdd, setShowQuickAdd] = useState(false);
     const [editingTransaction, setEditingTransaction] = useState(null);
     const [showEditForm, setShowEditForm] = useState(false);
