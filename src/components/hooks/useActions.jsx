@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -13,6 +14,7 @@ export const useTransactionMutationsDashboard = (setShowQuickAdd, setShowQuickAd
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TRANSACTIONS] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SYSTEM_BUDGETS] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CASH_WALLET] });
       setShowQuickAdd(false);
       setShowQuickAddIncome(false);
       showToast({
@@ -142,6 +144,7 @@ export const useTransactionActions = (setShowForm, setEditingTransaction) => {
     mutationFn: (data) => base44.entities.Transaction.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TRANSACTIONS] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CASH_WALLET] });
       setShowForm(false);
       setEditingTransaction(null);
       showToast({
@@ -163,6 +166,7 @@ export const useTransactionActions = (setShowForm, setEditingTransaction) => {
     mutationFn: ({ id, data }) => base44.entities.Transaction.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TRANSACTIONS] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CASH_WALLET] });
       setShowForm(false);
       setEditingTransaction(null);
       showToast({
@@ -181,9 +185,54 @@ export const useTransactionActions = (setShowForm, setEditingTransaction) => {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Transaction.delete(id),
+    mutationFn: async (transaction) => {
+      // Handle cash wallet balance adjustment for cash transactions
+      if (transaction.isCashTransaction && transaction.cashAmount && transaction.cashCurrency) {
+        const allWallets = await base44.entities.CashWallet.list();
+        const wallet = allWallets.find(w => w.created_by === transaction.created_by);
+        
+        if (wallet) {
+          const balances = wallet.balances || [];
+          let updatedBalances = [...balances];
+          
+          // Reverse the transaction effect on wallet
+          if (transaction.cashTransactionType === 'withdrawal_to_wallet') {
+            // Was added to wallet, so subtract it
+            updatedBalances = balances.map(b => 
+              b.currencyCode === transaction.cashCurrency
+                ? { ...b, amount: b.amount - transaction.cashAmount }
+                : b
+            ).filter(b => b.amount > 0.01); // Filter out balances that become zero or negative
+          } else if (transaction.cashTransactionType === 'deposit_from_wallet_to_bank' || transaction.cashTransactionType === 'expense_from_wallet') {
+            // Was removed/spent from wallet, so add it back
+            const existingBalanceIndex = balances.findIndex(b => b.currencyCode === transaction.cashCurrency);
+            if (existingBalanceIndex !== -1) {
+              updatedBalances = balances.map((b, index) =>
+                index === existingBalanceIndex
+                  ? { ...b, amount: b.amount + transaction.cashAmount }
+                  : b
+              );
+            } else {
+              // Should not happen if it was a valid cash transaction from wallet, but add as fallback
+              updatedBalances = [...balances, { 
+                currencyCode: transaction.cashCurrency, 
+                amount: transaction.cashAmount 
+              }];
+            }
+          }
+          
+          await base44.entities.CashWallet.update(wallet.id, {
+            balances: updatedBalances
+          });
+        }
+      }
+      
+      // Delete the transaction
+      await base44.entities.Transaction.delete(transaction.id);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TRANSACTIONS] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CASH_WALLET] });
       showToast({
         title: "Success",
         description: "Transaction deleted successfully",
@@ -212,9 +261,9 @@ export const useTransactionActions = (setShowForm, setEditingTransaction) => {
     setShowForm(true);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = (transaction) => {
     if (window.confirm('Are you sure you want to delete this transaction?')) {
-      deleteMutation.mutate(id);
+      deleteMutation.mutate(transaction);
     }
   };
 

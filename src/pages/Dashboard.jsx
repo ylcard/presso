@@ -22,6 +22,7 @@ import {
   useTransactionMutationsDashboard,
   useBudgetMutationsDashboard,
 } from "../components/hooks/useActions";
+import { useExchangeRates } from "../components/hooks/useExchangeRates";
 
 import RemainingBudgetCard from "../components/dashboard/RemainingBudgetCard";
 import BudgetBars from "../components/dashboard/BudgetBars";
@@ -56,6 +57,7 @@ export default function Dashboard() {
   const { allSystemBudgets } = useSystemBudgetsAll(user);
   const { systemBudgets } = useSystemBudgetsForPeriod(user, monthStart, monthEnd);
   const { cashWallet } = useCashWallet(user);
+  const { exchangeRates } = useExchangeRates();
 
   // System budget management (auto-create/update)
   useSystemBudgetManagement(
@@ -102,7 +104,7 @@ export default function Dashboard() {
     handleDeposit,
     isWithdrawing,
     isDepositing,
-  } = useCashWalletActions(user, cashWallet);
+  } = useCashWalletActions(user, cashWallet, settings, exchangeRates);
 
   return (
     <div className="min-h-screen p-4 md:p-8">
@@ -139,7 +141,7 @@ export default function Dashboard() {
           }}
         />
 
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-[2fr_1fr] gap-6">
           <RemainingBudgetCard
             remaining={remainingBudget}
             income={currentMonthIncome}
@@ -217,6 +219,7 @@ export default function Dashboard() {
           open={showDepositDialog}
           onOpenChange={setShowDepositDialog}
           onSubmit={handleDeposit}
+          cashWallet={cashWallet}
           isSubmitting={isDepositing}
         />
       </div>
