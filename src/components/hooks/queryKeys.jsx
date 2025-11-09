@@ -5,8 +5,9 @@ export const QUERY_KEYS = {
   CATEGORIES: 'categories',
   GOALS: 'goals',
   CUSTOM_BUDGETS: 'customBudgets',
-  ALL_SYSTEM_BUDGETS: 'allSystemBudgets',
   SYSTEM_BUDGETS: 'systemBudgets',
-  ALLOCATIONS: 'allocations',
+  ALL_SYSTEM_BUDGETS: 'allSystemBudgets',
   ALL_BUDGETS: 'allBudgets',
+  ALLOCATIONS: 'allocations',
+  EXCHANGE_RATES: 'exchangeRates',
 };
