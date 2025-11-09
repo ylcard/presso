@@ -9,9 +9,10 @@ import {
   useCategories,
   useCustomBudgetsAll,
   useSystemBudgetsForPeriod,
+  useCashWallet,
 } from "../components/hooks/useBase44Entities";
 import { useBudgetsAggregates } from "../components/hooks/useDerivedData";
-import { useBudgetActions } from "../components/hooks/useActions";
+import { useCustomBudgetActions } from "../components/hooks/useActions";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,6 +45,7 @@ export default function Budgets() {
   const { categories } = useCategories();
   const { allCustomBudgets } = useCustomBudgetsAll(user);
   const { systemBudgets, isLoading: loadingSystemBudgets } = useSystemBudgetsForPeriod(user, monthStart, monthEnd);
+  const { cashWallet } = useCashWallet(user);
 
   // Aggregated data
   const { customBudgets, systemBudgetsWithStats, groupedCustomBudgets } = useBudgetsAggregates(
@@ -56,22 +58,12 @@ export default function Budgets() {
   );
 
   // Actions (CRUD operations and form state)
-  const {
-    showForm,
-    setShowForm,
-    editingBudget,
-    setEditingBudget,
-    handleSubmit,
-    handleEdit,
-    handleDelete,
-    handleStatusChange,
-    isSubmitting,
-  } = useBudgetActions(user, transactions);
+  const customBudgetActions = useCustomBudgetActions(user, transactions, cashWallet);
 
   // Confirm and execute delete
   const confirmDelete = () => {
     if (budgetToDelete) {
-      handleDelete(budgetToDelete);
+      customBudgetActions.handleDelete(budgetToDelete);
       setBudgetToDelete(null);
     }
   };
@@ -86,8 +78,8 @@ export default function Budgets() {
           </div>
           <Button
             onClick={() => {
-              setEditingBudget(null);
-              setShowForm(!showForm);
+              customBudgetActions.setEditingBudget(null);
+              customBudgetActions.setShowForm(!customBudgetActions.showForm);
             }}
             className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
           >
@@ -105,15 +97,17 @@ export default function Budgets() {
           }}
         />
 
-        {showForm && (
+        {customBudgetActions.showForm && (
           <CustomBudgetForm
-            budget={editingBudget}
-            onSubmit={handleSubmit}
+            budget={customBudgetActions.editingBudget}
+            onSubmit={customBudgetActions.handleSubmit}
             onCancel={() => {
-              setShowForm(false);
-              setEditingBudget(null);
+              customBudgetActions.setShowForm(false);
+              customBudgetActions.setEditingBudget(null);
             }}
-            isSubmitting={isSubmitting}
+            isSubmitting={customBudgetActions.isSubmitting}
+            cashWallet={cashWallet}
+            baseCurrency={settings.baseCurrency}
           />
         )}
 
@@ -188,9 +182,9 @@ export default function Budgets() {
                         budget={budget}
                         transactions={transactions}
                         settings={settings}
-                        onEdit={handleEdit}
+                        onEdit={customBudgetActions.handleEdit}
                         onDelete={(id) => setBudgetToDelete(id)}
-                        onStatusChange={handleStatusChange}
+                        onStatusChange={customBudgetActions.handleStatusChange}
                       />
                     ))}
                   </div>
