@@ -1,7 +1,7 @@
-
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { showToast } from "@/components/ui/use-toast";
 import { QUERY_KEYS } from "./queryKeys";
 
 // Hook for transaction mutations (Dashboard)
@@ -15,6 +15,18 @@ export const useTransactionMutationsDashboard = (setShowQuickAdd, setShowQuickAd
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SYSTEM_BUDGETS] });
       setShowQuickAdd(false);
       setShowQuickAddIncome(false);
+      showToast({
+        title: "Success",
+        description: "Transaction added successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error creating transaction:', error);
+      showToast({
+        title: "Error",
+        description: error?.message || "Failed to create transaction. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -37,6 +49,18 @@ export const useBudgetMutationsDashboard = (user, transactions, allCustomBudgets
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CUSTOM_BUDGETS] });
       setShowQuickAddBudget(false);
+      showToast({
+        title: "Success",
+        description: "Budget created successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error creating budget:', error);
+      showToast({
+        title: "Error",
+        description: error?.message || "Failed to create budget. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -53,6 +77,18 @@ export const useBudgetMutationsDashboard = (user, transactions, allCustomBudgets
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CUSTOM_BUDGETS] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TRANSACTIONS] });
+      showToast({
+        title: "Success",
+        description: "Budget deleted successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error deleting budget:', error);
+      showToast({
+        title: "Error",
+        description: error?.message || "Failed to delete budget. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -73,6 +109,18 @@ export const useBudgetMutationsDashboard = (user, transactions, allCustomBudgets
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CUSTOM_BUDGETS] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TRANSACTIONS] });
+      showToast({
+        title: "Success",
+        description: "Budget marked as completed",
+      });
+    },
+    onError: (error) => {
+      console.error('Error completing budget:', error);
+      showToast({
+        title: "Error",
+        description: error?.message || "Failed to complete budget. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -96,6 +144,18 @@ export const useTransactionActions = (setShowForm, setEditingTransaction) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TRANSACTIONS] });
       setShowForm(false);
       setEditingTransaction(null);
+      showToast({
+        title: "Success",
+        description: "Transaction created successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error creating transaction:', error);
+      showToast({
+        title: "Error",
+        description: error?.message || "Failed to create transaction. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -105,6 +165,18 @@ export const useTransactionActions = (setShowForm, setEditingTransaction) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TRANSACTIONS] });
       setShowForm(false);
       setEditingTransaction(null);
+      showToast({
+        title: "Success",
+        description: "Transaction updated successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error updating transaction:', error);
+      showToast({
+        title: "Error",
+        description: error?.message || "Failed to update transaction. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -112,6 +184,18 @@ export const useTransactionActions = (setShowForm, setEditingTransaction) => {
     mutationFn: (id) => base44.entities.Transaction.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TRANSACTIONS] });
+      showToast({
+        title: "Success",
+        description: "Transaction deleted successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error deleting transaction:', error);
+      showToast({
+        title: "Error",
+        description: error?.message || "Failed to delete transaction. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -152,6 +236,18 @@ export const useCategoryActions = (setShowForm, setEditingCategory) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CATEGORIES] });
       setShowForm(false);
       setEditingCategory(null);
+      showToast({
+        title: "Success",
+        description: "Category created successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error creating category:', error);
+      showToast({
+        title: "Error",
+        description: error?.message || "Failed to create category. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -161,6 +257,18 @@ export const useCategoryActions = (setShowForm, setEditingCategory) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CATEGORIES] });
       setShowForm(false);
       setEditingCategory(null);
+      showToast({
+        title: "Success",
+        description: "Category updated successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error updating category:', error);
+      showToast({
+        title: "Error",
+        description: error?.message || "Failed to update category. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -168,6 +276,18 @@ export const useCategoryActions = (setShowForm, setEditingCategory) => {
     mutationFn: (id) => base44.entities.Category.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CATEGORIES] });
+      showToast({
+        title: "Success",
+        description: "Category deleted successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error deleting category:', error);
+      showToast({
+        title: "Error",
+        description: error?.message || "Failed to delete category. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -206,6 +326,18 @@ export const useGoalActions = (user, goals) => {
     mutationFn: ({ id, data }) => base44.entities.BudgetGoal.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GOALS] });
+      showToast({
+        title: "Success",
+        description: "Goal updated successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error updating goal:', error);
+      showToast({
+        title: "Error",
+        description: error?.message || "Failed to update goal. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -213,23 +345,40 @@ export const useGoalActions = (user, goals) => {
     mutationFn: (data) => base44.entities.BudgetGoal.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GOALS] });
+      showToast({
+        title: "Success",
+        description: "Goal created successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error creating goal:', error);
+      showToast({
+        title: "Error",
+        description: error?.message || "Failed to create goal. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
   const handleGoalUpdate = async (priority, percentage) => {
     const existingGoal = goals.find(g => g.priority === priority);
     
-    if (existingGoal) {
-      await updateGoalMutation.mutateAsync({
-        id: existingGoal.id,
-        data: { target_percentage: percentage }
-      });
-    } else if (user) {
-      await createGoalMutation.mutateAsync({
-        priority,
-        target_percentage: percentage,
-        user_email: user.email
-      });
+    try {
+      if (existingGoal) {
+        await updateGoalMutation.mutateAsync({
+          id: existingGoal.id,
+          data: { target_percentage: percentage }
+        });
+      } else if (user) {
+        await createGoalMutation.mutateAsync({
+          priority,
+          target_percentage: percentage,
+          user_email: user.email
+        });
+      }
+    } catch (error) {
+      // Error already handled by mutation's onError
+      console.error('Error in handleGoalUpdate:', error);
     }
   };
 
@@ -255,6 +404,18 @@ export const useCustomBudgetActions = (user, transactions) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CUSTOM_BUDGETS] });
       setShowForm(false);
       setEditingBudget(null);
+      showToast({
+        title: "Success",
+        description: "Budget created successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error creating budget:', error);
+      showToast({
+        title: "Error",
+        description: error?.message || "Failed to create budget. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -264,6 +425,18 @@ export const useCustomBudgetActions = (user, transactions) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CUSTOM_BUDGETS] });
       setShowForm(false);
       setEditingBudget(null);
+      showToast({
+        title: "Success",
+        description: "Budget updated successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error updating budget:', error);
+      showToast({
+        title: "Error",
+        description: error?.message || "Failed to update budget. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -280,6 +453,18 @@ export const useCustomBudgetActions = (user, transactions) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CUSTOM_BUDGETS] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TRANSACTIONS] });
+      showToast({
+        title: "Success",
+        description: "Budget deleted successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error deleting budget:', error);
+      showToast({
+        title: "Error",
+        description: error?.message || "Failed to delete budget. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -287,6 +472,18 @@ export const useCustomBudgetActions = (user, transactions) => {
     mutationFn: ({ id, status }) => base44.entities.CustomBudget.update(id, { status }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CUSTOM_BUDGETS] });
+      showToast({
+        title: "Success",
+        description: "Budget status updated successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error updating budget status:', error);
+      showToast({
+        title: "Error",
+        description: error?.message || "Failed to update budget status. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -336,6 +533,18 @@ export const useBudgetActions = (user, transactions) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CUSTOM_BUDGETS] });
       setShowForm(false);
       setEditingBudget(null);
+      showToast({
+        title: "Success",
+        description: "Budget created successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error creating budget:', error);
+      showToast({
+        title: "Error",
+        description: error?.message || "Failed to create budget. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -345,6 +554,18 @@ export const useBudgetActions = (user, transactions) => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CUSTOM_BUDGETS] });
       setShowForm(false);
       setEditingBudget(null);
+      showToast({
+        title: "Success",
+        description: "Budget updated successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error updating budget:', error);
+      showToast({
+        title: "Error",
+        description: error?.message || "Failed to update budget. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -361,6 +582,18 @@ export const useBudgetActions = (user, transactions) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CUSTOM_BUDGETS] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TRANSACTIONS] });
+      showToast({
+        title: "Success",
+        description: "Budget deleted successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error deleting budget:', error);
+      showToast({
+        title: "Error",
+        description: error?.message || "Failed to delete budget. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -368,6 +601,18 @@ export const useBudgetActions = (user, transactions) => {
     mutationFn: ({ id, status }) => base44.entities.CustomBudget.update(id, { status }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CUSTOM_BUDGETS] });
+      showToast({
+        title: "Success",
+        description: "Budget status updated successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error updating budget status:', error);
+      showToast({
+        title: "Error",
+        description: error?.message || "Failed to update budget status. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -434,8 +679,17 @@ export const useSettingsForm = (settings, updateSettings) => {
       await updateSettings(formData);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
+      showToast({
+        title: "Success",
+        description: "Settings saved successfully",
+      });
     } catch (error) {
       console.error('Error saving settings:', error);
+      showToast({
+        title: "Error",
+        description: error?.message || "Failed to save settings. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsSaving(false);
     }
