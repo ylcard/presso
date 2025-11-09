@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,6 +18,7 @@ export default function CustomBudgetForm({ budget, onSubmit, onCancel, isSubmitt
   const [formData, setFormData] = useState({
     name: '',
     allocatedAmount: '',
+    cashAllocatedAmount: '',
     startDate: monthStart,
     endDate: monthEnd,
     description: '',
@@ -30,6 +30,7 @@ export default function CustomBudgetForm({ budget, onSubmit, onCancel, isSubmitt
       setFormData({
         name: budget.name || '',
         allocatedAmount: budget.allocatedAmount?.toString() || '',
+        cashAllocatedAmount: budget.cashAllocatedAmount?.toString() || '0',
         startDate: budget.startDate || monthStart,
         endDate: budget.endDate || monthEnd,
         description: budget.description || '',
@@ -48,10 +49,12 @@ export default function CustomBudgetForm({ budget, onSubmit, onCancel, isSubmitt
   const handleSubmit = (e) => {
     e.preventDefault();
     const normalizedAmount = normalizeAmount(formData.allocatedAmount);
+    const normalizedCashAmount = normalizeAmount(formData.cashAllocatedAmount || '0');
     
     onSubmit({
       ...formData,
       allocatedAmount: parseFloat(normalizedAmount),
+      cashAllocatedAmount: parseFloat(normalizedCashAmount),
       status: budget?.status || 'active'
     });
   };
@@ -72,7 +75,7 @@ export default function CustomBudgetForm({ budget, onSubmit, onCancel, isSubmitt
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="allocatedAmount">Total Budget</Label>
+          <Label htmlFor="allocatedAmount">Card/Bank Budget</Label>
           <AmountInput
             id="allocatedAmount"
             value={formData.allocatedAmount}
@@ -81,6 +84,17 @@ export default function CustomBudgetForm({ budget, onSubmit, onCancel, isSubmitt
             required
           />
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="cashAllocatedAmount">Cash Budget (Optional)</Label>
+        <AmountInput
+          id="cashAllocatedAmount"
+          value={formData.cashAllocatedAmount}
+          onChange={(e) => setFormData({ ...formData, cashAllocatedAmount: e.target.value })}
+          placeholder="0.00"
+        />
+        <p className="text-xs text-gray-500">Amount of physical cash to allocate for this budget</p>
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">

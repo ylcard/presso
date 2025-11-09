@@ -18,6 +18,7 @@ import CategorySelect from "../ui/CategorySelect";
 import CurrencySelect from "../ui/CurrencySelect";
 import { useSettings } from "../utils/SettingsContext";
 import { useExchangeRates } from "../hooks/useExchangeRates";
+import { useCashWallet } from "../hooks/useBase44Entities";
 import { calculateConvertedAmount, getRateForDate, SUPPORTED_CURRENCIES } from "../utils/currencyCalculations";
 import { formatDateString, normalizeAmount, filterBudgetsByTransactionDate } from "../utils/budgetCalculations";
 
@@ -30,9 +31,10 @@ export default function QuickAddTransaction({
   onSubmit, 
   isSubmitting 
 }) {
-  const { settings } = useSettings();
+  const { user, settings } = useSettings();
   const { toast } = useToast();
   const { exchangeRates, refreshRates, isRefreshing } = useExchangeRates();
+  const { cashWallet } = useCashWallet(user);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -43,7 +45,8 @@ export default function QuickAddTransaction({
     date: formatDateString(new Date()),
     isPaid: false,
     paidDate: '',
-    customBudgetId: defaultCustomBudgetId || ''
+    customBudgetId: defaultCustomBudgetId || '',
+    isCashExpense: false
   });
 
   useEffect(() => {
@@ -63,14 +66,14 @@ export default function QuickAddTransaction({
 
   // Proactively refresh exchange rates when currency or date changes (for foreign currencies only)
   useEffect(() => {
-    if (isForeignCurrency && formData.originalCurrency && formData.date) {
+    if (isForeignCurrency && formData.originalCurrency && formData.date && !formData.isCashExpense) {
       refreshRates(
         formData.originalCurrency,
         settings.baseCurrency || 'USD',
         formData.date
       );
     }
-  }, [formData.originalCurrency, formData.date, isForeignCurrency]);
+  }, [formData.originalCurrency, formData.date, isForeignCurrency, formData.isCashExpense]);
 
   // Get currency symbol for the selected originalCurrency
   const selectedCurrencySymbol = SUPPORTED_CURRENCIES.find(
@@ -79,6 +82,8 @@ export default function QuickAddTransaction({
 
   // Filter budgets by transaction date
   const filteredBudgets = filterBudgetsByTransactionDate(customBudgets, formData.date);
+
+  const cashBalance = cashWallet?.balance || 0;
 
   const handleRefreshRates = async () => {
     const result = await refreshRates(
@@ -106,11 +111,21 @@ export default function QuickAddTransaction({
     const normalizedAmount = normalizeAmount(formData.amount);
     const originalAmount = parseFloat(normalizedAmount);
     
+    // Check if sufficient cash for cash expenses
+    if (formData.isCashExpense && originalAmount > cashBalance) {
+      toast({
+        title: "Insufficient Cash",
+        description: "You don't have enough cash in your wallet for this expense.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     let finalAmount = originalAmount;
     let exchangeRateUsed = null;
 
-    // Perform currency conversion if needed
-    if (isForeignCurrency) {
+    // Perform currency conversion if needed (not for cash expenses - they're always in base currency)
+    if (isForeignCurrency && !formData.isCashExpense) {
       const sourceRate = getRateForDate(exchangeRates, formData.originalCurrency, formData.date);
       const targetRate = getRateForDate(exchangeRates, settings.baseCurrency || 'USD', formData.date);
 
@@ -138,14 +153,16 @@ export default function QuickAddTransaction({
       title: formData.title,
       amount: finalAmount,
       originalAmount: originalAmount,
-      originalCurrency: formData.originalCurrency,
+      originalCurrency: formData.isCashExpense ? settings.baseCurrency : formData.originalCurrency,
       exchangeRateUsed: exchangeRateUsed,
       type: formData.type,
       category_id: formData.category_id || null,
       date: formData.date,
-      isPaid: formData.isPaid,
-      paidDate: formData.isPaid ? (formData.paidDate || formData.date) : null,
-      customBudgetId: formData.customBudgetId || null
+      isPaid: formData.isCashExpense ? true : formData.isPaid,
+      paidDate: formData.isCashExpense ? formData.date : (formData.isPaid ? (formData.paidDate || formData.date) : null),
+      customBudgetId: formData.customBudgetId || null,
+      isCashTransaction: formData.isCashExpense,
+      cashTransactionType: formData.isCashExpense ? 'expense_from_wallet' : null
     });
     
     setFormData({
@@ -157,7 +174,8 @@ export default function QuickAddTransaction({
       date: formatDateString(new Date()),
       isPaid: false,
       paidDate: '',
-      customBudgetId: defaultCustomBudgetId || ''
+      customBudgetId: defaultCustomBudgetId || '',
+      isCashExpense: false
     });
   };
 
@@ -188,7 +206,7 @@ export default function QuickAddTransaction({
                 value={formData.amount}
                 onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                 placeholder="0.00"
-                currencySymbol={selectedCurrencySymbol}
+                currencySymbol={formData.isCashExpense ? settings.currencySymbol : selectedCurrencySymbol}
                 required
               />
             </div>
@@ -203,27 +221,50 @@ export default function QuickAddTransaction({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="currency">Currency</Label>
-              {isForeignCurrency && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleRefreshRates}
-                  disabled={isRefreshing}
-                  className="h-8 px-2 text-blue-600 hover:text-blue-700"
-                >
-                  <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                </Button>
-              )}
-            </div>
-            <CurrencySelect
-              value={formData.originalCurrency}
-              onValueChange={(value) => setFormData({ ...formData, originalCurrency: value })}
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="isCashExpense"
+              checked={formData.isCashExpense}
+              onCheckedChange={(checked) => setFormData({ 
+                ...formData, 
+                isCashExpense: checked,
+                originalCurrency: checked ? settings.baseCurrency : formData.originalCurrency,
+                isPaid: checked ? true : formData.isPaid
+              })}
             />
+            <Label htmlFor="isCashExpense" className="cursor-pointer flex items-center gap-2">
+              Paid with cash
+              {cashWallet && (
+                <span className="text-xs text-gray-500">
+                  (Available: {selectedCurrencySymbol}{cashBalance.toFixed(2)})
+                </span>
+              )}
+            </Label>
           </div>
+
+          {!formData.isCashExpense && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="currency">Currency</Label>
+                {isForeignCurrency && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRefreshRates}
+                    disabled={isRefreshing}
+                    className="h-8 px-2 text-blue-600 hover:text-blue-700"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  </Button>
+                )}
+              </div>
+              <CurrencySelect
+                value={formData.originalCurrency}
+                onValueChange={(value) => setFormData({ ...formData, originalCurrency: value })}
+              />
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="category">Category</Label>
@@ -234,22 +275,24 @@ export default function QuickAddTransaction({
             />
           </div>
 
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="isPaid"
-              checked={formData.isPaid}
-              onCheckedChange={(checked) => setFormData({ 
-                ...formData, 
-                isPaid: checked,
-                paidDate: checked ? formData.date : ''
-              })}
-            />
-            <Label htmlFor="isPaid" className="cursor-pointer">
-              Already paid
-            </Label>
-          </div>
+          {!formData.isCashExpense && (
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="isPaid"
+                checked={formData.isPaid}
+                onCheckedChange={(checked) => setFormData({ 
+                  ...formData, 
+                  isPaid: checked,
+                  paidDate: checked ? formData.date : ''
+                })}
+              />
+              <Label htmlFor="isPaid" className="cursor-pointer">
+                Already paid
+              </Label>
+            </div>
+          )}
 
-          {formData.isPaid && (
+          {formData.isPaid && !formData.isCashExpense && (
             <div className="space-y-2">
               <Label htmlFor="paidDate">Payment Date</Label>
               <DatePicker
