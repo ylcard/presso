@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Trash2 } from "lucide-react";
@@ -26,8 +27,8 @@ export default function BudgetBar({
     savingsTarget
   } = budget;
   
-  // For system budgets, use budgetAmount instead of allocatedAmount
-  const budgetAmount = budget.budgetAmount || budget.allocatedAmount;
+  // Use totalBudget from stats for accurate display
+  const budgetAmount = stats.totalBudget || budget.budgetAmount || budget.allocatedAmount;
   
   // Calculate heights as percentages
   const paidHeightPct = maxHeight > 0 ? (stats.paidAmount / maxHeight) * 100 : 0;
@@ -44,7 +45,7 @@ export default function BudgetBar({
     ? savingsTarget - actualSavings 
     : (!isCustom 
         ? targetAmount - expectedAmount - stats.paidAmount 
-        : budgetAmount - stats.totalSpent);
+        : stats.remaining);
   
   // Get the color for the vertical bar - use budget's own color, not dynamic
   const barColor = budget.color || '#3B82F6';
