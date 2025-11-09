@@ -1,18 +1,19 @@
+
 import { useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { QUERY_KEYS } from "./queryKeys";
 import { getCurrentMonthTransactions } from "../utils/budgetCalculations";
 
-// Hook for fetching transactions
+// Hook to fetch transactions
 export const useTransactions = () => {
-  const { data: transactions = [], isLoading } = useQuery({
+  const { data: transactions = [], isLoading, error } = useQuery({
     queryKey: [QUERY_KEYS.TRANSACTIONS],
-    queryFn: () => base44.entities.Transaction.list('-date'),
+    queryFn: () => base44.entities.Transaction.list('date', 1000), // Oldest first (ascending order)
     initialData: [],
   });
 
-  return { transactions, isLoading };
+  return { transactions, isLoading, error };
 };
 
 // Hook for fetching categories

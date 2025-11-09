@@ -12,8 +12,8 @@ import { useToast } from "@/components/ui/use-toast";
 import { useSettings } from "../utils/SettingsContext";
 import { useAllBudgets } from "../hooks/useBase44Entities";
 import { useExchangeRates } from "../hooks/useExchangeRates";
-import { calculateConvertedAmount, getRateForDate } from "../utils/currencyCalculations";
-import { formatDateString, normalizeAmount } from "../utils/budgetCalculations";
+import { calculateConvertedAmount, getRateForDate, SUPPORTED_CURRENCIES } from "../utils/currencyCalculations";
+import { formatDateString, normalizeAmount, filterBudgetsByTransactionDate } from "../utils/budgetCalculations";
 import AmountInput from "../ui/AmountInput";
 import DatePicker from "../ui/DatePicker";
 import CategorySelect from "../ui/CategorySelect";
@@ -58,6 +58,25 @@ export default function TransactionForm({ transaction, categories, onSubmit, onC
   }, [transaction, settings.baseCurrency]);
 
   const isForeignCurrency = formData.originalCurrency !== (settings.baseCurrency || 'USD');
+
+  // Proactively refresh exchange rates when currency or date changes (for foreign currencies only)
+  useEffect(() => {
+    if (isForeignCurrency && formData.originalCurrency && formData.date) {
+      refreshRates(
+        formData.originalCurrency,
+        settings.baseCurrency || 'USD',
+        formData.date
+      );
+    }
+  }, [formData.originalCurrency, formData.date, isForeignCurrency]);
+
+  // Get currency symbol for the selected originalCurrency
+  const selectedCurrencySymbol = SUPPORTED_CURRENCIES.find(
+    c => c.code === formData.originalCurrency
+  )?.symbol || formData.originalCurrency;
+
+  // Filter budgets by transaction date
+  const filteredBudgets = filterBudgetsByTransactionDate(allBudgets, formData.date);
 
   const handleRefreshRates = async () => {
     const result = await refreshRates(
@@ -173,6 +192,7 @@ export default function TransactionForm({ transaction, categories, onSubmit, onC
                   value={formData.amount}
                   onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                   placeholder="0.00"
+                  currencySymbol={selectedCurrencySymbol}
                   required
                 />
               </div>
@@ -257,7 +277,7 @@ export default function TransactionForm({ transaction, categories, onSubmit, onC
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value={null}>None</SelectItem>
-                    {allBudgets.map((budget) => (
+                    {filteredBudgets.map((budget) => (
                       <SelectItem key={budget.id} value={budget.id}>
                         {budget.isSystemBudget && <span className="text-blue-600 mr-1">★</span>}
                         {budget.name}

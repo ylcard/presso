@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import {
   Dialog,
@@ -19,8 +18,8 @@ import CategorySelect from "../ui/CategorySelect";
 import CurrencySelect from "../ui/CurrencySelect";
 import { useSettings } from "../utils/SettingsContext";
 import { useExchangeRates } from "../hooks/useExchangeRates";
-import { calculateConvertedAmount, getRateForDate } from "../utils/currencyCalculations";
-import { formatDateString, normalizeAmount } from "../utils/budgetCalculations";
+import { calculateConvertedAmount, getRateForDate, SUPPORTED_CURRENCIES } from "../utils/currencyCalculations";
+import { formatDateString, normalizeAmount, filterBudgetsByTransactionDate } from "../utils/budgetCalculations";
 
 export default function QuickAddTransaction({ 
   open, 
@@ -61,6 +60,25 @@ export default function QuickAddTransaction({
   }, [open, settings.baseCurrency]);
 
   const isForeignCurrency = formData.originalCurrency !== (settings.baseCurrency || 'USD');
+
+  // Proactively refresh exchange rates when currency or date changes (for foreign currencies only)
+  useEffect(() => {
+    if (isForeignCurrency && formData.originalCurrency && formData.date) {
+      refreshRates(
+        formData.originalCurrency,
+        settings.baseCurrency || 'USD',
+        formData.date
+      );
+    }
+  }, [formData.originalCurrency, formData.date, isForeignCurrency]);
+
+  // Get currency symbol for the selected originalCurrency
+  const selectedCurrencySymbol = SUPPORTED_CURRENCIES.find(
+    c => c.code === formData.originalCurrency
+  )?.symbol || formData.originalCurrency;
+
+  // Filter budgets by transaction date
+  const filteredBudgets = filterBudgetsByTransactionDate(customBudgets, formData.date);
 
   const handleRefreshRates = async () => {
     const result = await refreshRates(
@@ -170,6 +188,7 @@ export default function QuickAddTransaction({
                 value={formData.amount}
                 onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                 placeholder="0.00"
+                currencySymbol={selectedCurrencySymbol}
                 required
               />
             </div>
@@ -252,7 +271,7 @@ export default function QuickAddTransaction({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={null}>None</SelectItem>
-                {customBudgets.map((budget) => (
+                {filteredBudgets.map((budget) => (
                   <SelectItem key={budget.id} value={budget.id}>
                     {budget.isSystemBudget && <span className="text-blue-600 mr-1">★</span>}
                     {budget.name}

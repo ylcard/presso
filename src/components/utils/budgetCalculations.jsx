@@ -1,4 +1,5 @@
 
+
 // Utility function to create a map from an array of entities
 // Can optionally extract a specific field value instead of the whole entity
 export const createEntityMap = (entities, keyField = 'id', valueExtractor = null) => {
@@ -327,4 +328,22 @@ export const getTransactionEffectivePriority = (transaction, categories, allCust
     }
 
     return 'uncategorized'; // Fallback for uncategorized expenses not in custom budgets
+};
+
+// Filter custom budgets that are active during a specific transaction date
+export const filterBudgetsByTransactionDate = (customBudgets, transactionDate) => {
+    if (!transactionDate || !customBudgets) return [];
+    
+    const txDate = parseDate(transactionDate);
+    if (!txDate) return [];
+    
+    return customBudgets.filter(budget => {
+        const startDate = parseDate(budget.startDate);
+        const endDate = parseDate(budget.endDate);
+        
+        if (!startDate || !endDate) return false;
+        
+        // Include budget if transaction date falls within budget period
+        return txDate >= startDate && txDate <= endDate;
+    });
 };
