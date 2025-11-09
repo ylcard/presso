@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Plus, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import {
   useActiveBudgets,
   useDashboardSummary,
   usePaidTransactions,
+  useMonthlyIncome, // Added useMonthlyIncome import
 } from "../components/hooks/useDerivedData";
 import {
   useTransactionMutationsDashboard,
@@ -36,6 +38,18 @@ import CashWithdrawDialog from "../components/cashwallet/CashWithdrawDialog";
 import CashDepositDialog from "../components/cashwallet/CashDepositDialog";
 import { useCashWalletActions } from "../components/cashwallet/useCashWalletActions";
 
+// Helper function to filter transactions for the current month/year
+const getCurrentMonthTransactions = (allTransactions, month, year) => {
+  if (!allTransactions || allTransactions.length === 0) {
+    return [];
+  }
+  return allTransactions.filter(t => {
+    const transactionDate = new Date(t.date);
+    // getMonth() is 0-indexed, so it matches selectedMonth directly
+    return transactionDate.getMonth() === month && transactionDate.getFullYear() === year;
+  });
+};
+
 export default function Dashboard() {
   const { settings, user } = useSettings();
   
@@ -50,7 +64,7 @@ export default function Dashboard() {
 
   // Data fetching
   const { transactions } = useTransactions();
-  const paidTransactions = usePaidTransactions(transactions);
+  const paidTransactions = usePaidTransactions(transactions); // Kept to preserve existing functionality for RecentTransactions
   const { categories } = useCategories();
   const { goals } = useGoals(user);
   const { allCustomBudgets } = useCustomBudgetsAll(user);
@@ -59,7 +73,7 @@ export default function Dashboard() {
   const { cashWallet } = useCashWallet(user);
   const { exchangeRates } = useExchangeRates();
 
-  // System budget management (auto-create/update)
+  // System budget management
   useSystemBudgetManagement(
     user,
     selectedMonth,
@@ -71,7 +85,7 @@ export default function Dashboard() {
     monthEnd
   );
 
-  // Computed data
+  // Active budgets computation
   const { activeCustomBudgets, allActiveBudgets } = useActiveBudgets(
     allCustomBudgets,
     allSystemBudgets,
@@ -79,32 +93,24 @@ export default function Dashboard() {
     selectedYear
   );
 
+  // Dashboard summary with updated signature
   const { remainingBudget, currentMonthIncome, currentMonthExpenses } = useDashboardSummary(
     transactions,
     selectedMonth,
-    selectedYear
+    selectedYear,
+    allCustomBudgets,
+    systemBudgets
   );
 
-  // Mutations
+  const monthlyIncome = useMonthlyIncome(getCurrentMonthTransactions(transactions, selectedMonth, selectedYear));
+
+  // Mutations for transactions and budgets
   const { createTransaction, isCreating } = useTransactionMutationsDashboard(setShowQuickAdd, setShowQuickAddIncome);
-  const { createBudget, deleteBudget, completeBudget } = useBudgetMutationsDashboard(
-    user,
-    transactions,
-    allCustomBudgets,
-    setShowQuickAddBudget
-  );
+  const { createBudget, deleteBudget, completeBudget, isCreating: isCreatingBudget, isDeleting, isCompleting } =
+    useBudgetMutationsDashboard(user, transactions, allCustomBudgets, setShowQuickAddBudget);
 
   // Cash wallet actions
-  const {
-    showWithdrawDialog,
-    setShowWithdrawDialog,
-    showDepositDialog,
-    setShowDepositDialog,
-    handleWithdraw,
-    handleDeposit,
-    isWithdrawing,
-    isDepositing,
-  } = useCashWalletActions(user, cashWallet, settings, exchangeRates);
+  const cashWalletActions = useCashWalletActions(user, cashWallet, settings, exchangeRates);
 
   return (
     <div className="min-h-screen p-4 md:p-8">
@@ -150,8 +156,8 @@ export default function Dashboard() {
           />
           <CashWalletCard
             cashWallet={cashWallet}
-            onWithdraw={() => setShowWithdrawDialog(true)}
-            onDeposit={() => setShowDepositDialog(true)}
+            onWithdraw={() => cashWalletActions.setShowWithdrawDialog(true)}
+            onDeposit={() => cashWalletActions.setShowDepositDialog(true)}
           />
         </div>
 
@@ -166,7 +172,7 @@ export default function Dashboard() {
             currentYear={selectedYear}
             settings={settings}
             goals={goals}
-            monthlyIncome={currentMonthIncome}
+            monthlyIncome={monthlyIncome} // Used the new monthlyIncome
             onDeleteBudget={deleteBudget}
             onCompleteBudget={completeBudget}
             onCreateBudget={() => setShowQuickAddBudget(true)}
@@ -202,25 +208,25 @@ export default function Dashboard() {
           open={showQuickAddBudget}
           onOpenChange={setShowQuickAddBudget}
           onSubmit={createBudget}
-          isSubmitting={isCreating}
+          isSubmitting={isCreatingBudget} // Changed to isCreatingBudget
           selectedMonth={selectedMonth}
           selectedYear={selectedYear}
         />
 
         <CashWithdrawDialog
-          open={showWithdrawDialog}
-          onOpenChange={setShowWithdrawDialog}
-          onSubmit={handleWithdraw}
+          open={cashWalletActions.showWithdrawDialog}
+          onOpenChange={cashWalletActions.setShowWithdrawDialog}
+          onSubmit={cashWalletActions.handleWithdraw}
           categories={categories}
-          isSubmitting={isWithdrawing}
+          isSubmitting={cashWalletActions.isWithdrawing}
         />
 
         <CashDepositDialog
-          open={showDepositDialog}
-          onOpenChange={setShowDepositDialog}
-          onSubmit={handleDeposit}
+          open={cashWalletActions.showDepositDialog}
+          onOpenChange={cashWalletActions.setShowDepositDialog}
+          onSubmit={cashWalletActions.handleDeposit}
           cashWallet={cashWallet}
-          isSubmitting={isDepositing}
+          isSubmitting={cashWalletActions.isDepositing}
         />
       </div>
     </div>

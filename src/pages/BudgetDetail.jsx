@@ -13,6 +13,7 @@ import { formatCurrency } from "../components/utils/formatCurrency";
 import { formatDate } from "../components/utils/formatDate";
 import { getCustomBudgetStats, getSystemBudgetStats, getCustomBudgetAllocationStats } from "../components/utils/budgetCalculations";
 import { useCustomBudgetActions } from "../components/hooks/useActions";
+import { useCashWallet } from "../components/hooks/useBase44Entities";
 import QuickAddTransaction from "../components/transactions/QuickAddTransaction";
 import TransactionCard from "../components/transactions/TransactionCard";
 import TransactionForm from "../components/transactions/TransactionForm";
@@ -30,6 +31,8 @@ export default function BudgetDetail() {
 
     const urlParams = new URLSearchParams(window.location.search);
     const budgetId = urlParams.get('id');
+
+    const { cashWallet } = useCashWallet(user);
 
     const { data: budget, isLoading: budgetLoading } = useQuery({
         queryKey: ['budget', budgetId],
@@ -564,6 +567,8 @@ export default function BudgetDetail() {
                                 onSubmit={handleEditBudget}
                                 onCancel={() => setShowEditBudgetForm(false)}
                                 isSubmitting={updateBudgetMutation.isPending}
+                                cashWallet={cashWallet}
+                                baseCurrency={settings.baseCurrency}
                             />
                         </div>
                     </div>
