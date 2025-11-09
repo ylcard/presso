@@ -77,10 +77,11 @@ export const allocateCashFromWallet = async (walletId, currentBalances, allocati
     updatedBalances = updateCurrencyBalance(
       updatedBalances,
       allocation.currencyCode,
-      -allocation.amount
+      -allocation.amount // Negative to deduct from wallet
     );
   }
 
+  // Perform the update
   await base44.entities.CashWallet.update(walletId, {
     balances: updatedBalances
   });
@@ -99,10 +100,11 @@ export const returnCashToWallet = async (walletId, currentBalances, allocations)
     updatedBalances = updateCurrencyBalance(
       updatedBalances,
       allocation.currencyCode,
-      allocation.amount
+      allocation.amount // Positive to add to wallet
     );
   }
 
+  // Perform the update
   await base44.entities.CashWallet.update(walletId, {
     balances: updatedBalances
   });
