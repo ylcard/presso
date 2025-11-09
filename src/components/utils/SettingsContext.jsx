@@ -6,8 +6,7 @@ const SettingsContext = createContext();
 const STORAGE_KEY = 'budgetwise_settings';
 
 const defaultSettings = {
-  currencySymbol: '₽',
-  currencyCode: 'GBP',
+  currencySymbol: '$',
   currencyPosition: 'before',
   thousandSeparator: ',',
   decimalSeparator: '.',
@@ -30,9 +29,7 @@ export const SettingsProvider = ({ children }) => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        const parsed = JSON.parse(stored);
-        console.log('Loaded settings from localStorage:', parsed);
-        return { ...defaultSettings, ...parsed };
+        return { ...defaultSettings, ...JSON.parse(stored) };
       }
     } catch (error) {
       console.error('Error loading settings from localStorage:', error);
@@ -55,27 +52,20 @@ export const SettingsProvider = ({ children }) => {
       const allSettings = await base44.entities.UserSettings.list();
       const userSettings = allSettings.find(s => s.user_email === currentUser.email);
       
-      console.log('User settings from database:', userSettings);
-      
       if (userSettings) {
         const newSettings = {
-          currencySymbol: userSettings.currencySymbol ?? '$',
-          currencyCode: userSettings.currencyCode ?? 'USD',
-          currencyPosition: userSettings.currencyPosition ?? 'before',
-          thousandSeparator: userSettings.thousandSeparator ?? ',',
-          decimalSeparator: userSettings.decimalSeparator ?? '.',
-          decimalPlaces: userSettings.decimalPlaces ?? 2,
-          hideTrailingZeros: userSettings.hideTrailingZeros ?? false,
-          dateFormat: userSettings.dateFormat ?? 'MMM dd, yyyy'
+          currencySymbol: userSettings.currencySymbol || '$',
+          currencyPosition: userSettings.currencyPosition || 'before',
+          thousandSeparator: userSettings.thousandSeparator || ',',
+          decimalSeparator: userSettings.decimalSeparator || '.',
+          decimalPlaces: userSettings.decimalPlaces || 2,
+          hideTrailingZeros: userSettings.hideTrailingZeros || false,
+          dateFormat: userSettings.dateFormat || 'MMM dd, yyyy'
         };
-        
-        console.log('Processed settings to apply:', newSettings);
         
         // Update state and localStorage
         setSettings(newSettings);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings));
-      } else {
-        console.log('No user settings found in database, using defaults/localStorage');
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -90,8 +80,6 @@ export const SettingsProvider = ({ children }) => {
         throw new Error('User not logged in');
       }
       
-      console.log('Updating settings with:', newSettings);
-      
       // Update localStorage immediately
       const updatedSettings = { ...settings, ...newSettings };
       setSettings(updatedSettings);
@@ -102,17 +90,13 @@ export const SettingsProvider = ({ children }) => {
       const userSettings = allSettings.find(s => s.user_email === user.email);
       
       if (userSettings) {
-        console.log('Updating existing UserSettings record:', userSettings.id);
         await base44.entities.UserSettings.update(userSettings.id, newSettings);
       } else {
-        console.log('Creating new UserSettings record');
         await base44.entities.UserSettings.create({
           ...newSettings,
           user_email: user.email
         });
       }
-      
-      console.log('Settings successfully saved to database');
     } catch (error) {
       console.error('Error updating settings:', error);
       throw error;
