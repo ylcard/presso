@@ -3,8 +3,9 @@ import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { showToast } from "@/components/ui/use-toast";
 import { QUERY_KEYS } from "../hooks/queryKeys";
+import { calculateConvertedAmount, getRateForDate } from "../utils/currencyCalculations";
 
-export const useCashWalletActions = (user, cashWallet) => {
+export const useCashWalletActions = (user, cashWallet, settings, exchangeRates) => {
   const queryClient = useQueryClient();
   const [showWithdrawDialog, setShowWithdrawDialog] = useState(false);
   const [showDepositDialog, setShowDepositDialog] = useState(false);
@@ -13,7 +14,7 @@ export const useCashWalletActions = (user, cashWallet) => {
   const ensureCashWallet = async () => {
     if (!cashWallet && user) {
       const wallet = await base44.entities.CashWallet.create({
-        balance: 0,
+        balances: [],
         user_email: user.email
       });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CASH_WALLET] });
@@ -22,17 +23,54 @@ export const useCashWalletActions = (user, cashWallet) => {
     return cashWallet;
   };
 
+  // Helper to update balance for a specific currency
+  const updateCurrencyBalance = (balances, currencyCode, amountChange) => {
+    const existingBalance = balances.find(b => b.currencyCode === currencyCode);
+    
+    if (existingBalance) {
+      return balances.map(b => 
+        b.currencyCode === currencyCode 
+          ? { ...b, amount: b.amount + amountChange }
+          : b
+      );
+    } else {
+      return [...balances, { currencyCode, amount: amountChange }];
+    }
+  };
+
   // Withdraw cash (Bank -> Wallet)
   const withdrawMutation = useMutation({
     mutationFn: async (data) => {
       const wallet = await ensureCashWallet();
       
-      // Create transaction
+      // Convert amount to base currency for the transaction expense
+      const baseCurrency = settings?.baseCurrency || 'USD';
+      let convertedAmount = data.amount;
+      let exchangeRateUsed = null;
+
+      if (data.currency !== baseCurrency) {
+        const sourceRate = getRateForDate(exchangeRates, data.currency, data.date);
+        const targetRate = getRateForDate(exchangeRates, baseCurrency, data.date);
+
+        if (sourceRate && targetRate) {
+          const conversion = calculateConvertedAmount(
+            data.amount,
+            data.currency,
+            baseCurrency,
+            { sourceToUSD: sourceRate, targetToUSD: targetRate }
+          );
+          convertedAmount = conversion.convertedAmount;
+          exchangeRateUsed = conversion.exchangeRateUsed;
+        }
+      }
+      
+      // Create transaction (as expense in base currency)
       await base44.entities.Transaction.create({
         title: data.title,
-        amount: data.amount,
+        amount: convertedAmount,
         originalAmount: data.amount,
-        originalCurrency: user?.baseCurrency || 'USD',
+        originalCurrency: data.currency,
+        exchangeRateUsed: exchangeRateUsed,
         type: 'expense',
         category_id: data.category_id || null,
         date: data.date,
@@ -40,12 +78,20 @@ export const useCashWalletActions = (user, cashWallet) => {
         paidDate: data.date,
         notes: data.notes || null,
         isCashTransaction: true,
-        cashTransactionType: 'withdrawal_to_wallet'
+        cashTransactionType: 'withdrawal_to_wallet',
+        cashAmount: data.amount,
+        cashCurrency: data.currency
       });
 
-      // Update wallet balance
+      // Update wallet balance in the specific currency
+      const updatedBalances = updateCurrencyBalance(
+        wallet.balances || [],
+        data.currency,
+        data.amount
+      );
+
       await base44.entities.CashWallet.update(wallet.id, {
-        balance: wallet.balance + data.amount
+        balances: updatedBalances
       });
     },
     onSuccess: () => {
@@ -71,27 +117,59 @@ export const useCashWalletActions = (user, cashWallet) => {
   const depositMutation = useMutation({
     mutationFn: async (data) => {
       const wallet = await ensureCashWallet();
+      const balances = wallet.balances || [];
+      const currencyBalance = balances.find(b => b.currencyCode === data.currency);
       
-      if (wallet.balance < data.amount) {
-        throw new Error('Insufficient cash in wallet');
+      if (!currencyBalance || currencyBalance.amount < data.amount) {
+        throw new Error('Insufficient cash in wallet for this currency');
       }
 
-      // Create transaction
+      // Convert amount to base currency for the transaction income
+      const baseCurrency = settings?.baseCurrency || 'USD';
+      let convertedAmount = data.amount;
+      let exchangeRateUsed = null;
+
+      if (data.currency !== baseCurrency) {
+        const sourceRate = getRateForDate(exchangeRates, data.currency, data.date);
+        const targetRate = getRateForDate(exchangeRates, baseCurrency, data.date);
+
+        if (sourceRate && targetRate) {
+          const conversion = calculateConvertedAmount(
+            data.amount,
+            data.currency,
+            baseCurrency,
+            { sourceToUSD: sourceRate, targetToUSD: targetRate }
+          );
+          convertedAmount = conversion.convertedAmount;
+          exchangeRateUsed = conversion.exchangeRateUsed;
+        }
+      }
+
+      // Create transaction (as income in base currency)
       await base44.entities.Transaction.create({
         title: data.title,
-        amount: data.amount,
+        amount: convertedAmount,
         originalAmount: data.amount,
-        originalCurrency: user?.baseCurrency || 'USD',
+        originalCurrency: data.currency,
+        exchangeRateUsed: exchangeRateUsed,
         type: 'income',
         date: data.date,
         notes: data.notes || null,
         isCashTransaction: true,
-        cashTransactionType: 'deposit_from_wallet_to_bank'
+        cashTransactionType: 'deposit_from_wallet_to_bank',
+        cashAmount: data.amount,
+        cashCurrency: data.currency
       });
 
       // Update wallet balance
+      const updatedBalances = updateCurrencyBalance(
+        balances,
+        data.currency,
+        -data.amount
+      ).filter(b => b.amount > 0.01); // Remove zero/near-zero balances
+
       await base44.entities.CashWallet.update(wallet.id, {
-        balance: wallet.balance - data.amount
+        balances: updatedBalances
       });
     },
     onSuccess: () => {
