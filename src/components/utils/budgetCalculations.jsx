@@ -1,3 +1,4 @@
+
 // Utility function to create a map from an array of entities
 // Can optionally extract a specific field value instead of the whole entity
 export const createEntityMap = (entities, keyField = 'id', valueExtractor = null) => {
@@ -191,6 +192,7 @@ export const getCustomBudgetStats = (customBudget, transactions) => {
     };
 };
 
+// FIXED: System Budget Stats - Exclude cash expenses linked to custom budgets to prevent double-counting
 export const getSystemBudgetStats = (systemBudget, transactions, categories, allCustomBudgets = []) => {
     const budgetStart = parseDate(systemBudget.startDate);
     const budgetEnd = parseDate(systemBudget.endDate);
@@ -206,6 +208,15 @@ export const getSystemBudgetStats = (systemBudget, transactions, categories, all
     // Filter transactions using effective priority
     const budgetTransactions = transactions.filter(t => {
         if (t.type !== 'expense' || !t.category_id) return false;
+
+        // CRITICAL FIX: Exclude cash expenses that are linked to custom budgets
+        // These are already tracked in the custom budget's cash allocation, so counting them
+        // here would result in double-counting
+        if (t.isCashTransaction && 
+            t.cashTransactionType === 'expense_from_wallet' && 
+            t.customBudgetId) {
+            return false; // Skip this transaction for system budget calculations
+        }
 
         // Use effective priority to determine if transaction belongs to this system budget
         const effectivePriority = getTransactionEffectivePriority(t, categories, allCustomBudgets);
