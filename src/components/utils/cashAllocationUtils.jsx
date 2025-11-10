@@ -1,181 +1,189 @@
 import { base44 } from "@/api/base44Client";
 
-/**
- * Utility functions for managing cash allocations in custom budgets
- */
-
-/**
- * Get available balance for a specific currency in the cash wallet
- */
+// Get balance for a specific currency from cash wallet
 export const getCurrencyBalance = (cashWallet, currencyCode) => {
-  if (!cashWallet || !cashWallet.balances) return 0;
-  const balance = cashWallet.balances.find(b => b.currencyCode === currencyCode);
-  return balance ? balance.amount : 0;
+    if (!cashWallet || !cashWallet.balances) return 0;
+    const balance = cashWallet.balances.find(b => b.currencyCode === currencyCode);
+    return balance ? balance.amount : 0;
 };
 
-/**
- * Update balance for a specific currency
- */
+// Update balance for a specific currency (helper function)
 export const updateCurrencyBalance = (balances, currencyCode, amountChange) => {
-  const existingBalance = balances.find(b => b.currencyCode === currencyCode);
-  
-  if (existingBalance) {
-    return balances.map(b => 
-      b.currencyCode === currencyCode 
-        ? { ...b, amount: b.amount + amountChange }
-        : b
-    ).filter(b => b.amount > 0.01); // Remove zero/near-zero balances
-  } else if (amountChange > 0) {
-    return [...balances, { currencyCode, amount: amountChange }];
-  }
-  return balances;
+    const existingBalanceIndex = balances.findIndex(b => b.currencyCode === currencyCode);
+    
+    if (existingBalanceIndex !== -1) {
+        const updatedBalances = balances.map((b, index) => 
+            index === existingBalanceIndex 
+                ? { ...b, amount: b.amount + amountChange }
+                : b
+        );
+        // Filter out balances that become zero or negative (considering floating point precision)
+        return updatedBalances.filter(b => b.amount > 0.01); 
+    } else if (amountChange > 0) { // Only add if it's a positive amount
+        return [...balances, { currencyCode, amount: amountChange }];
+    }
+    return balances;
 };
 
-/**
- * Calculate total allocated cash across all currencies
- */
+// Get total cash allocated across all currencies
 export const getTotalCashAllocated = (cashAllocations) => {
-  if (!cashAllocations || !Array.isArray(cashAllocations)) return 0;
-  return cashAllocations.reduce((sum, alloc) => sum + (alloc.amount || 0), 0);
+    if (!cashAllocations || cashAllocations.length === 0) return 0;
+    return cashAllocations.reduce((sum, alloc) => sum + alloc.amount, 0);
 };
 
-/**
- * Validate if wallet has sufficient balance for the requested allocations
- */
+// Validate that cash wallet has sufficient balance for allocations
 export const validateCashAllocations = (cashWallet, requestedAllocations, baseCurrency) => {
-  if (!requestedAllocations || requestedAllocations.length === 0) {
-    return { valid: true };
-  }
-
-  const errors = [];
-  
-  for (const allocation of requestedAllocations) {
-    const available = getCurrencyBalance(cashWallet, allocation.currencyCode);
-    if (allocation.amount > available) {
-      errors.push({
-        currency: allocation.currencyCode,
-        requested: allocation.amount,
-        available
-      });
+    if (!requestedAllocations || requestedAllocations.length === 0) {
+        return { valid: true, errors: [] };
     }
-  }
 
-  return {
-    valid: errors.length === 0,
-    errors
-  };
-};
+    const errors = [];
+    
+    requestedAllocations.forEach(allocation => {
+        const available = getCurrencyBalance(cashWallet, allocation.currencyCode);
+        if (allocation.amount > available) {
+            errors.push({
+                currency: allocation.currencyCode,
+                requested: allocation.amount,
+                available
+            });
+        }
+    });
 
-/**
- * Allocate cash from wallet to budget
- * Returns updated wallet balances
- */
-export const allocateCashFromWallet = async (walletId, currentBalances, allocations) => {
-  let updatedBalances = [...(currentBalances || [])];
-  
-  for (const allocation of allocations) {
-    updatedBalances = updateCurrencyBalance(
-      updatedBalances,
-      allocation.currencyCode,
-      -allocation.amount // Negative to deduct from wallet
-    );
-  }
-
-  // Perform the update
-  await base44.entities.CashWallet.update(walletId, {
-    balances: updatedBalances
-  });
-
-  return updatedBalances;
-};
-
-/**
- * Return cash from budget to wallet
- * Returns updated wallet balances
- */
-export const returnCashToWallet = async (walletId, currentBalances, allocations) => {
-  let updatedBalances = [...(currentBalances || [])];
-  
-  for (const allocation of allocations) {
-    updatedBalances = updateCurrencyBalance(
-      updatedBalances,
-      allocation.currencyCode,
-      allocation.amount // Positive to add to wallet
-    );
-  }
-
-  // Perform the update
-  await base44.entities.CashWallet.update(walletId, {
-    balances: updatedBalances
-  });
-
-  return updatedBalances;
-};
-
-/**
- * Calculate remaining cash allocations after expenses
- */
-export const calculateRemainingCashAllocations = (budget, transactions) => {
-  if (!budget.cashAllocations || budget.cashAllocations.length === 0) {
-    return [];
-  }
-
-  // Get all cash expenses for this budget
-  const cashExpenses = transactions.filter(t => 
-    t.customBudgetId === budget.id &&
-    t.type === 'expense' &&
-    t.isCashTransaction &&
-    t.cashTransactionType === 'expense_from_wallet' &&
-    t.cashCurrency
-  );
-
-  // Group expenses by currency
-  const expensesByCurrency = cashExpenses.reduce((acc, t) => {
-    acc[t.cashCurrency] = (acc[t.cashCurrency] || 0) + t.cashAmount;
-    return acc;
-  }, {});
-
-  // Calculate remaining for each currency
-  return budget.cashAllocations.map(alloc => {
-    const spent = expensesByCurrency[alloc.currencyCode] || 0;
     return {
-      currencyCode: alloc.currencyCode,
-      amount: Math.max(0, alloc.amount - spent)
+        valid: errors.length === 0,
+        errors
     };
-  }).filter(alloc => alloc.amount > 0.01);
 };
 
-/**
- * Handle cash allocation changes when editing a budget
- * Returns object with { shouldAllocate, shouldReturn, allocationsToProcess }
- */
-export const calculateAllocationChanges = (oldAllocations, newAllocations) => {
-  const oldMap = (oldAllocations || []).reduce((acc, a) => {
-    acc[a.currencyCode] = a.amount;
-    return acc;
-  }, {});
+// Allocate cash from wallet (deduct from wallet balance)
+// UPDATED: Now fetches the latest wallet data before updating
+export const allocateCashFromWallet = async (walletId, currentBalances, allocations) => {
+    if (!allocations || allocations.length === 0) return;
 
-  const newMap = (newAllocations || []).reduce((acc, a) => {
-    acc[a.currencyCode] = a.amount;
-    return acc;
-  }, {});
-
-  const allocationsToProcess = [];
-  const allCurrencies = new Set([...Object.keys(oldMap), ...Object.keys(newMap)]);
-
-  allCurrencies.forEach(currency => {
-    const oldAmount = oldMap[currency] || 0;
-    const newAmount = newMap[currency] || 0;
-    const diff = newAmount - oldAmount;
-
-    if (Math.abs(diff) > 0.01) {
-      allocationsToProcess.push({
-        currencyCode: currency,
-        amount: Math.abs(diff),
-        isIncrease: diff > 0
-      });
+    // Fetch the latest wallet data
+    const allWallets = await base44.entities.CashWallet.list();
+    const latestWallet = allWallets.find(w => w.id === walletId);
+    
+    if (!latestWallet) {
+        throw new Error('Cash wallet not found');
     }
-  });
 
-  return allocationsToProcess;
+    let updatedBalances = [...(latestWallet.balances || [])];
+    
+    allocations.forEach(allocation => {
+        updatedBalances = updateCurrencyBalance(
+            updatedBalances,
+            allocation.currencyCode,
+            -allocation.amount // Negative to deduct
+        );
+    });
+
+    await base44.entities.CashWallet.update(walletId, {
+        balances: updatedBalances
+    });
+};
+
+// Return cash to wallet (add back to wallet balance)
+// UPDATED: Now fetches the latest wallet data before updating
+export const returnCashToWallet = async (walletId, currentBalances, allocations) => {
+    if (!allocations || allocations.length === 0) return;
+
+    // Fetch the latest wallet data
+    const allWallets = await base44.entities.CashWallet.list();
+    const latestWallet = allWallets.find(w => w.id === walletId);
+    
+    if (!latestWallet) {
+        throw new Error('Cash wallet not found');
+    }
+
+    let updatedBalances = [...(latestWallet.balances || [])];
+    
+    allocations.forEach(allocation => {
+        updatedBalances = updateCurrencyBalance(
+            updatedBalances,
+            allocation.currencyCode,
+            allocation.amount // Positive to add back
+        );
+    });
+
+    await base44.entities.CashWallet.update(walletId, {
+        balances: updatedBalances
+    });
+};
+
+// Calculate remaining cash allocations for a budget
+export const calculateRemainingCashAllocations = (budget, transactions) => {
+    if (!budget.cashAllocations || budget.cashAllocations.length === 0) {
+        return [];
+    }
+
+    // Get cash expenses for this budget (only those from wallet)
+    const cashExpenses = transactions.filter(
+        t => t.customBudgetId === budget.id && 
+             t.isCashTransaction && 
+             t.cashTransactionType === 'expense_from_wallet'
+    );
+
+    // Calculate spent per currency
+    const spentByCurrency = {};
+    cashExpenses.forEach(expense => {
+        const currency = expense.cashCurrency;
+        const amount = expense.cashAmount || 0;
+        spentByCurrency[currency] = (spentByCurrency[currency] || 0) + amount;
+    });
+
+    // Calculate remaining per currency
+    const remaining = [];
+    budget.cashAllocations.forEach(allocation => {
+        const spent = spentByCurrency[allocation.currencyCode] || 0;
+        const remainingAmount = allocation.amount - spent;
+        if (remainingAmount > 0) {
+            remaining.push({
+                currencyCode: allocation.currencyCode,
+                amount: remainingAmount
+            });
+        }
+    });
+
+    return remaining;
+};
+
+// Calculate changes in cash allocations (for budget updates)
+export const calculateAllocationChanges = (oldAllocations, newAllocations) => {
+    const changes = [];
+    
+    // Create maps for easier comparison
+    const oldMap = {};
+    const newMap = {};
+    
+    oldAllocations.forEach(alloc => {
+        oldMap[alloc.currencyCode] = alloc.amount;
+    });
+    
+    newAllocations.forEach(alloc => {
+        newMap[alloc.currencyCode] = alloc.amount;
+    });
+    
+    // Get all unique currency codes
+    const allCurrencies = new Set([
+        ...Object.keys(oldMap),
+        ...Object.keys(newMap)
+    ]);
+    
+    allCurrencies.forEach(currency => {
+        const oldAmount = oldMap[currency] || 0;
+        const newAmount = newMap[currency] || 0;
+        const difference = newAmount - oldAmount;
+        
+        if (Math.abs(difference) > 0.01) { // Avoid floating point precision issues
+            changes.push({
+                currencyCode: currency,
+                amount: Math.abs(difference),
+                isIncrease: difference > 0
+            });
+        }
+    });
+    
+    return changes;
 };
