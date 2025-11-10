@@ -1,4 +1,3 @@
-
 import React, { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,6 +34,19 @@ export default function CustomBudgetCard({
   const canChangeStatus = !budget.isSystemBudget && !hideActions;
   
   const isCompleted = budget.status === 'completed';
+
+  // Calculate totals from separated digital and cash
+  let totalBudget = stats.digital.allocated;
+  let totalSpent = stats.digital.spent;
+  
+  if (stats.cashByCurrency) {
+    Object.values(stats.cashByCurrency).forEach(cashData => {
+      totalBudget += cashData.allocated;
+      totalSpent += cashData.spent;
+    });
+  }
+  
+  const percentageUsed = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
 
   return (
     <motion.div
@@ -97,14 +109,14 @@ export default function CustomBudgetCard({
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm text-gray-600">Budget Used</span>
-                <Badge variant={stats.percentageUsed > 100 ? "destructive" : "default"}>
-                  {stats.percentageUsed.toFixed(0)}%
+                <Badge variant={percentageUsed > 100 ? "destructive" : "default"}>
+                  {percentageUsed.toFixed(0)}%
                 </Badge>
               </div>
               <Progress
-                value={Math.min(stats.percentageUsed, 100)}
+                value={Math.min(percentageUsed, 100)}
                 className="h-2"
-                style={{ '--progress-background': getProgressBarColor(stats.percentageUsed) }}
+                style={{ '--progress-background': getProgressBarColor(percentageUsed) }}
               />
             </div>
 
@@ -112,30 +124,39 @@ export default function CustomBudgetCard({
               {isCompleted ? (
                 <>
                   <div>
-                    <p className="text-xs text-gray-500 mb-1">Spent</p>
+                    <p className="text-xs text-gray-500 mb-1">Spent (Digital)</p>
                     <p className="font-bold text-gray-900">
-                      {formatCurrency(stats.totalSpent, settings)}
+                      {formatCurrency(stats.digital.spent, settings)}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500 mb-1">Original Budget</p>
                     <p className="font-bold text-gray-900">
-                      {formatCurrency(budget.originalAllocatedAmount || stats.totalBudget, settings)}
+                      {formatCurrency(budget.originalAllocatedAmount || totalBudget, settings)}
                     </p>
                   </div>
                 </>
               ) : (
                 <>
                   <div>
-                    <p className="text-xs text-gray-500 mb-1">Remaining</p>
+                    <p className="text-xs text-gray-500 mb-1">Remaining (Digital)</p>
                     <p className="font-bold text-gray-900">
-                      {formatCurrency(stats.remaining, settings)}
+                      {formatCurrency(stats.digital.remaining, settings)}
                     </p>
+                    {stats.cashByCurrency && Object.keys(stats.cashByCurrency).length > 0 && (
+                      <div className="mt-1 space-y-0.5">
+                        {Object.entries(stats.cashByCurrency).map(([currency, data]) => (
+                          <p key={currency} className="text-xs text-gray-600">
+                            Cash ({currency}): {formatCurrency(data.remaining, { ...settings, currencySymbol: getCurrencySymbol(currency) })}
+                          </p>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div>
                     <p className="text-xs text-gray-500 mb-1">Total Budget</p>
                     <p className="font-bold text-gray-900">
-                      {formatCurrency(stats.totalBudget, settings)}
+                      {formatCurrency(totalBudget, settings)}
                     </p>
                   </div>
                 </>
@@ -145,11 +166,11 @@ export default function CustomBudgetCard({
             <div className="flex items-center justify-between pt-2 border-t">
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Receipt className="w-4 h-4" />
-                <span>{stats.transactionCount} expenses</span>
+                <span>{stats.totalTransactionCount} expenses</span>
               </div>
-              {!isCompleted && stats.unpaidAmount > 0 && (
+              {!isCompleted && stats.digital.unpaid > 0 && (
                 <Badge variant="outline" className="text-orange-600 border-orange-600">
-                  {formatCurrency(stats.unpaidAmount, settings)} unpaid
+                  {formatCurrency(stats.digital.unpaid, settings)} unpaid
                 </Badge>
               )}
             </div>
@@ -173,3 +194,41 @@ export default function CustomBudgetCard({
     </motion.div>
   );
 }
+
+// Helper to get currency symbol
+const getCurrencySymbol = (currencyCode) => {
+  const currencySymbols = {
+    'USD': '$',
+    'EUR': '€',
+    'GBP': '£',
+    'JPY': '¥',
+    'CAD': 'CA$',
+    'AUD': 'A$',
+    'CHF': 'CHF',
+    'CNY': '¥',
+    'INR': '₹',
+    'MXN': 'MX$',
+    'BRL': 'R$',
+    'ZAR': 'R',
+    'KRW': '₩',
+    'SGD': 'S$',
+    'NZD': 'NZ$',
+    'HKD': 'HK$',
+    'SEK': 'kr',
+    'NOK': 'kr',
+    'DKK': 'kr',
+    'PLN': 'zł',
+    'THB': '฿',
+    'MYR': 'RM',
+    'IDR': 'Rp',
+    'PHP': '₱',
+    'CZK': 'Kč',
+    'ILS': '₪',
+    'CLP': 'CLP$',
+    'AED': 'د.إ',
+    'SAR': '﷼',
+    'TWD': 'NT$',
+    'TRY': '₺'
+  };
+  return currencySymbols[currencyCode] || currencyCode;
+};
