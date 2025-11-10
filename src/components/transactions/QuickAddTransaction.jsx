@@ -19,7 +19,7 @@ import CurrencySelect from "../ui/CurrencySelect";
 import { useSettings } from "../utils/SettingsContext";
 import { useExchangeRates } from "../hooks/useExchangeRates";
 import { useCashWallet } from "../hooks/useBase44Entities";
-import { getCurrencyBalance } from "../utils/cashAllocationUtils";
+import { getCurrencyBalance, getRemainingAllocatedCash } from "../utils/cashAllocationUtils";
 import { calculateConvertedAmount, getRateForDate, SUPPORTED_CURRENCIES } from "../utils/currencyCalculations";
 import { formatDateString, normalizeAmount, filterBudgetsByTransactionDate } from "../utils/budgetCalculations";
 
@@ -30,7 +30,8 @@ export default function QuickAddTransaction({
   customBudgets, 
   defaultCustomBudgetId = '', 
   onSubmit, 
-  isSubmitting 
+  isSubmitting,
+  transactions = []
 }) {
   const { user, settings } = useSettings();
   const { toast } = useToast();
@@ -50,18 +51,27 @@ export default function QuickAddTransaction({
     isCashExpense: false
   });
 
+  // Pre-select date and budget when defaultCustomBudgetId is provided
   useEffect(() => {
-    if (defaultCustomBudgetId) {
-      setFormData(prev => ({ ...prev, customBudgetId: defaultCustomBudgetId }));
+    if (defaultCustomBudgetId && open) {
+      const selectedBudget = customBudgets.find(b => b.id === defaultCustomBudgetId);
+      if (selectedBudget) {
+        setFormData(prev => ({
+          ...prev,
+          customBudgetId: defaultCustomBudgetId,
+          date: selectedBudget.startDate, // Set to budget's start date
+          originalCurrency: settings.baseCurrency || 'USD'
+        }));
+      }
     }
-  }, [defaultCustomBudgetId]);
+  }, [defaultCustomBudgetId, open, customBudgets, settings.baseCurrency]);
 
   useEffect(() => {
-    // Reset currency when dialog opens
-    if (open) {
+    // Reset currency when dialog opens (only if not already set by budget pre-selection)
+    if (open && !defaultCustomBudgetId) {
       setFormData(prev => ({ ...prev, originalCurrency: settings.baseCurrency || 'USD' }));
     }
-  }, [open, settings.baseCurrency]);
+  }, [open, settings.baseCurrency, defaultCustomBudgetId]);
 
   const isForeignCurrency = formData.originalCurrency !== (settings.baseCurrency || 'USD');
 
@@ -84,8 +94,25 @@ export default function QuickAddTransaction({
   // Filter budgets by transaction date
   const filteredBudgets = filterBudgetsByTransactionDate(customBudgets, formData.date);
 
-  // Get cash balance for base currency
-  const cashBalance = getCurrencyBalance(cashWallet, settings.baseCurrency || 'USD');
+  // Calculate available balance dynamically based on selected currency and budget
+  const availableBalance = (() => {
+    if (!formData.isCashExpense) return 0;
+
+    const currency = formData.originalCurrency;
+
+    if (formData.customBudgetId) {
+      // Get remaining allocated cash for the selected budget and currency
+      const selectedBudget = customBudgets.find(b => b.id === formData.customBudgetId);
+      if (selectedBudget) {
+        return getRemainingAllocatedCash(selectedBudget, transactions, currency);
+      }
+    } else {
+      // Get total cash wallet balance for the selected currency
+      return getCurrencyBalance(cashWallet, currency);
+    }
+
+    return 0;
+  })();
 
   const handleRefreshRates = async () => {
     const result = await refreshRates(
@@ -114,10 +141,12 @@ export default function QuickAddTransaction({
     const originalAmount = parseFloat(normalizedAmount);
     
     // Check if sufficient cash for cash expenses
-    if (formData.isCashExpense && originalAmount > cashBalance) {
+    if (formData.isCashExpense && originalAmount > availableBalance) {
       toast({
-        title: "Insufficient Cash",
-        description: "You don't have enough cash in your wallet for this expense.",
+        title: "Insufficient Funds",
+        description: formData.customBudgetId 
+          ? "You don't have enough allocated cash in this budget for this expense."
+          : "You don't have enough cash in your wallet for this expense.",
         variant: "destructive",
       });
       return;
@@ -126,7 +155,7 @@ export default function QuickAddTransaction({
     let finalAmount = originalAmount;
     let exchangeRateUsed = null;
 
-    // Perform currency conversion if needed (not for cash expenses - they're always in base currency)
+    // Perform currency conversion if needed (not for cash expenses - they're always in selected currency, converted to base)
     if (isForeignCurrency && !formData.isCashExpense) {
       const sourceRate = getRateForDate(exchangeRates, formData.originalCurrency, formData.date);
       const targetRate = getRateForDate(exchangeRates, settings.baseCurrency || 'USD', formData.date);
@@ -149,13 +178,29 @@ export default function QuickAddTransaction({
 
       finalAmount = conversion.convertedAmount;
       exchangeRateUsed = conversion.exchangeRateUsed;
+    } else if (formData.isCashExpense && isForeignCurrency) {
+      // For cash expenses in foreign currency, convert to base currency
+      const sourceRate = getRateForDate(exchangeRates, formData.originalCurrency, formData.date);
+      const targetRate = getRateForDate(exchangeRates, settings.baseCurrency || 'USD', formData.date);
+
+      if (sourceRate && targetRate) {
+        const conversion = calculateConvertedAmount(
+          originalAmount,
+          formData.originalCurrency,
+          settings.baseCurrency || 'USD',
+          { sourceToUSD: sourceRate, targetToUSD: targetRate }
+        );
+
+        finalAmount = conversion.convertedAmount;
+        exchangeRateUsed = conversion.exchangeRateUsed;
+      }
     }
     
     onSubmit({
       title: formData.title,
       amount: finalAmount,
       originalAmount: originalAmount,
-      originalCurrency: formData.isCashExpense ? settings.baseCurrency : formData.originalCurrency,
+      originalCurrency: formData.originalCurrency,
       exchangeRateUsed: exchangeRateUsed,
       type: formData.type,
       category_id: formData.category_id || null,
@@ -166,7 +211,7 @@ export default function QuickAddTransaction({
       isCashTransaction: formData.isCashExpense,
       cashTransactionType: formData.isCashExpense ? 'expense_from_wallet' : null,
       cashAmount: formData.isCashExpense ? originalAmount : null,
-      cashCurrency: formData.isCashExpense ? settings.baseCurrency : null
+      cashCurrency: formData.isCashExpense ? formData.originalCurrency : null
     });
     
     setFormData({
@@ -210,7 +255,7 @@ export default function QuickAddTransaction({
                 value={formData.amount}
                 onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                 placeholder="0.00"
-                currencySymbol={formData.isCashExpense ? settings.currencySymbol : selectedCurrencySymbol}
+                currencySymbol={selectedCurrencySymbol}
                 required
               />
             </div>
@@ -232,41 +277,40 @@ export default function QuickAddTransaction({
               onCheckedChange={(checked) => setFormData({ 
                 ...formData, 
                 isCashExpense: checked,
-                originalCurrency: checked ? settings.baseCurrency : formData.originalCurrency,
                 isPaid: checked ? true : formData.isPaid
               })}
             />
             <Label htmlFor="isCashExpense" className="cursor-pointer flex items-center gap-2">
               Paid with cash
-              <span className="text-xs text-gray-500">
-                (Available: {settings.currencySymbol}{cashBalance.toFixed(2)})
-              </span>
+              {formData.isCashExpense && (
+                <span className="text-xs text-gray-500">
+                  (Available: {selectedCurrencySymbol}{availableBalance.toFixed(2)})
+                </span>
+              )}
             </Label>
           </div>
 
-          {!formData.isCashExpense && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="currency">Currency</Label>
-                {isForeignCurrency && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleRefreshRates}
-                    disabled={isRefreshing}
-                    className="h-8 px-2 text-blue-600 hover:text-blue-700"
-                  >
-                    <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                  </Button>
-                )}
-              </div>
-              <CurrencySelect
-                value={formData.originalCurrency}
-                onValueChange={(value) => setFormData({ ...formData, originalCurrency: value })}
-              />
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="currency">Currency</Label>
+              {isForeignCurrency && !formData.isCashExpense && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleRefreshRates}
+                  disabled={isRefreshing}
+                  className="h-8 px-2 text-blue-600 hover:text-blue-700"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                </Button>
+              )}
             </div>
-          )}
+            <CurrencySelect
+              value={formData.originalCurrency}
+              onValueChange={(value) => setFormData({ ...formData, originalCurrency: value })}
+            />
+          </div>
 
           <div className="space-y-2">
             <Label htmlFor="category">Category</Label>

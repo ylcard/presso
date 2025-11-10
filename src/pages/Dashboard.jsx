@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-// import { Wallet as WalletIcon } from "lucide-react"; // UNUSED: No WalletIcon usage found in component
 import { useSettings } from "../components/utils/SettingsContext";
 import { usePeriod } from "../components/hooks/usePeriod";
 import {
@@ -132,8 +131,8 @@ export default function Dashboard() {
           <div className="md:col-span-1">
             <CashWalletCard
               cashWallet={cashWallet}
-              onWithdraw={cashWalletActions.openWithdrawDialog}
-              onDeposit={cashWalletActions.openDepositDialog}
+              onDepositCash={cashWalletActions.openDepositCashDialog}
+              onReturnCash={cashWalletActions.openReturnCashDialog}
             />
           </div>
         </div>
@@ -197,19 +196,22 @@ export default function Dashboard() {
         )}
 
         <CashWithdrawDialog
-          open={cashWalletActions.withdrawDialogOpen}
-          onOpenChange={cashWalletActions.setWithdrawDialogOpen}
+          open={cashWalletActions.depositCashDialogOpen}
+          onOpenChange={cashWalletActions.setDepositCashDialogOpen}
           categories={categories}
-          onSubmit={cashWalletActions.handleWithdraw}
-          isSubmitting={cashWalletActions.isWithdrawing}
+          onSubmit={cashWalletActions.handleDepositCash}
+          isSubmitting={cashWalletActions.isDepositingCash}
+          baseCurrency={settings.baseCurrency}
         />
 
         <CashDepositDialog
-          open={cashWalletActions.depositDialogOpen}
-          onOpenChange={cashWalletActions.setDepositDialogOpen}
-          onSubmit={cashWalletActions.handleDeposit}
-          isSubmitting={cashWalletActions.isDepositing}
+          open={cashWalletActions.returnCashDialogOpen}
+          onOpenChange={cashWalletActions.setReturnCashDialogOpen}
+          onSubmit={cashWalletActions.handleReturnCash}
+          isSubmitting={cashWalletActions.isReturningCash}
           cashWallet={cashWallet}
+          baseCurrency={settings.baseCurrency}
+          settings={settings}
         />
       </div>
     </div>
