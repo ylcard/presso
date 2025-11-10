@@ -3,7 +3,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, Wallet } from "lucide-react";
 import { formatCurrency } from "../utils/formatCurrency";
 
-export default function RemainingBudgetCard({ remaining, income, expenses, settings }) {
+
+export default function RemainingBudgetCard({ remainingBudget, currentMonthIncome, currentMonthExpenses, settings }) {
   const percentageUsed = income > 0 ? (expenses / income) * 100 : 0;
 
   return (
@@ -19,7 +20,7 @@ export default function RemainingBudgetCard({ remaining, income, expenses, setti
         
         <div className="mt-6">
           <p className="text-5xl md:text-6xl font-bold mb-6 text-center">
-            {formatCurrency(remaining, settings)}
+            {formatCurrency(remainingBudget, settings)}
           </p>
           
           <div className="grid md:grid-cols-3 gap-4">
@@ -29,7 +30,7 @@ export default function RemainingBudgetCard({ remaining, income, expenses, setti
                   <TrendingUp className="w-4 h-4" />
                   <span className="text-sm opacity-90">Income</span>
                 </div>
-                <p className="text-2xl font-bold">{formatCurrency(income, settings)}</p>
+                <p className="text-2xl font-bold">{formatCurrency(currentMonthIncome, settings)}</p>
               </div>
             </div>
             
@@ -39,7 +40,7 @@ export default function RemainingBudgetCard({ remaining, income, expenses, setti
                   <TrendingDown className="w-4 h-4" />
                   <span className="text-sm opacity-90">Expenses</span>
                 </div>
-                <p className="text-2xl font-bold">{formatCurrency(expenses, settings)}</p>
+                <p className="text-2xl font-bold">{formatCurrency(currentMonthExpenses, settings)}</p>
               </div>
             </div>
             
