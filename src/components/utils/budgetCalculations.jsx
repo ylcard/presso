@@ -1,4 +1,3 @@
-
 // Utility function to create a map from an array of entities
 // Can optionally extract a specific field value instead of the whole entity
 export const createEntityMap = (entities, keyField = 'id', valueExtractor = null) => {
@@ -120,6 +119,7 @@ export const calculateRemainingBudget = (transactions, month, year) => {
     return income - paidExpenses - unpaidExpenseAmount;
 };
 
+// REFACTORED: Custom Budget Stats with Strict Digital/Cash Separation
 export const getCustomBudgetStats = (customBudget, transactions) => {
     const budgetStart = parseDate(customBudget.startDate);
     const budgetEnd = parseDate(customBudget.endDate);
@@ -139,50 +139,55 @@ export const getCustomBudgetStats = (customBudget, transactions) => {
         return transactionDate >= budgetStart && transactionDate <= budgetEnd;
     });
 
-    // Separate card and cash transactions
-    const cardTransactions = budgetTransactions.filter(t => !t.isCashTransaction || t.cashTransactionType !== 'expense_from_wallet');
-    const cashTransactions = budgetTransactions.filter(t => t.isCashTransaction && t.cashTransactionType === 'expense_from_wallet');
+    // Separate digital and cash transactions
+    const digitalTransactions = budgetTransactions.filter(
+        t => !t.isCashTransaction || t.cashTransactionType !== 'expense_from_wallet'
+    );
+    const cashTransactions = budgetTransactions.filter(
+        t => t.isCashTransaction && t.cashTransactionType === 'expense_from_wallet'
+    );
 
-    const totalSpent = budgetTransactions
+    // Calculate digital stats
+    const digitalAllocated = customBudget.allocatedAmount || 0;
+    const digitalSpent = digitalTransactions
         .filter(t => t.type === 'expense')
         .reduce((sum, t) => sum + t.amount, 0);
-
-    const cardSpent = cardTransactions
-        .filter(t => t.type === 'expense')
-        .reduce((sum, t) => sum + t.amount, 0);
-
-    const cashSpent = cashTransactions
-        .filter(t => t.type === 'expense')
-        .reduce((sum, t) => sum + t.amount, 0);
-
-    const paidAmount = budgetTransactions
-        .filter(t => t.type === 'expense' && t.isPaid)
-        .reduce((sum, t) => sum + t.amount, 0);
-
-    const unpaidAmount = budgetTransactions
+    const digitalUnpaid = digitalTransactions
         .filter(t => t.type === 'expense' && !t.isPaid)
         .reduce((sum, t) => sum + t.amount, 0);
+    const digitalRemaining = digitalAllocated - digitalSpent;
 
-    // Calculate total allocated amount including cash allocations
-    const cashAllocatedTotal = customBudget.cashAllocations?.reduce((sum, alloc) => sum + alloc.amount, 0) || 0;
-    const totalBudget = customBudget.allocatedAmount + cashAllocatedTotal;
-    const remaining = totalBudget - totalSpent;
-    const cardRemaining = customBudget.allocatedAmount - cardSpent;
-    const cashRemaining = cashAllocatedTotal - cashSpent;
-    const percentageUsed = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
+    // Calculate cash stats by currency
+    const cashByCurrency = {};
+    const cashAllocations = customBudget.cashAllocations || [];
+    
+    cashAllocations.forEach(allocation => {
+        const currencyCode = allocation.currencyCode;
+        const allocated = allocation.amount || 0;
+        
+        // Calculate spent in this currency (cash expenses are always paid)
+        const spent = cashTransactions
+            .filter(t => t.type === 'expense' && t.cashCurrency === currencyCode)
+            .reduce((sum, t) => sum + (t.cashAmount || 0), 0);
+        
+        const remaining = allocated - spent;
+        
+        cashByCurrency[currencyCode] = {
+            allocated,
+            spent,
+            remaining
+        };
+    });
 
     return {
-        totalBudget,
-        totalSpent,
-        cardSpent,
-        cashSpent,
-        paidAmount,
-        unpaidAmount,
-        remaining,
-        cardRemaining,
-        cashRemaining,
-        percentageUsed,
-        transactionCount: budgetTransactions.length
+        digital: {
+            allocated: digitalAllocated,
+            spent: digitalSpent,
+            unpaid: digitalUnpaid,
+            remaining: digitalRemaining
+        },
+        cashByCurrency,
+        totalTransactionCount: budgetTransactions.length
     };
 };
 
@@ -270,10 +275,13 @@ export const getDirectUnpaidExpenses = (systemBudget, transactions, categories, 
     // Get IDs of ALL custom budgets to exclude their transactions
     const allCustomBudgetIds = allCustomBudgets.map(cb => cb.id);
 
-    // Get unpaid transactions for this system budget type, excluding those in custom budgets
+    // Get unpaid digital transactions for this system budget type, excluding those in custom budgets
     const directUnpaidTransactions = transactions.filter(t => {
         if (t.type !== 'expense' || !t.category_id) return false;
         if (t.isPaid) return false;
+        
+        // Only count digital expenses (cash expenses are always paid)
+        if (t.isCashTransaction && t.cashTransactionType === 'expense_from_wallet') return false;
 
         // Check if category priority matches system budget type
         const categoryPriority = categoryPriorityMap[t.category_id];
@@ -290,6 +298,104 @@ export const getDirectUnpaidExpenses = (systemBudget, transactions, categories, 
     });
 
     return directUnpaidTransactions.reduce((sum, t) => sum + t.amount, 0);
+};
+
+// NEW: Calculate "Expected" Amount for "Wants" System Budget
+export const calculateWantsExpectedAmount = (allCustomBudgets, transactions, categories, systemBudget, baseCurrency) => {
+    let mainSum = 0;
+    const separateCashAmounts = {};
+
+    // Loop through all custom budgets
+    allCustomBudgets.forEach(cb => {
+        const cbStats = getCustomBudgetStats(cb, transactions);
+
+        // For ACTIVE budgets: include digital remaining and digital unpaid
+        if (cb.status === 'active') {
+            mainSum += cbStats.digital.remaining;
+            mainSum += cbStats.digital.unpaid;
+        }
+
+        // For COMPLETED budgets: include ONLY digital unpaid (not remaining)
+        if (cb.status === 'completed') {
+            mainSum += cbStats.digital.unpaid;
+        }
+
+        // For ALL budgets (active or completed): handle cash remaining
+        Object.keys(cbStats.cashByCurrency).forEach(currencyCode => {
+            const cashData = cbStats.cashByCurrency[currencyCode];
+            
+            if (currencyCode === baseCurrency) {
+                // Cash in base currency: add to main sum
+                mainSum += cashData.remaining;
+            } else {
+                // Cash in different currency: accumulate separately
+                if (!separateCashAmounts[currencyCode]) {
+                    separateCashAmounts[currencyCode] = 0;
+                }
+                separateCashAmounts[currencyCode] += cashData.remaining;
+            }
+        });
+    });
+
+    // Add direct unpaid digital expenses
+    const directUnpaid = getDirectUnpaidExpenses(systemBudget, transactions, categories, allCustomBudgets);
+    mainSum += directUnpaid;
+
+    // Convert separateCashAmounts object to array with currency symbols
+    const separateCashArray = Object.keys(separateCashAmounts)
+        .filter(currencyCode => separateCashAmounts[currencyCode] > 0)
+        .map(currencyCode => {
+            // Get currency symbol from SUPPORTED_CURRENCIES (we'll need to import this)
+            const symbol = getCurrencySymbol(currencyCode);
+            return {
+                currencyCode,
+                amount: separateCashAmounts[currencyCode],
+                symbol
+            };
+        });
+
+    return {
+        mainSum,
+        separateCashAmounts: separateCashArray
+    };
+};
+
+// Helper to get currency symbol
+const getCurrencySymbol = (currencyCode) => {
+    const currencySymbols = {
+        'USD': '$',
+        'EUR': '€',
+        'GBP': '£',
+        'JPY': '¥',
+        'CAD': 'CA$',
+        'AUD': 'A$',
+        'CHF': 'CHF',
+        'CNY': '¥',
+        'INR': '₹',
+        'MXN': 'MX$',
+        'BRL': 'R$',
+        'ZAR': 'R',
+        'KRW': '₩',
+        'SGD': 'S$',
+        'NZD': 'NZ$',
+        'HKD': 'HK$',
+        'SEK': 'kr',
+        'NOK': 'kr',
+        'DKK': 'kr',
+        'PLN': 'zł',
+        'THB': '฿',
+        'MYR': 'RM',
+        'IDR': 'Rp',
+        'PHP': '₱',
+        'CZK': 'Kč',
+        'ILS': '₪',
+        'CLP': 'CLP$',
+        'AED': 'د.إ',
+        'SAR': '﷼',
+        'TWD': 'NT$',
+        'TRY': '₺'
+    };
+    return currencySymbols[currencyCode] || currencyCode;
 };
 
 export const getCustomBudgetAllocationStats = (customBudget, allocations, transactions) => {
