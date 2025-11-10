@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ export default function BudgetBars({
   settings, 
   goals, 
   monthlyIncome, 
+  baseCurrency, // Added baseCurrency prop
   onDeleteBudget, 
   onCompleteBudget, 
   onCreateBudget 
@@ -26,7 +28,7 @@ export default function BudgetBars({
 
   // Use the extracted hook for all calculations
   const { systemBudgetsData, customBudgetsData, totalActualSavings, savingsTarget, savingsShortfall } = 
-    useBudgetBarsData(systemBudgets, customBudgets, allCustomBudgets, transactions, categories, goals, monthlyIncome);
+    useBudgetBarsData(systemBudgets, customBudgets, allCustomBudgets, transactions, categories, goals, monthlyIncome, baseCurrency); // Pass baseCurrency to hook
 
   const visibleCustomBudgets = customBudgetsData.slice(customStartIndex, customStartIndex + barsPerPage);
   const canScrollLeft = customStartIndex > 0;
