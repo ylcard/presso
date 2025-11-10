@@ -9,6 +9,7 @@ import {
   getSystemBudgetStats,
   getCustomBudgetStats,
   getDirectUnpaidExpenses,
+  calculateWantsExpectedAmount, // ADDED
   createEntityMap,
   filterActiveCustomBudgets,
   // Added based on outline for useDashboardSummary
@@ -283,7 +284,8 @@ export const useBudgetBarsData = (
   transactions,
   categories,
   goals,
-  monthlyIncome
+  monthlyIncome,
+  baseCurrency // ADDED
 ) => {
   return useMemo(() => {
     const system = systemBudgets.sort((a, b) => {
@@ -294,9 +296,6 @@ export const useBudgetBarsData = (
     
     // Create goal map using enhanced createEntityMap with value extractor
     const goalMap = createEntityMap(goals, 'priority', (goal) => goal.target_percentage);
-    
-    // Filter only active custom budgets for 'wants' budget calculations
-    const activeCustom = filterActiveCustomBudgets(custom);
         
     // Process system budgets
     const systemBudgetsData = system.map(sb => {
@@ -310,22 +309,19 @@ export const useBudgetBarsData = (
       const targetAmount = sb.budgetAmount;
       
       let expectedAmount = 0;
+      let expectedSeparateCash = []; // ADDED
       
       if (sb.systemBudgetType === 'wants') {
-        const directUnpaid = getDirectUnpaidExpenses(budgetForStats, transactions, categories, allCustomBudgets);
-        
-        // For custom budgets: use remaining unspent amount (total - totalSpent)
-        const activeCustomExpected = activeCustom.reduce((sum, cb) => {
-          const cbStats = getCustomBudgetStats(cb, transactions);
-          
-          // Use totalBudget - totalSpent to get the remaining unspent amount
-          // This avoids double-counting unpaid expenses
-          const expectedFromBudget = cbStats.totalBudget - cbStats.totalSpent;
-          
-          return sum + Math.max(0, expectedFromBudget);
-        }, 0);
-        
-        expectedAmount = directUnpaid + activeCustomExpected;
+        // Use new calculation function that handles digital/cash separation
+        const wantsExpected = calculateWantsExpectedAmount( // UPDATED
+          allCustomBudgets,
+          transactions,
+          categories,
+          budgetForStats,
+          baseCurrency // ADDED
+        );
+        expectedAmount = wantsExpected.mainSum;
+        expectedSeparateCash = wantsExpected.separateCashAmounts; // ADDED
       } else if (sb.systemBudgetType === 'needs') {
         expectedAmount = getDirectUnpaidExpenses(budgetForStats, transactions, categories, allCustomBudgets);
       } else if (sb.systemBudgetType === 'savings') {
@@ -343,6 +339,7 @@ export const useBudgetBarsData = (
         targetAmount,
         targetPercentage,
         expectedAmount,
+        expectedSeparateCash, // ADDED
         maxHeight,
         isOverBudget,
         overBudgetAmount
@@ -352,9 +349,19 @@ export const useBudgetBarsData = (
     // Process custom budgets
     const customBudgetsData = custom.map(cb => {
       const stats = getCustomBudgetStats(cb, transactions);
-      const maxHeight = Math.max(stats.totalBudget, stats.totalSpent);
-      const isOverBudget = stats.totalSpent > stats.totalBudget;
-      const overBudgetAmount = isOverBudget ? stats.totalSpent - stats.totalBudget : 0;
+      
+      // Calculate total budget and total spent from digital and cash
+      let totalBudget = stats.digital.allocated; // UPDATED
+      let totalSpent = stats.digital.spent;      // UPDATED
+      
+      Object.values(stats.cashByCurrency).forEach(cashData => { // UPDATED
+        totalBudget += cashData.allocated;                       // UPDATED
+        totalSpent += cashData.spent;                           // UPDATED
+      });
+      
+      const maxHeight = Math.max(totalBudget, totalSpent); // UPDATED
+      const isOverBudget = totalSpent > totalBudget;       // UPDATED
+      const overBudgetAmount = isOverBudget ? totalSpent - totalBudget : 0; // UPDATED
       
       return {
         ...cb,
@@ -395,7 +402,7 @@ export const useBudgetBarsData = (
       savingsTarget: savingsTargetAmount,
       savingsShortfall
     };
-  }, [systemBudgets, customBudgets, allCustomBudgets, transactions, categories, goals, monthlyIncome]);
+  }, [systemBudgets, customBudgets, allCustomBudgets, transactions, categories, goals, monthlyIncome, baseCurrency]); // ADDED baseCurrency
 };
 
 // Hook for monthly breakdown calculations
