@@ -12,6 +12,7 @@ import CurrencySelect from "../ui/CurrencySelect";
 import { PRESET_COLORS } from "../utils/constants";
 import { normalizeAmount } from "../utils/budgetCalculations";
 import { getCurrencyBalance, validateCashAllocations } from "../utils/cashAllocationUtils";
+import { formatCurrency } from "../utils/formatCurrency";
 import { SUPPORTED_CURRENCIES } from "../utils/currencyCalculations";
 import { usePeriod } from "../hooks/usePeriod";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -23,7 +24,8 @@ export default function CustomBudgetForm({
   isSubmitting, 
   isQuickAdd = false,
   cashWallet,
-  baseCurrency 
+  baseCurrency,
+  settings
 }) {
   const { monthStart, monthEnd } = usePeriod();
 
@@ -181,7 +183,7 @@ export default function CustomBudgetForm({
             {formData.cashAllocations.map((alloc, index) => {
               const available = getCurrencyBalance(cashWallet, alloc.currencyCode);
               return (
-                <div key={index} className="flex gap-2 items-start">
+                <div key={index} className="flex gap-2 items-end">
                   <div className="flex-1 grid grid-cols-2 gap-2">
                     <div className="space-y-1">
                       <Label className="text-xs">Currency</Label>
@@ -196,7 +198,7 @@ export default function CustomBudgetForm({
                       <Label className="text-xs flex items-center justify-between">
                         <span>Amount</span>
                         <span className="text-gray-500">
-                          Available: {getCurrencySymbol(alloc.currencyCode)}{available.toFixed(2)}
+                          Available: {settings ? formatCurrency(available, { ...settings, currencySymbol: getCurrencySymbol(alloc.currencyCode) }) : `${getCurrencySymbol(alloc.currencyCode)}${available.toFixed(2)}`}
                         </span>
                       </Label>
                       <AmountInput
@@ -214,7 +216,7 @@ export default function CustomBudgetForm({
                     variant="ghost"
                     size="icon"
                     onClick={() => handleRemoveCashAllocation(index)}
-                    className="mt-6"
+                    className="flex-shrink-0"
                   >
                     <Trash2 className="w-4 h-4 text-red-600" />
                   </Button>

@@ -1,4 +1,3 @@
-
 import { useMemo, useState } from "react";
 import {
   calculateRemainingBudget,
@@ -108,7 +107,8 @@ export const useDashboardSummary = (transactions, selectedMonth, selectedYear, a
       })
       .reduce((sum, t) => sum + t.amount, 0);
 
-    // Add remaining amounts from active custom budgets
+    // Add remaining DIGITAL amounts from active custom budgets
+    // DO NOT add cash remaining - it's already counted via withdrawal transactions
     const activeCustomBudgets = allCustomBudgets.filter(cb => {
       if (cb.status !== 'active') return false;
       const cbStart = parseDate(cb.startDate);
@@ -118,14 +118,9 @@ export const useDashboardSummary = (transactions, selectedMonth, selectedYear, a
 
     const customBudgetRemaining = activeCustomBudgets.reduce((sum, cb) => {
       const stats = getCustomBudgetStats(cb, transactions);
-      // Calculate total remaining from digital and cash
-      let totalRemaining = stats.digital.remaining;
-      if (stats.cashByCurrency) {
-        Object.values(stats.cashByCurrency).forEach(cashData => {
-          totalRemaining += cashData.remaining;
-        });
-      }
-      return sum + Math.max(0, totalRemaining);
+      // ONLY count digital remaining (cash is already counted via withdrawal)
+      const digitalRemaining = stats.digital.remaining;
+      return sum + Math.max(0, digitalRemaining);
     }, 0);
 
     return allTransactionalExpenses + customBudgetRemaining;

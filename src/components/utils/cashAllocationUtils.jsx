@@ -57,19 +57,19 @@ export const validateCashAllocations = (cashWallet, requestedAllocations, baseCu
 };
 
 // Allocate cash from wallet (deduct from wallet balance)
-// Fetches latest wallet data to ensure we're working with fresh balances
+// Uses user_email to identify and update the wallet
 export const allocateCashFromWallet = async (userEmail, allocations) => {
     if (!allocations || allocations.length === 0) return;
 
-    // Fetch the latest wallet data using user_email
-    const allWallets = await base44.entities.CashWallet.list();
-    const latestWallet = allWallets.find(w => w.user_email === userEmail);
+    // Fetch the user's wallet directly using filter by user_email
+    const userWallets = await base44.entities.CashWallet.filter({ user_email: userEmail });
     
-    if (!latestWallet) {
-        throw new Error('Cash wallet not found');
+    if (!userWallets || userWallets.length === 0) {
+        throw new Error('Cash wallet not found for user');
     }
 
-    let updatedBalances = [...(latestWallet.balances || [])];
+    const wallet = userWallets[0];
+    let updatedBalances = [...(wallet.balances || [])];
     
     allocations.forEach(allocation => {
         updatedBalances = updateCurrencyBalance(
@@ -79,25 +79,26 @@ export const allocateCashFromWallet = async (userEmail, allocations) => {
         );
     });
 
-    await base44.entities.CashWallet.update(latestWallet.id, {
+    // Update by user_email (entity's unique identifier)
+    await base44.entities.CashWallet.update(wallet.user_email, {
         balances: updatedBalances
     });
 };
 
 // Return cash to wallet (add back to wallet balance)
-// Fetches latest wallet data to ensure we're working with fresh balances
+// Uses user_email to identify and update the wallet
 export const returnCashToWallet = async (userEmail, allocations) => {
     if (!allocations || allocations.length === 0) return;
 
-    // Fetch the latest wallet data using user_email
-    const allWallets = await base44.entities.CashWallet.list();
-    const latestWallet = allWallets.find(w => w.user_email === userEmail);
+    // Fetch the user's wallet directly using filter by user_email
+    const userWallets = await base44.entities.CashWallet.filter({ user_email: userEmail });
     
-    if (!latestWallet) {
-        throw new Error('Cash wallet not found');
+    if (!userWallets || userWallets.length === 0) {
+        throw new Error('Cash wallet not found for user');
     }
 
-    let updatedBalances = [...(latestWallet.balances || [])];
+    const wallet = userWallets[0];
+    let updatedBalances = [...(wallet.balances || [])];
     
     allocations.forEach(allocation => {
         updatedBalances = updateCurrencyBalance(
@@ -107,7 +108,8 @@ export const returnCashToWallet = async (userEmail, allocations) => {
         );
     });
 
-    await base44.entities.CashWallet.update(latestWallet.id, {
+    // Update by user_email (entity's unique identifier)
+    await base44.entities.CashWallet.update(wallet.user_email, {
         balances: updatedBalances
     });
 };

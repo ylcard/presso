@@ -14,6 +14,7 @@ import { formatDate } from "../components/utils/formatDate";
 import { getCustomBudgetStats, getSystemBudgetStats, getCustomBudgetAllocationStats } from "../components/utils/budgetCalculations";
 import { useCashWallet } from "../components/hooks/useBase44Entities";
 import { calculateRemainingCashAllocations, returnCashToWallet } from "../components/utils/cashAllocationUtils";
+import { useCustomBudgetActions } from "../components/hooks/useActions";
 import QuickAddTransaction from "../components/transactions/QuickAddTransaction";
 import TransactionCard from "../components/transactions/TransactionCard";
 import TransactionForm from "../components/transactions/TransactionForm";
@@ -41,7 +42,6 @@ export default function BudgetDetail() {
     const [showQuickAdd, setShowQuickAdd] = useState(false);
     const [editingTransaction, setEditingTransaction] = useState(null);
     const [showEditForm, setShowEditForm] = useState(false);
-    const [showEditBudgetForm, setShowEditBudgetForm] = useState(false);
 
     const urlParams = new URLSearchParams(window.location.search);
     const budgetId = urlParams.get('id');
@@ -125,6 +125,9 @@ export default function BudgetDetail() {
         enabled: !!budgetId && budget && !budget.isSystemBudget,
     });
 
+    // Use proper budget actions hook with cash allocation handling
+    const budgetActions = useCustomBudgetActions(user, transactions, cashWallet);
+
     const createTransactionMutation = useMutation({
         mutationFn: (data) => base44.entities.Transaction.create(data),
         onSuccess: () => {
@@ -177,12 +180,11 @@ export default function BudgetDetail() {
             if (!budgetToComplete) return;
 
             // Return remaining cash to wallet if any
-            if (budgetToComplete.cashAllocations && budgetToComplete.cashAllocations.length > 0 && cashWallet) {
+            if (budgetToComplete.cashAllocations && budgetToComplete.cashAllocations.length > 0 && user) {
               const remaining = calculateRemainingCashAllocations(budgetToComplete, transactions);
               if (remaining.length > 0) {
                 await returnCashToWallet(
-                  cashWallet.id,
-                  cashWallet.balances || [],
+                  user.email,
                   remaining
                 );
               }
@@ -201,6 +203,7 @@ export default function BudgetDetail() {
             queryClient.invalidateQueries({ queryKey: ['budget', budgetId] });
             queryClient.invalidateQueries({ queryKey: ['customBudgets'] });
             queryClient.invalidateQueries({ queryKey: ['cashWallet'] });
+            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CASH_WALLET] });
         },
     });
 
@@ -219,15 +222,6 @@ export default function BudgetDetail() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['budget', budgetId] });
             queryClient.invalidateQueries({ queryKey: ['customBudgets'] });
-        },
-    });
-
-    const updateBudgetMutation = useMutation({
-        mutationFn: ({ id, data }) => base44.entities.CustomBudget.update(id, data),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['budget', budgetId] });
-            queryClient.invalidateQueries({ queryKey: ['customBudgets'] });
-            setShowEditBudgetForm(false);
         },
     });
 
@@ -331,17 +325,16 @@ export default function BudgetDetail() {
 
     const handleDeleteBudget = async () => {
         if (confirm('Are you sure you want to delete this budget? All associated transactions will also be deleted.')) {
-            for (const transaction of budgetTransactions) {
-                await base44.entities.Transaction.delete(transaction.id);
-            }
-
-            await base44.entities.CustomBudget.delete(budgetId);
+            await budgetActions.handleDelete(budgetId);
             window.location.href = createPageUrl("Budgets");
         }
     };
 
     const handleEditBudget = (data) => {
-        updateBudgetMutation.mutate({ id: budgetId, data });
+        // Set the editing budget so the hook knows we're editing
+        budgetActions.setEditingBudget(budget);
+        // Call the proper submit handler that includes cash allocation logic
+        budgetActions.handleSubmit(data);
     };
 
     useEffect(() => {
@@ -465,7 +458,7 @@ export default function BudgetDetail() {
                     <div className="flex gap-2">
                         {canEdit && !isCompleted && (
                             <Button
-                                onClick={() => setShowEditBudgetForm(true)}
+                                onClick={() => budgetActions.setShowForm(true)}
                                 variant="outline"
                             >
                                 Edit Budget
@@ -696,16 +689,17 @@ export default function BudgetDetail() {
                     />
                 )}
 
-                {showEditBudgetForm && !budget.isSystemBudget && (
+                {budgetActions.showForm && !budget.isSystemBudget && (
                     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
                         <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                             <CustomBudgetForm
                                 budget={budget}
                                 onSubmit={handleEditBudget}
-                                onCancel={() => setShowEditBudgetForm(false)}
-                                isSubmitting={updateBudgetMutation.isPending}
+                                onCancel={() => budgetActions.setShowForm(false)}
+                                isSubmitting={budgetActions.isSubmitting}
                                 cashWallet={cashWallet}
                                 baseCurrency={settings.baseCurrency}
+                                settings={settings}
                             />
                         </div>
                     </div>
