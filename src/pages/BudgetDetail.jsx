@@ -412,7 +412,7 @@ export default function BudgetDetail() {
     const isCompleted = budget.status === 'completed';
     const canEdit = !budget.isSystemBudget;
 
-    // Calculate totals for display
+    // Calculate totals for display with safety checks
     let totalBudget = 0;
     let totalSpent = 0;
     let totalRemaining = 0;
@@ -424,17 +424,17 @@ export default function BudgetDetail() {
         totalRemaining = stats.remaining || 0;
         totalUnpaid = stats.unpaidAmount || 0;
     } else {
-        // For custom budgets, aggregate digital and cash
-        totalBudget = stats.digital.allocated;
-        totalSpent = stats.digital.spent;
-        totalRemaining = stats.digital.remaining;
-        totalUnpaid = stats.digital.unpaid; // Cash transactions are always paid, so unpaid is digital only
+        // For custom budgets, aggregate digital and cash with safety checks
+        totalBudget = stats?.digital?.allocated || 0;
+        totalSpent = stats?.digital?.spent || 0;
+        totalRemaining = stats?.digital?.remaining || 0;
+        totalUnpaid = stats?.digital?.unpaid || 0; // Cash transactions are always paid, so unpaid is digital only
         
-        if (stats.cashByCurrency) {
+        if (stats?.cashByCurrency) {
             Object.values(stats.cashByCurrency).forEach(cashData => {
-                totalBudget += cashData.allocated;
-                totalSpent += cashData.spent;
-                totalRemaining += cashData.remaining;
+                totalBudget += cashData?.allocated || 0;
+                totalSpent += cashData?.spent || 0;
+                totalRemaining += cashData?.remaining || 0;
             });
         }
     }
@@ -520,12 +520,12 @@ export default function BudgetDetail() {
                             <div className="text-2xl font-bold text-gray-900">
                                 {formatCurrency(totalBudget, settings)}
                             </div>
-                            {!budget.isSystemBudget && stats.cashByCurrency && Object.keys(stats.cashByCurrency).length > 0 && (
+                            {!budget.isSystemBudget && stats?.cashByCurrency && Object.keys(stats.cashByCurrency).length > 0 && (
                                 <div className="mt-2 text-xs text-gray-600 space-y-1">
-                                    <p>Digital: {formatCurrency(stats.digital.allocated, settings)}</p>
+                                    <p>Digital: {formatCurrency(stats?.digital?.allocated || 0, settings)}</p>
                                     {Object.entries(stats.cashByCurrency).map(([currency, data]) => (
                                         <p key={currency}>
-                                            Cash ({currency}): {formatCurrency(data.allocated, { ...settings, currencySymbol: getCurrencySymbol(currency) })}
+                                            Cash ({currency}): {formatCurrency(data?.allocated || 0, { ...settings, currencySymbol: getCurrencySymbol(currency) })}
                                         </p>
                                     ))}
                                 </div>
@@ -543,14 +543,14 @@ export default function BudgetDetail() {
                                 {formatCurrency(totalSpent, settings)}
                             </div>
                             <p className="text-xs text-gray-500 mt-1">
-                                {((totalSpent / totalBudget) * 100).toFixed(1)}% used
+                                {((totalSpent / (totalBudget || 1)) * 100).toFixed(1)}% used
                             </p>
-                            {!budget.isSystemBudget && stats.cashByCurrency && Object.keys(stats.cashByCurrency).length > 0 && (
+                            {!budget.isSystemBudget && stats?.cashByCurrency && Object.keys(stats.cashByCurrency).length > 0 && (
                                 <div className="mt-2 text-xs text-gray-600 space-y-1">
-                                    <p>Digital: {formatCurrency(stats.digital.spent, settings)}</p>
+                                    <p>Digital: {formatCurrency(stats?.digital?.spent || 0, settings)}</p>
                                     {Object.entries(stats.cashByCurrency).map(([currency, data]) => (
                                         <p key={currency}>
-                                            Cash ({currency}): {formatCurrency(data.spent, { ...settings, currencySymbol: getCurrencySymbol(currency) })}
+                                            Cash ({currency}): {formatCurrency(data?.spent || 0, { ...settings, currencySymbol: getCurrencySymbol(currency) })}
                                         </p>
                                     ))}
                                 </div>
@@ -567,12 +567,12 @@ export default function BudgetDetail() {
                             <div className={`text-2xl font-bold ${totalRemaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                 {formatCurrency(totalRemaining, settings)}
                             </div>
-                            {!budget.isSystemBudget && stats.cashByCurrency && Object.keys(stats.cashByCurrency).length > 0 && (
+                            {!budget.isSystemBudget && stats?.cashByCurrency && Object.keys(stats.cashByCurrency).length > 0 && (
                                 <div className="mt-2 text-xs text-gray-600 space-y-1">
-                                    <p>Digital: {formatCurrency(stats.digital.remaining, settings)}</p>
+                                    <p>Digital: {formatCurrency(stats?.digital?.remaining || 0, settings)}</p>
                                     {Object.entries(stats.cashByCurrency).map(([currency, data]) => (
                                         <p key={currency}>
-                                            Cash ({currency}): {formatCurrency(data.remaining, { ...settings, currencySymbol: getCurrencySymbol(currency) })}
+                                            Cash ({currency}): {formatCurrency(data?.remaining || 0, { ...settings, currencySymbol: getCurrencySymbol(currency) })}
                                         </p>
                                     ))}
                                 </div>

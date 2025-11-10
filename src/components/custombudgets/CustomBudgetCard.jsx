@@ -35,14 +35,14 @@ export default function CustomBudgetCard({
   
   const isCompleted = budget.status === 'completed';
 
-  // Calculate totals from separated digital and cash
-  let totalBudget = stats.digital.allocated;
-  let totalSpent = stats.digital.spent;
+  // Calculate totals from separated digital and cash with safety checks
+  let totalBudget = stats?.digital?.allocated || 0;
+  let totalSpent = stats?.digital?.spent || 0;
   
-  if (stats.cashByCurrency) {
+  if (stats?.cashByCurrency) {
     Object.values(stats.cashByCurrency).forEach(cashData => {
-      totalBudget += cashData.allocated;
-      totalSpent += cashData.spent;
+      totalBudget += cashData?.allocated || 0;
+      totalSpent += cashData?.spent || 0;
     });
   }
   
@@ -126,7 +126,7 @@ export default function CustomBudgetCard({
                   <div>
                     <p className="text-xs text-gray-500 mb-1">Spent (Digital)</p>
                     <p className="font-bold text-gray-900">
-                      {formatCurrency(stats.digital.spent, settings)}
+                      {formatCurrency(stats?.digital?.spent || 0, settings)}
                     </p>
                   </div>
                   <div>
@@ -141,13 +141,13 @@ export default function CustomBudgetCard({
                   <div>
                     <p className="text-xs text-gray-500 mb-1">Remaining (Digital)</p>
                     <p className="font-bold text-gray-900">
-                      {formatCurrency(stats.digital.remaining, settings)}
+                      {formatCurrency(stats?.digital?.remaining || 0, settings)}
                     </p>
-                    {stats.cashByCurrency && Object.keys(stats.cashByCurrency).length > 0 && (
+                    {stats?.cashByCurrency && Object.keys(stats.cashByCurrency).length > 0 && (
                       <div className="mt-1 space-y-0.5">
                         {Object.entries(stats.cashByCurrency).map(([currency, data]) => (
                           <p key={currency} className="text-xs text-gray-600">
-                            Cash ({currency}): {formatCurrency(data.remaining, { ...settings, currencySymbol: getCurrencySymbol(currency) })}
+                            Cash ({currency}): {formatCurrency(data?.remaining || 0, { ...settings, currencySymbol: getCurrencySymbol(currency) })}
                           </p>
                         ))}
                       </div>
@@ -166,9 +166,9 @@ export default function CustomBudgetCard({
             <div className="flex items-center justify-between pt-2 border-t">
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Receipt className="w-4 h-4" />
-                <span>{stats.totalTransactionCount} expenses</span>
+                <span>{stats?.totalTransactionCount || 0} expenses</span>
               </div>
-              {!isCompleted && stats.digital.unpaid > 0 && (
+              {!isCompleted && (stats?.digital?.unpaid || 0) > 0 && (
                 <Badge variant="outline" className="text-orange-600 border-orange-600">
                   {formatCurrency(stats.digital.unpaid, settings)} unpaid
                 </Badge>
