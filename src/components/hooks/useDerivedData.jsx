@@ -80,24 +80,38 @@ export const useDashboardSummary = (transactions, selectedMonth, selectedYear, a
   const currentMonthExpenses = useMemo(() => {
     const monthStart = getFirstDayOfMonth(selectedMonth, selectedYear);
     const monthEnd = getLastDayOfMonth(selectedMonth, selectedYear);
+    const monthStartDate = parseDate(monthStart);
+    const monthEndDate = parseDate(monthEnd);
     
-    // Get paid expenses
-    const paidExpenses = getCurrentMonthTransactions(transactions, selectedMonth, selectedYear)
-      .filter(t => t.type === 'expense' && shouldCountTowardBudget(t))
+    // Sum ALL transactional expenses for the current month
+    // For paid expenses: count if paidDate is in the month
+    // For unpaid expenses: count if date is in the month
+    const allTransactionalExpenses = transactions
+      .filter(t => {
+        if (t.type !== 'expense') return false;
+        if (!shouldCountTowardBudget(t)) return false;
+        
+        // If paid, check paidDate
+        if (t.isPaid && t.paidDate) {
+          const paidDate = parseDate(t.paidDate);
+          return paidDate >= monthStartDate && paidDate <= monthEndDate;
+        }
+        
+        // If unpaid, check transaction date
+        if (!t.isPaid) {
+          const transactionDate = parseDate(t.date);
+          return transactionDate >= monthStartDate && transactionDate <= monthEndDate;
+        }
+        
+        return false; // Should not reach here for expense transactions not meeting previous criteria
+      })
       .reduce((sum, t) => sum + t.amount, 0);
     
-    // Get unpaid direct expenses (excluding those in custom budgets)
-    const unpaidExpenses = getUnpaidExpensesForMonth(transactions, selectedMonth, selectedYear)
-      .filter(t => shouldCountTowardBudget(t) && !t.customBudgetId)
-      .reduce((sum, t) => sum + t.amount, 0);
-    
-    // Get REMAINING amounts from active custom budgets within this period
+    // Add remaining amounts from active custom budgets
     const activeCustomBudgets = allCustomBudgets.filter(cb => {
       if (cb.status !== 'active') return false;
       const cbStart = parseDate(cb.startDate);
       const cbEnd = parseDate(cb.endDate);
-      const monthStartDate = parseDate(monthStart);
-      const monthEndDate = parseDate(monthEnd);
       return cbStart <= monthEndDate && cbEnd >= monthStartDate;
     });
     
@@ -113,7 +127,7 @@ export const useDashboardSummary = (transactions, selectedMonth, selectedYear, a
       return sum + Math.max(0, totalRemaining);
     }, 0);
     
-    return paidExpenses + unpaidExpenses + customBudgetRemaining;
+    return allTransactionalExpenses + customBudgetRemaining;
   }, [transactions, selectedMonth, selectedYear, allCustomBudgets]);
 
   return {
@@ -291,7 +305,7 @@ export const useBudgetBarsData = (
   categories,
   goals,
   monthlyIncome,
-  baseCurrency // ADDED
+  baseCurrency
 ) => {
   return useMemo(() => {
     const system = systemBudgets.sort((a, b) => {
@@ -315,19 +329,19 @@ export const useBudgetBarsData = (
       const targetAmount = sb.budgetAmount;
       
       let expectedAmount = 0;
-      let expectedSeparateCash = []; // ADDED
+      let expectedSeparateCash = [];
       
       if (sb.systemBudgetType === 'wants') {
         // Use new calculation function that handles digital/cash separation
-        const wantsExpected = calculateWantsExpectedAmount( // UPDATED
+        const wantsExpected = calculateWantsExpectedAmount(
           allCustomBudgets,
           transactions,
           categories,
           budgetForStats,
-          baseCurrency // ADDED
+          baseCurrency
         );
         expectedAmount = wantsExpected.mainSum;
-        expectedSeparateCash = wantsExpected.separateCashAmounts; // ADDED
+        expectedSeparateCash = wantsExpected.separateCashAmounts;
       } else if (sb.systemBudgetType === 'needs') {
         expectedAmount = getDirectUnpaidExpenses(budgetForStats, transactions, categories, allCustomBudgets);
       } else if (sb.systemBudgetType === 'savings') {
@@ -345,7 +359,7 @@ export const useBudgetBarsData = (
         targetAmount,
         targetPercentage,
         expectedAmount,
-        expectedSeparateCash, // ADDED
+        expectedSeparateCash,
         maxHeight,
         isOverBudget,
         overBudgetAmount
@@ -357,17 +371,17 @@ export const useBudgetBarsData = (
       const stats = getCustomBudgetStats(cb, transactions);
       
       // Calculate total budget and total spent from digital and cash
-      let totalBudget = stats.digital.allocated; // UPDATED
-      let totalSpent = stats.digital.spent;      // UPDATED
+      let totalBudget = stats.digital.allocated;
+      let totalSpent = stats.digital.spent;
       
-      Object.values(stats.cashByCurrency).forEach(cashData => { // UPDATED
-        totalBudget += cashData.allocated;                       // UPDATED
-        totalSpent += cashData.spent;                           // UPDATED
+      Object.values(stats.cashByCurrency).forEach(cashData => {
+        totalBudget += cashData.allocated;
+        totalSpent += cashData.spent;
       });
       
-      const maxHeight = Math.max(totalBudget, totalSpent); // UPDATED
-      const isOverBudget = totalSpent > totalBudget;       // UPDATED
-      const overBudgetAmount = isOverBudget ? totalSpent - totalBudget : 0; // UPDATED
+      const maxHeight = Math.max(totalBudget, totalSpent);
+      const isOverBudget = totalSpent > totalBudget;
+      const overBudgetAmount = isOverBudget ? totalSpent - totalBudget : 0;
       
       return {
         ...cb,
@@ -408,7 +422,7 @@ export const useBudgetBarsData = (
       savingsTarget: savingsTargetAmount,
       savingsShortfall
     };
-  }, [systemBudgets, customBudgets, allCustomBudgets, transactions, categories, goals, monthlyIncome, baseCurrency]); // ADDED baseCurrency
+  }, [systemBudgets, customBudgets, allCustomBudgets, transactions, categories, goals, monthlyIncome, baseCurrency]);
 };
 
 // Hook for monthly breakdown calculations
