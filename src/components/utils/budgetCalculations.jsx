@@ -192,10 +192,11 @@ export const getCustomBudgetStats = (customBudget, transactions) => {
     };
 };
 
-// FIXED: System Budget Stats - Exclude cash expenses linked to custom budgets to prevent double-counting
+// ENHANCED: System Budget Stats - Returns structured paid/unpaid with multi-currency support
 export const getSystemBudgetStats = (systemBudget, transactions, categories, allCustomBudgets = []) => {
     const budgetStart = parseDate(systemBudget.startDate);
     const budgetEnd = parseDate(systemBudget.endDate);
+    const baseCurrency = 'USD'; // This should ideally come from settings, but defaulting for now
 
     // Create a map of category_id to priority
     const categoryPriorityMap = {};
@@ -237,34 +238,65 @@ export const getSystemBudgetStats = (systemBudget, transactions, categories, all
         return false;
     });
 
-    // Separate card and cash transactions
-    const cardTransactions = budgetTransactions.filter(t => !t.isCashTransaction || t.cashTransactionType !== 'expense_from_wallet');
-    const cashTransactions = budgetTransactions.filter(t => t.isCashTransaction && t.cashTransactionType === 'expense_from_wallet');
+    // Separate paid and unpaid transactions
+    const paidTransactions = budgetTransactions.filter(t => t.isPaid);
+    const unpaidTransactions = budgetTransactions.filter(t => !t.isPaid);
 
-    const totalSpent = budgetTransactions.reduce((sum, t) => sum + t.amount, 0);
-    const cardSpent = cardTransactions.reduce((sum, t) => sum + t.amount, 0);
-    const cashSpent = cashTransactions.reduce((sum, t) => sum + t.amount, 0);
+    // Calculate paid amounts by currency
+    const paidByCurrency = {};
+    paidTransactions.forEach(t => {
+        // For cash transactions, use cashCurrency and cashAmount if available, else original
+        const currency = t.isCashTransaction && t.cashCurrency ? t.cashCurrency : (t.originalCurrency || baseCurrency);
+        const amount = t.isCashTransaction && t.cashAmount ? t.cashAmount : (t.originalAmount || t.amount);
+        
+        if (!paidByCurrency[currency]) {
+            paidByCurrency[currency] = 0;
+        }
+        paidByCurrency[currency] += amount;
+    });
 
-    const paidAmount = budgetTransactions
-        .filter(t => t.isPaid)
-        .reduce((sum, t) => sum + t.amount, 0);
-    const unpaidAmount = budgetTransactions
-        .filter(t => !t.isPaid)
-        .reduce((sum, t) => sum + t.amount, 0);
+    // Calculate unpaid amounts by currency (digital only, as cash is always paid)
+    const unpaidByCurrency = {};
+    unpaidTransactions.forEach(t => {
+        // Unpaid transactions are always digital, so use original details
+        const currency = t.originalCurrency || baseCurrency;
+        const amount = t.originalAmount || t.amount;
+        
+        if (!unpaidByCurrency[currency]) {
+            unpaidByCurrency[currency] = 0;
+        }
+        unpaidByCurrency[currency] += amount;
+    });
 
+    // Structure the response
+    const paid = {
+        baseCurrencyAmount: paidByCurrency[baseCurrency] || 0,
+        otherCurrencyAmounts: Object.entries(paidByCurrency)
+            .filter(([currency]) => currency !== baseCurrency)
+            .map(([currencyCode, amount]) => ({ currencyCode, amount }))
+    };
+
+    const unpaid = {
+        baseCurrencyAmount: unpaidByCurrency[baseCurrency] || 0,
+        otherCurrencyAmounts: Object.entries(unpaidByCurrency)
+            .filter(([currency]) => currency !== baseCurrency)
+            .map(([currencyCode, amount]) => ({ currencyCode, amount }))
+    };
+
+    // Legacy fields for backwards compatibility
     const totalBudget = systemBudget.budgetAmount + (systemBudget.cashAllocatedAmount || 0);
-    const cardRemaining = systemBudget.budgetAmount - cardSpent;
-    const cashRemaining = (systemBudget.cashAllocatedAmount || 0) - cashSpent;
+    const totalSpent = budgetTransactions.reduce((sum, t) => sum + t.amount, 0); // This sum is in base currency due to implicit conversion by t.amount
+    const paidAmount = paidTransactions.reduce((sum, t) => sum + t.amount, 0); // Base currency sum
+    const unpaidAmount = unpaidTransactions.reduce((sum, t) => sum + t.amount, 0); // Base currency sum
 
     return {
+        paid,
+        unpaid,
+        // Legacy fields
         totalSpent,
-        cardSpent,
-        cashSpent,
         paidAmount,
         unpaidAmount,
         remaining: totalBudget - totalSpent,
-        cardRemaining,
-        cashRemaining,
         percentageUsed: totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0,
         transactionCount: budgetTransactions.length
     };

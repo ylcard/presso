@@ -19,7 +19,7 @@ import QuickAddTransaction from "../components/transactions/QuickAddTransaction"
 import TransactionCard from "../components/transactions/TransactionCard";
 import TransactionForm from "../components/transactions/TransactionForm";
 import AllocationManager from "../components/custombudgets/AllocationManager";
-import CustomBudgetCard from "../components/custombudgets/CustomBudgetCard";
+import CompactCustomBudgetCard from "../components/custombudgets/CompactCustomBudgetCard"; // Updated import
 import CustomBudgetForm from "../components/custombudgets/CustomBudgetForm";
 import { QUERY_KEYS } from "../components/hooks/queryKeys";
 
@@ -290,11 +290,11 @@ export default function BudgetDetail() {
         if (!budget) return null;
 
         if (budget.isSystemBudget) {
-            return getSystemBudgetStats(budget, transactions, categories, allCustomBudgets);
+            return getSystemBudgetStats(budget, transactions, categories, allCustomBudgets, settings.baseCurrency);
         } else {
             return getCustomBudgetStats(budget, transactions);
         }
-    }, [budget, transactions, categories, allCustomBudgets]);
+    }, [budget, transactions, categories, allCustomBudgets, settings.baseCurrency]);
 
     const allocationStats = useMemo(() => {
         if (!budget || budget.isSystemBudget) return null;
@@ -377,8 +377,8 @@ export default function BudgetDetail() {
                         </div>
                     </div>
 
-                    <div className="grid md:grid-cols-4 gap-4">
-                        {[1, 2, 3, 4].map((i) => (
+                    <div className="grid md:grid-cols-3 gap-4"> {/* Changed from md:grid-cols-4 */}
+                        {[1, 2, 3].map((i) => ( // Changed from 1,2,3,4
                             <Card key={i} className="border-none shadow-lg">
                                 <CardContent className="p-6">
                                     <div className="h-4 w-24 bg-gray-200 rounded animate-pulse mb-2" />
@@ -405,26 +405,19 @@ export default function BudgetDetail() {
 
     // Calculate totals for display with safety checks
     let totalBudget = 0;
-    let totalSpent = 0;
     let totalRemaining = 0;
-    let totalUnpaid = 0;
     
     if (budget.isSystemBudget) {
         totalBudget = budget.budgetAmount || 0;
-        totalSpent = stats.totalSpent || 0;
         totalRemaining = stats.remaining || 0;
-        totalUnpaid = stats.unpaidAmount || 0;
     } else {
         // For custom budgets, aggregate digital and cash with safety checks
         totalBudget = stats?.digital?.allocated || 0;
-        totalSpent = stats?.digital?.spent || 0;
         totalRemaining = stats?.digital?.remaining || 0;
-        totalUnpaid = stats?.digital?.unpaid || 0; // Cash transactions are always paid, so unpaid is digital only
         
         if (stats?.cashByCurrency) {
             Object.values(stats.cashByCurrency).forEach(cashData => {
                 totalBudget += cashData?.allocated || 0;
-                totalSpent += cashData?.spent || 0;
                 totalRemaining += cashData?.remaining || 0;
             });
         }
@@ -501,7 +494,8 @@ export default function BudgetDetail() {
                     </div>
                 </div>
 
-                <div className="grid md:grid-cols-4 gap-4">
+                {/* NEW: Combined Spent and Unpaid Card Layout */}
+                <div className="grid md:grid-cols-3 gap-4">
                     <Card className="border-none shadow-lg">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium text-gray-500">Budget</CardTitle>
@@ -524,27 +518,87 @@ export default function BudgetDetail() {
                         </CardContent>
                     </Card>
 
+                    {/* COMBINED: Paid + Unpaid Card */}
                     <Card className="border-none shadow-lg">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium text-gray-500">Spent</CardTitle>
+                            <CardTitle className="text-sm font-medium text-gray-500">Expenses</CardTitle>
                             <TrendingDown className="w-4 h-4 text-red-500" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold text-red-600">
-                                {formatCurrency(totalSpent, settings)}
-                            </div>
-                            <p className="text-xs text-gray-500 mt-1">
-                                {((totalSpent / (totalBudget || 1)) * 100).toFixed(1)}% used
-                            </p>
-                            {!budget.isSystemBudget && stats?.cashByCurrency && Object.keys(stats.cashByCurrency).length > 0 && (
-                                <div className="mt-2 text-xs text-gray-600 space-y-1">
-                                    <p>Digital: {formatCurrency(stats?.digital?.spent || 0, settings)}</p>
-                                    {Object.entries(stats.cashByCurrency).map(([currency, data]) => (
-                                        <p key={currency}>
-                                            Cash ({currency}): {formatCurrency(data?.spent || 0, { ...settings, currencySymbol: getCurrencySymbol(currency) })}
-                                        </p>
-                                    ))}
-                                </div>
+                            {budget.isSystemBudget ? (
+                                <>
+                                    {/* System Budget: Show paid and unpaid with multi-currency support */}
+                                    <div className="space-y-3">
+                                        <div>
+                                            <p className="text-xs text-gray-500 mb-1">Paid</p>
+                                            <div className="text-2xl font-bold text-gray-900">
+                                                {formatCurrency(stats.paid.baseCurrencyAmount, settings)}
+                                            </div>
+                                            {stats.paid.otherCurrencyAmounts.map(({ currencyCode, amount }) => (
+                                                <div key={currencyCode} className="text-lg font-semibold text-gray-700 mt-1">
+                                                    {getCurrencySymbol(currencyCode)}{amount.toFixed(2)}
+                                                </div>
+                                            ))}
+                                        </div>
+                                        {(stats.unpaid.baseCurrencyAmount > 0 || stats.unpaid.otherCurrencyAmounts.length > 0) && (
+                                            <div>
+                                                <p className="text-xs text-gray-500 mb-1">Unpaid</p>
+                                                <div className="text-xl font-bold text-orange-600">
+                                                    {formatCurrency(stats.unpaid.baseCurrencyAmount, settings)}
+                                                </div>
+                                                {stats.unpaid.otherCurrencyAmounts.map(({ currencyCode, amount }) => (
+                                                    <div key={currencyCode} className="text-lg font-semibold text-orange-500 mt-1">
+                                                        {getCurrencySymbol(currencyCode)}{amount.toFixed(2)}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    {/* Custom Budget: Show paid (digital + cash) and unpaid */}
+                                    <div className="space-y-3">
+                                        <div>
+                                            <p className="text-xs text-gray-500 mb-1">Paid</p>
+                                            {(() => {
+                                                const baseCurrency = settings.baseCurrency || 'USD';
+                                                const digitalPaid = (stats?.digital?.spent || 0) - (stats?.digital?.unpaid || 0);
+                                                
+                                                // Group all paid amounts by currency
+                                                const paidByCurrency = {};
+                                                if (digitalPaid > 0) {
+                                                    paidByCurrency[baseCurrency] = digitalPaid;
+                                                }
+                                                
+                                                if (stats?.cashByCurrency) {
+                                                    Object.entries(stats.cashByCurrency).forEach(([currency, data]) => {
+                                                        if (data?.spent > 0) {
+                                                            paidByCurrency[currency] = (paidByCurrency[currency] || 0) + data.spent;
+                                                        }
+                                                    });
+                                                }
+                                                
+                                                return Object.entries(paidByCurrency).map(([currency, amount], index) => (
+                                                    <div key={currency} className={index === 0 ? "text-2xl font-bold text-gray-900" : "text-lg font-semibold text-gray-700 mt-1"}>
+                                                        {currency === baseCurrency 
+                                                            ? formatCurrency(amount, settings)
+                                                            : `${getCurrencySymbol(currency)}${amount.toFixed(2)}`
+                                                        }
+                                                    </div>
+                                                ));
+                                            })()}
+                                        </div>
+                                        {(stats?.digital?.unpaid || 0) > 0 && (
+                                            <div>
+                                                <p className="text-xs text-gray-500 mb-1">Unpaid</p>
+                                                <div className="text-xl font-bold text-orange-600">
+                                                    {formatCurrency(stats.digital.unpaid, settings)}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </>
                             )}
                         </CardContent>
                     </Card>
@@ -568,21 +622,6 @@ export default function BudgetDetail() {
                                     ))}
                                 </div>
                             )}
-                        </CardContent>
-                    </Card>
-
-                    <Card className="border-none shadow-lg">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium text-gray-500">Unpaid (Digital Only)</CardTitle>
-                            <Clock className="w-4 h-4 text-orange-500" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold text-orange-600">
-                                {formatCurrency(totalUnpaid, settings)}
-                            </div>
-                            <p className="text-xs text-gray-500 mt-1">
-                                Cash expenses are always paid
-                            </p>
                         </CardContent>
                     </Card>
                 </div>
@@ -620,20 +659,16 @@ export default function BudgetDetail() {
                             </p>
                         </CardHeader>
                         <CardContent>
-                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div className="grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                                 {relatedCustomBudgetsForDisplay.map((customBudget) => {
                                     const customBudgetStats = getCustomBudgetStats(customBudget, transactions);
 
                                     return (
-                                        <CustomBudgetCard
+                                        <CompactCustomBudgetCard // Changed from CustomBudgetCard
                                             key={customBudget.id}
-                                            budget={{
-                                                ...customBudget,
-                                                preCalculatedStats: customBudgetStats
-                                            }}
-                                            transactions={transactions}
+                                            budget={customBudget} // Updated prop
+                                            stats={customBudgetStats} // Updated prop
                                             settings={settings}
-                                            hideActions={true}
                                         />
                                     );
                                 })}
@@ -711,6 +746,7 @@ export default function BudgetDetail() {
                     defaultCustomBudgetId={budgetId}
                     onSubmit={(data) => createTransactionMutation.mutate(data)}
                     isSubmitting={createTransactionMutation.isPending}
+                    transactions={transactions} // Added transactions prop
                 />
             </div>
         </div>
