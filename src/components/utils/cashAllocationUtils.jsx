@@ -57,13 +57,13 @@ export const validateCashAllocations = (cashWallet, requestedAllocations, baseCu
 };
 
 // Allocate cash from wallet (deduct from wallet balance)
-// UPDATED: Now fetches the latest wallet data before updating
-export const allocateCashFromWallet = async (walletId, currentBalances, allocations) => {
+// Fetches latest wallet data to ensure we're working with fresh balances
+export const allocateCashFromWallet = async (userEmail, allocations) => {
     if (!allocations || allocations.length === 0) return;
 
-    // Fetch the latest wallet data
+    // Fetch the latest wallet data using user_email
     const allWallets = await base44.entities.CashWallet.list();
-    const latestWallet = allWallets.find(w => w.id === walletId);
+    const latestWallet = allWallets.find(w => w.user_email === userEmail);
     
     if (!latestWallet) {
         throw new Error('Cash wallet not found');
@@ -79,19 +79,19 @@ export const allocateCashFromWallet = async (walletId, currentBalances, allocati
         );
     });
 
-    await base44.entities.CashWallet.update(walletId, {
+    await base44.entities.CashWallet.update(latestWallet.id, {
         balances: updatedBalances
     });
 };
 
 // Return cash to wallet (add back to wallet balance)
-// UPDATED: Now fetches the latest wallet data before updating
-export const returnCashToWallet = async (walletId, currentBalances, allocations) => {
+// Fetches latest wallet data to ensure we're working with fresh balances
+export const returnCashToWallet = async (userEmail, allocations) => {
     if (!allocations || allocations.length === 0) return;
 
-    // Fetch the latest wallet data
+    // Fetch the latest wallet data using user_email
     const allWallets = await base44.entities.CashWallet.list();
-    const latestWallet = allWallets.find(w => w.id === walletId);
+    const latestWallet = allWallets.find(w => w.user_email === userEmail);
     
     if (!latestWallet) {
         throw new Error('Cash wallet not found');
@@ -107,7 +107,7 @@ export const returnCashToWallet = async (walletId, currentBalances, allocations)
         );
     });
 
-    await base44.entities.CashWallet.update(walletId, {
+    await base44.entities.CashWallet.update(latestWallet.id, {
         balances: updatedBalances
     });
 };

@@ -57,7 +57,7 @@ export default function Budgets() {
     selectedYear
   );
 
-  // Actions (CRUD operations and form state)
+  // Actions - NOW USING useCustomBudgetActions instead of useBudgetActions
   const customBudgetActions = useCustomBudgetActions(user, transactions, cashWallet);
 
   // Confirm and execute delete

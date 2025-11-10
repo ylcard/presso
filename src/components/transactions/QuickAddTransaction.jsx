@@ -19,6 +19,7 @@ import CurrencySelect from "../ui/CurrencySelect";
 import { useSettings } from "../utils/SettingsContext";
 import { useExchangeRates } from "../hooks/useExchangeRates";
 import { useCashWallet } from "../hooks/useBase44Entities";
+import { getCurrencyBalance } from "../utils/cashAllocationUtils";
 import { calculateConvertedAmount, getRateForDate, SUPPORTED_CURRENCIES } from "../utils/currencyCalculations";
 import { formatDateString, normalizeAmount, filterBudgetsByTransactionDate } from "../utils/budgetCalculations";
 
@@ -83,7 +84,8 @@ export default function QuickAddTransaction({
   // Filter budgets by transaction date
   const filteredBudgets = filterBudgetsByTransactionDate(customBudgets, formData.date);
 
-  const cashBalance = cashWallet?.balance || 0;
+  // Get cash balance for base currency
+  const cashBalance = getCurrencyBalance(cashWallet, settings.baseCurrency || 'USD');
 
   const handleRefreshRates = async () => {
     const result = await refreshRates(
@@ -162,7 +164,9 @@ export default function QuickAddTransaction({
       paidDate: formData.isCashExpense ? formData.date : (formData.isPaid ? (formData.paidDate || formData.date) : null),
       customBudgetId: formData.customBudgetId || null,
       isCashTransaction: formData.isCashExpense,
-      cashTransactionType: formData.isCashExpense ? 'expense_from_wallet' : null
+      cashTransactionType: formData.isCashExpense ? 'expense_from_wallet' : null,
+      cashAmount: formData.isCashExpense ? originalAmount : null,
+      cashCurrency: formData.isCashExpense ? settings.baseCurrency : null
     });
     
     setFormData({
@@ -234,11 +238,9 @@ export default function QuickAddTransaction({
             />
             <Label htmlFor="isCashExpense" className="cursor-pointer flex items-center gap-2">
               Paid with cash
-              {cashWallet && (
-                <span className="text-xs text-gray-500">
-                  (Available: {selectedCurrencySymbol}{cashBalance.toFixed(2)})
-                </span>
-              )}
+              <span className="text-xs text-gray-500">
+                (Available: {settings.currencySymbol}{cashBalance.toFixed(2)})
+              </span>
             </Label>
           </div>
 

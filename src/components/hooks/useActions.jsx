@@ -490,10 +490,9 @@ export const useCustomBudgetActions = (user, transactions, cashWallet) => {
       });
 
       // Handle cash allocations if any
-      if (data.cashAllocations && data.cashAllocations.length > 0 && cashWallet) {
+      if (data.cashAllocations && data.cashAllocations.length > 0 && user) {
         await allocateCashFromWallet(
-          cashWallet.id,
-          cashWallet.balances || [],
+          user.email,
           data.cashAllocations
         );
       }
@@ -530,7 +529,7 @@ export const useCustomBudgetActions = (user, transactions, cashWallet) => {
       }
 
       // Handle cash allocation changes
-      if (cashWallet) {
+      if (user) {
         const oldAllocations = existingBudget.cashAllocations || [];
         const newAllocations = data.cashAllocations || [];
         
@@ -540,15 +539,13 @@ export const useCustomBudgetActions = (user, transactions, cashWallet) => {
           if (change.isIncrease) {
             // Allocate more cash from wallet
             await allocateCashFromWallet(
-              cashWallet.id,
-              cashWallet.balances || [],
+              user.email,
               [{ currencyCode: change.currencyCode, amount: change.amount }]
             );
           } else {
             // Return cash to wallet
             await returnCashToWallet(
-              cashWallet.id,
-              cashWallet.balances || [],
+              user.email,
               [{ currencyCode: change.currencyCode, amount: change.amount }]
             );
           }
@@ -595,12 +592,11 @@ export const useCustomBudgetActions = (user, transactions, cashWallet) => {
       }
 
       // Return any remaining cash allocations to wallet
-      if (budget.cashAllocations && budget.cashAllocations.length > 0 && cashWallet) {
+      if (budget.cashAllocations && budget.cashAllocations.length > 0 && user) {
         const remaining = calculateRemainingCashAllocations(budget, transactions);
         if (remaining.length > 0) {
           await returnCashToWallet(
-            cashWallet.id,
-            cashWallet.balances || [],
+            user.email,
             remaining
           );
         }
@@ -639,12 +635,11 @@ export const useCustomBudgetActions = (user, transactions, cashWallet) => {
 
       if (status === 'completed') {
         // When completing: return remaining cash to wallet
-        if (budget.cashAllocations && budget.cashAllocations.length > 0 && cashWallet) {
+        if (budget.cashAllocations && budget.cashAllocations.length > 0 && user) {
           const remaining = calculateRemainingCashAllocations(budget, transactions);
           if (remaining.length > 0) {
             await returnCashToWallet(
-              cashWallet.id,
-              cashWallet.balances || [],
+              user.email,
               remaining
             );
           }
@@ -662,16 +657,13 @@ export const useCustomBudgetActions = (user, transactions, cashWallet) => {
         });
       } else if (status === 'active') {
         // When reactivating: restore original allocated amount, but do NOT restore cash allocations
-        // The cash is already back in the wallet or spent through transactions.
-        // If the user wants to re-allocate cash, they will have to do it manually.
         return await base44.entities.CustomBudget.update(id, {
           status: 'active',
           allocatedAmount: budget.originalAllocatedAmount || budget.allocatedAmount,
-          originalAllocatedAmount: null, // Clear original allocated amount as it's now active again
-          cashAllocations: [] // Clear cash allocations on reactivation to avoid re-allocating
+          originalAllocatedAmount: null,
+          cashAllocations: [] // Clear cash allocations on reactivation
         });
       } else {
-        // For other status changes (e.g., 'pending' if implemented)
         return await base44.entities.CustomBudget.update(id, { status });
       }
     },
@@ -727,8 +719,12 @@ export const useCustomBudgetActions = (user, transactions, cashWallet) => {
   };
 };
 
-// Hook for budget actions (for Budgets page)
+// DEPRECATED: This hook is scheduled to be removed. Use useCustomBudgetActions instead.
+// This hook lacks cash allocation logic and should not be used for budget management.
+// Keeping for now to avoid breaking changes, but all usages should be migrated to useCustomBudgetActions.
 export const useBudgetActions = (user, transactions) => {
+  console.warn('DEPRECATED: useBudgetActions is deprecated. Use useCustomBudgetActions instead for proper cash allocation handling.');
+  
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingBudget, setEditingBudget] = useState(null);
