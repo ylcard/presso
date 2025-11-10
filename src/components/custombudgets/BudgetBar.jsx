@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Trash2 } from "lucide-react";
@@ -19,7 +18,7 @@ export default function BudgetBar({
     stats, 
     targetAmount, 
     targetPercentage, 
-    expectedAmount,
+    expectedAmount = 0,
     expectedSeparateCash = [],
     maxHeight, 
     isOverBudget, 
@@ -28,36 +27,32 @@ export default function BudgetBar({
     savingsTarget
   } = budget;
   
-  // Calculate budget amount based on digital and cash
-  let budgetAmount = 0;
-  if (isCustom && stats) {
-    budgetAmount = stats.digital.allocated;
-    if (stats.cashByCurrency) {
-      Object.values(stats.cashByCurrency).forEach(cashData => {
-        budgetAmount += cashData.allocated;
-      });
-    }
-  } else {
-    budgetAmount = stats?.totalBudget || budget.budgetAmount || budget.allocatedAmount || 0;
-  }
-  
-  // Calculate heights as percentages
-  const paidHeightPct = maxHeight > 0 ? (stats.paidAmount / maxHeight) * 100 : 0;
-  const expectedHeightPct = maxHeight > 0 ? (expectedAmount / maxHeight) * 100 : 0;
-  const targetLinePosition = maxHeight > 0 && targetAmount ? (targetAmount / maxHeight) * 100 : 100;
-  
   const isCompleted = budget.status === 'completed';
   
-  // Determine if this is a system budget
-  const isSystemBudget = !!budget.systemBudgetType;
+  // Get the color for the vertical bar
+  const barColor = budget.color || '#3B82F6';
+  
+  // Calculate budget amount for display
+  let budgetAmount = 0;
+  if (isCustom && stats) {
+    budgetAmount = stats.totalBudget || 0;
+  } else {
+    budgetAmount = targetAmount || budget.budgetAmount || budget.allocatedAmount || 0;
+  }
+  
+  // Calculate paid amount
+  const paidAmount = stats?.paidAmount || 0;
+  
+  // Calculate heights as percentages of maxHeight
+  const paidHeightPct = maxHeight > 0 ? (paidAmount / maxHeight) * 100 : 0;
+  const expectedHeightPct = maxHeight > 0 ? (expectedAmount / maxHeight) * 100 : 0;
+  const targetLinePosition = maxHeight > 0 && budgetAmount ? (budgetAmount / maxHeight) * 100 : 100;
   
   // Calculate remaining for display
   let remaining = 0;
   if (isSystemSavings) {
     remaining = savingsTarget - actualSavings;
-  } else if (!isCustom) {
-    remaining = targetAmount - expectedAmount - stats.paidAmount;
-  } else if (stats) {
+  } else if (isCustom && stats) {
     // For custom budgets, sum digital and cash remaining
     remaining = stats.digital.remaining;
     if (stats.cashByCurrency) {
@@ -65,10 +60,10 @@ export default function BudgetBar({
         remaining += cashData.remaining;
       });
     }
+  } else {
+    // For system budgets
+    remaining = targetAmount - expectedAmount - paidAmount;
   }
-  
-  // Get the color for the vertical bar - use budget's own color, not dynamic
-  const barColor = budget.color || '#3B82F6';
   
   return (
     <Link
@@ -97,9 +92,9 @@ export default function BudgetBar({
               />
             </>
           ) : (
-            /* Regular budget bars */
+            /* Regular budget bars (both system and custom) */
             <>
-              {/* Paid amount */}
+              {/* Paid amount - solid color */}
               <div
                 className="absolute bottom-0 w-full rounded-b-xl transition-all duration-300"
                 style={{
@@ -108,7 +103,7 @@ export default function BudgetBar({
                 }}
               />
               
-              {/* Expected amount (on top of paid) */}
+              {/* Expected/Unpaid amount (on top of paid) - semi-transparent */}
               {expectedAmount > 0 && (
                 <div
                   className="absolute w-full transition-all duration-300"
@@ -120,8 +115,8 @@ export default function BudgetBar({
                 />
               )}
               
-              {/* Target line (budget limit) */}
-              {!isCustom && targetAmount && (
+              {/* Target line (budget limit) - dashed line showing allocated budget */}
+              {budgetAmount > 0 && (
                 <div
                   className="absolute w-full border-t-2 border-dashed border-gray-800 z-10"
                   style={{ bottom: `${targetLinePosition}%` }}
@@ -194,6 +189,7 @@ export default function BudgetBar({
               )}
             </>
           ) : !isCustom ? (
+            /* System budget labels */
             <>
               <p className="text-xs text-gray-600">
                 Budget: {formatCurrency(targetAmount, settings)}
@@ -211,25 +207,32 @@ export default function BudgetBar({
                 </div>
               )}
               <p className="text-xs text-gray-600">
-                Paid: {formatCurrency(stats.paidAmount, settings)}
+                Paid: {formatCurrency(paidAmount, settings)}
               </p>
               <p className={`text-sm font-medium mt-1 ${remaining < 0 ? 'text-red-600' : 'text-gray-900'}`}>
                 {remaining < 0 ? `Over by ${formatCurrency(Math.abs(remaining), settings)}` : `Remaining: ${formatCurrency(remaining, settings)}`}
               </p>
             </>
           ) : isCompleted ? (
+            /* Completed custom budget labels */
             <>
               <p className="text-xs text-gray-600">
                 Spent: {formatCurrency(stats.digital.spent, settings)}
               </p>
             </>
           ) : (
+            /* Active custom budget labels */
             <>
               <p className="text-xs text-gray-600">
                 Budget: {formatCurrency(budgetAmount, settings)}
               </p>
+              {expectedAmount > 0 && (
+                <p className="text-xs text-orange-600">
+                  Unpaid: {formatCurrency(expectedAmount, settings)}
+                </p>
+              )}
               <p className="text-xs text-gray-600">
-                Paid: {formatCurrency(stats.digital.spent, settings)}
+                Paid: {formatCurrency(paidAmount, settings)}
               </p>
               <p className={`text-sm font-medium mt-1 ${remaining < 0 ? 'text-red-600' : 'text-gray-900'}`}>
                 {remaining < 0 ? `Over by ${formatCurrency(Math.abs(remaining), settings)}` : `Remaining: ${formatCurrency(remaining, settings)}`}
