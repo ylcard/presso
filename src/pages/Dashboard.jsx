@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Wallet as WalletIcon } from "lucide-react";
+import { Plus } from "lucide-react";
+// import { Wallet as WalletIcon } from "lucide-react"; // UNUSED: No WalletIcon usage found in component
 import { useSettings } from "../components/utils/SettingsContext";
 import { usePeriod } from "../components/hooks/usePeriod";
 import {
@@ -25,6 +26,7 @@ import {
   useCustomBudgetActions,
 } from "../components/hooks/useActions";
 import { useCashWalletActions } from "../components/cashwallet/useCashWalletActions";
+import { useExchangeRates } from "../components/hooks/useExchangeRates";
 
 import QuickAddTransaction from "../components/transactions/QuickAddTransaction";
 import QuickAddIncome from "../components/transactions/QuickAddIncome";
@@ -54,12 +56,13 @@ export default function Dashboard() {
   const { allSystemBudgets } = useSystemBudgetsAll(user);
   const { systemBudgets, isLoading: loadingSystemBudgets } = useSystemBudgetsForPeriod(user, monthStart, monthEnd);
   const { cashWallet } = useCashWallet(user);
+  const { exchangeRates } = useExchangeRates();
 
   // System budget management (auto-creation/update)
   useSystemBudgetManagement(user, selectedMonth, selectedYear, goals, transactions, systemBudgets, monthStart, monthEnd);
 
   // Derived data
-  const paidTransactions = usePaidTransactions(transactions);
+  const paidTransactions = usePaidTransactions(transactions, 10);
   const monthlyTransactions = useMonthlyTransactions(transactions, selectedMonth, selectedYear);
   const monthlyIncome = useMonthlyIncome(monthlyTransactions);
   const { remainingBudget, currentMonthIncome, currentMonthExpenses } = useDashboardSummary(
@@ -79,7 +82,7 @@ export default function Dashboard() {
   // Actions
   const transactionActions = useTransactionMutationsDashboard(setShowQuickAdd, setShowQuickAddIncome);
   const budgetActions = useCustomBudgetActions(user, transactions, cashWallet);
-  const cashWalletActions = useCashWalletActions(user, cashWallet, categories);
+  const cashWalletActions = useCashWalletActions(user, cashWallet, settings, exchangeRates);
 
   return (
     <div className="min-h-screen p-4 md:p-8">
@@ -129,7 +132,6 @@ export default function Dashboard() {
           <div className="md:col-span-1">
             <CashWalletCard
               cashWallet={cashWallet}
-              settings={settings}
               onWithdraw={cashWalletActions.openWithdrawDialog}
               onDeposit={cashWalletActions.openDepositDialog}
             />
@@ -200,7 +202,6 @@ export default function Dashboard() {
           categories={categories}
           onSubmit={cashWalletActions.handleWithdraw}
           isSubmitting={cashWalletActions.isWithdrawing}
-          cashWallet={cashWallet}
         />
 
         <CashDepositDialog

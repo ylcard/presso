@@ -7,8 +7,8 @@ import { calculateConvertedAmount, getRateForDate } from "../utils/currencyCalcu
 
 export const useCashWalletActions = (user, cashWallet, settings, exchangeRates) => {
   const queryClient = useQueryClient();
-  const [showWithdrawDialog, setShowWithdrawDialog] = useState(false);
-  const [showDepositDialog, setShowDepositDialog] = useState(false);
+  const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
+  const [depositDialogOpen, setDepositDialogOpen] = useState(false);
 
   // Ensure cash wallet exists
   const ensureCashWallet = async () => {
@@ -97,7 +97,7 @@ export const useCashWalletActions = (user, cashWallet, settings, exchangeRates) 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CASH_WALLET] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TRANSACTIONS] });
-      setShowWithdrawDialog(false);
+      setWithdrawDialogOpen(false);
       showToast({
         title: "Success",
         description: "Cash withdrawn to wallet successfully",
@@ -175,7 +175,7 @@ export const useCashWalletActions = (user, cashWallet, settings, exchangeRates) 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CASH_WALLET] });
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TRANSACTIONS] });
-      setShowDepositDialog(false);
+      setDepositDialogOpen(false);
       showToast({
         title: "Success",
         description: "Cash deposited to bank successfully",
@@ -192,10 +192,12 @@ export const useCashWalletActions = (user, cashWallet, settings, exchangeRates) 
   });
 
   return {
-    showWithdrawDialog,
-    setShowWithdrawDialog,
-    showDepositDialog,
-    setShowDepositDialog,
+    withdrawDialogOpen,
+    setWithdrawDialogOpen,
+    depositDialogOpen,
+    setDepositDialogOpen,
+    openWithdrawDialog: () => setWithdrawDialogOpen(true),
+    openDepositDialog: () => setDepositDialogOpen(true),
     handleWithdraw: withdrawMutation.mutate,
     handleDeposit: depositMutation.mutate,
     isWithdrawing: withdrawMutation.isPending,

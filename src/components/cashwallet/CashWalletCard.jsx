@@ -2,23 +2,23 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Wallet, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
-import { useSettings } from "../utils/SettingsContext";
-import { formatCurrency } from "../utils/formatCurrency";
+// import { useSettings } from "../utils/SettingsContext"; // UNUSED: Component doesn't use settings
+// import { formatCurrency } from "../utils/formatCurrency"; // UNUSED: Component formats amounts manually
 import { SUPPORTED_CURRENCIES } from "../utils/currencyCalculations";
 
 export default function CashWalletCard({ cashWallet, onWithdraw, onDeposit }) {
-  const { settings } = useSettings();
+  // const { settings } = useSettings(); // UNUSED: settings not needed in this component
   const balances = cashWallet?.balances || [];
 
   // Get total in base currency
-  const totalInBaseCurrency = balances.reduce((sum, bal) => {
-    // For simplicity, just sum all balances (in a real app, would convert using rates)
-    // For now, show each currency separately
-    return sum;
-  }, 0);
+  // const totalInBaseCurrency = balances.reduce((sum, bal) => { // UNUSED: Was meant for future feature
+  //   // For simplicity, just sum all balances (in a real app, would convert using rates)
+  //   // For now, show each currency separately
+  //   return sum;
+  // }, 0);
 
   return (
-    <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
+    <Card className="h-full bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">

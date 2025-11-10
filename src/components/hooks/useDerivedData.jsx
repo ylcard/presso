@@ -21,13 +21,14 @@ import { iconMap } from "../utils/iconMapConfig";
 import { Circle } from "lucide-react";
 
 // Hook for filtering paid transactions
-export const usePaidTransactions = (transactions) => {
+export const usePaidTransactions = (transactions, limit = 10) => {
   return useMemo(() => {
     return transactions.filter(t => {
       if (t.type === 'income') return true;
       return t.isPaid === true;
-    }).sort((a, b) => new Date(b.date) - new Date(a.date));
-  }, [transactions]);
+    }).sort((a, b) => new Date(b.date) - new Date(a.date))
+      .slice(0, limit);
+  }, [transactions, limit]);
 };
 
 // Hook for transaction display logic (icon, colors, status)
