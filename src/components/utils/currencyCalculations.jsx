@@ -48,10 +48,11 @@ export function calculateConvertedAmount(sourceAmount, sourceCurrencyCode, targe
 
 /**
  * Retrieve exchange rates for a specific currency pair and date from the database.
+ * Now implements a 14-day freshness window - will use rates up to 14 days old.
  * 
  * @param {Array} exchangeRates - Array of ExchangeRate entities
  * @param {string} currencyCode - The currency code to look up (e.g., 'GBP')
- * @param {string} date - The date in YYYY-MM-DD format
+ * @param {string} date - The target date in YYYY-MM-DD format
  * @returns {number|null} The rate for Currency→USD, or null if not found
  */
 export function getRateForDate(exchangeRates, currencyCode, date) {
@@ -60,13 +61,40 @@ export function getRateForDate(exchangeRates, currencyCode, date) {
     return 1.0;
   }
 
-  const rateRecord = exchangeRates.find(
+  // First, try to find an exact match for the date
+  const exactMatch = exchangeRates.find(
     r => r.fromCurrency === currencyCode && 
          r.toCurrency === 'USD' && 
          r.date === date
   );
 
-  return rateRecord ? rateRecord.rate : null;
+  if (exactMatch) {
+    return exactMatch.rate;
+  }
+
+  // If no exact match, find the most recent rate within the 14-day window
+  const targetDate = new Date(date);
+  const fourteenDaysAgo = new Date(targetDate);
+  fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+
+  const candidateRates = exchangeRates.filter(
+    r => r.fromCurrency === currencyCode && 
+         r.toCurrency === 'USD'
+  );
+
+  // Find rates within the freshness window
+  const freshRates = candidateRates.filter(r => {
+    const rateDate = new Date(r.date);
+    return rateDate >= fourteenDaysAgo && rateDate <= targetDate;
+  });
+
+  if (freshRates.length === 0) {
+    return null; // No fresh rates available
+  }
+
+  // Return the most recent fresh rate
+  freshRates.sort((a, b) => new Date(b.date) - new Date(a.date));
+  return freshRates[0].rate;
 }
 
 /**
@@ -80,27 +108,23 @@ export function getRateForDate(exchangeRates, currencyCode, date) {
  * @returns {boolean} True if rates are fresh, false if stale or missing
  */
 export function areRatesFresh(exchangeRates, sourceCurrency, targetCurrency, date, freshnessWindowDays = 14) {
-  const now = new Date();
-  const freshnessThreshold = new Date(now.getTime() - (freshnessWindowDays * 24 * 60 * 60 * 1000));
-
-  // Check if both required rates exist for the specific date
-  const sourceRate = exchangeRates.find(
-    r => r.fromCurrency === sourceCurrency && r.toCurrency === 'USD' && r.date === date
-  );
-  const targetRate = exchangeRates.find(
-    r => r.fromCurrency === targetCurrency && r.toCurrency === 'USD' && r.date === date
-  );
-
-  // If either rate is missing, they are not fresh
-  if (!sourceRate || !targetRate) {
-    return false;
+  // If either currency is USD, we don't need to check freshness
+  if (sourceCurrency === 'USD' || targetCurrency === 'USD') {
+    // Only need to check the non-USD currency
+    const currencyToCheck = sourceCurrency === 'USD' ? targetCurrency : sourceCurrency;
+    if (currencyToCheck === 'USD') {
+      return true; // Both are USD
+    }
+    
+    const rate = getRateForDate(exchangeRates, currencyToCheck, date);
+    return rate !== null;
   }
 
-  // Check if both rates were created/updated within the freshness window
-  const sourceCreatedDate = new Date(sourceRate.created_date);
-  const targetCreatedDate = new Date(targetRate.created_date);
+  // Check if both required rates are available within the freshness window
+  const sourceRate = getRateForDate(exchangeRates, sourceCurrency, date);
+  const targetRate = getRateForDate(exchangeRates, targetCurrency, date);
 
-  return sourceCreatedDate >= freshnessThreshold && targetCreatedDate >= freshnessThreshold;
+  return sourceRate !== null && targetRate !== null;
 }
 
 /**

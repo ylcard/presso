@@ -21,6 +21,7 @@ export const useExchangeRates = () => {
   /**
    * Refresh exchange rates for specific currencies and date.
    * Only calls the LLM if rates are stale or missing.
+   * Implements deduplication - updates existing rates instead of creating duplicates.
    * 
    * @param {string} sourceCurrency - Source currency code (e.g., 'GBP')
    * @param {string} targetCurrency - Target currency code (user's base, e.g., 'EUR')
@@ -31,7 +32,7 @@ export const useExchangeRates = () => {
     setIsRefreshing(true);
 
     try {
-      // Check if rates are already fresh
+      // Check if rates are already fresh (within 14 days)
       const isFresh = areRatesFresh(exchangeRates, sourceCurrency, targetCurrency, date, 14);
       
       if (isFresh) {
@@ -91,20 +92,45 @@ Only include the rates for the currencies I listed above.`;
         }
       });
 
-      // Store the fetched rates in the database
-      const ratesToStore = [];
+      // Fetch all existing rates to check for duplicates
+      const allExistingRates = await base44.entities.ExchangeRate.list();
+
+      // Store or update the fetched rates in the database with deduplication
+      const ratesToCreate = [];
+      const ratesToUpdate = [];
+
       for (const [currency, rate] of Object.entries(response.rates)) {
-        ratesToStore.push({
-          date: date,
-          fromCurrency: currency,
-          toCurrency: 'USD',
-          rate: rate
-        });
+        // Check if rate already exists for this date/currency pair
+        const existingRate = allExistingRates.find(
+          r => r.date === date && 
+               r.fromCurrency === currency && 
+               r.toCurrency === 'USD'
+        );
+
+        if (existingRate) {
+          // Update existing rate if different
+          if (Math.abs(existingRate.rate - rate) > 0.0001) {
+            ratesToUpdate.push({ id: existingRate.id, rate });
+          }
+        } else {
+          // Create new rate
+          ratesToCreate.push({
+            date: date,
+            fromCurrency: currency,
+            toCurrency: 'USD',
+            rate: rate
+          });
+        }
       }
 
-      // Bulk create the new rates
-      if (ratesToStore.length > 0) {
-        await base44.entities.ExchangeRate.bulkCreate(ratesToStore);
+      // Bulk create new rates
+      if (ratesToCreate.length > 0) {
+        await base44.entities.ExchangeRate.bulkCreate(ratesToCreate);
+      }
+
+      // Update existing rates individually
+      for (const { id, rate } of ratesToUpdate) {
+        await base44.entities.ExchangeRate.update(id, { rate });
       }
 
       // Invalidate the query to refresh the data
@@ -113,7 +139,7 @@ Only include the rates for the currencies I listed above.`;
       setIsRefreshing(false);
       return {
         success: true,
-        message: 'Exchange rates updated successfully!',
+        message: `Exchange rates updated successfully! (${ratesToCreate.length} created, ${ratesToUpdate.length} updated)`,
         rates: response.rates
       };
 

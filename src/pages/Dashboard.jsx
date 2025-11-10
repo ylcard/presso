@@ -76,7 +76,7 @@ export default function Dashboard() {
     selectedYear
   );
 
-  // Actions - NOW USING useCustomBudgetActions
+  // Actions
   const transactionActions = useTransactionMutationsDashboard(setShowQuickAdd, setShowQuickAddIncome);
   const budgetActions = useCustomBudgetActions(user, transactions, cashWallet);
   const cashWalletActions = useCashWalletActions(user, cashWallet, categories);
@@ -117,46 +117,56 @@ export default function Dashboard() {
           }}
         />
 
-        <div className="grid md:grid-cols-2 gap-6">
-          <RemainingBudgetCard
-            remainingBudget={remainingBudget}
-            currentMonthIncome={currentMonthIncome}
-            currentMonthExpenses={currentMonthExpenses}
-            settings={settings}
-          />
-          <CashWalletCard
-            cashWallet={cashWallet}
-            settings={settings}
-            onWithdraw={cashWalletActions.openWithdrawDialog}
-            onDeposit={cashWalletActions.openDepositDialog}
-          />
+        <div className="grid md:grid-cols-3 gap-6">
+          <div className="md:col-span-2">
+            <RemainingBudgetCard
+              remainingBudget={remainingBudget}
+              currentMonthIncome={currentMonthIncome}
+              currentMonthExpenses={currentMonthExpenses}
+              settings={settings}
+            />
+          </div>
+          <div className="md:col-span-1">
+            <CashWalletCard
+              cashWallet={cashWallet}
+              settings={settings}
+              onWithdraw={cashWalletActions.openWithdrawDialog}
+              onDeposit={cashWalletActions.openDepositDialog}
+            />
+          </div>
         </div>
 
-        <BudgetBars
-          systemBudgets={systemBudgets}
-          customBudgets={activeCustomBudgets}
-          allCustomBudgets={allCustomBudgets}
-          transactions={transactions}
-          categories={categories}
-          currentMonth={selectedMonth}
-          currentYear={selectedYear}
-          settings={settings}
-          goals={goals}
-          monthlyIncome={monthlyIncome}
-          baseCurrency={settings.baseCurrency}
-          onDeleteBudget={budgetActions.handleDelete}
-          onCompleteBudget={(id) => budgetActions.handleStatusChange(id, 'completed')}
-          onCreateBudget={() => {
-            budgetActions.setEditingBudget(null);
-            setShowQuickAddBudget(true);
-          }}
-        />
+        <div className="grid lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <BudgetBars
+              systemBudgets={systemBudgets}
+              customBudgets={activeCustomBudgets}
+              allCustomBudgets={allCustomBudgets}
+              transactions={transactions}
+              categories={categories}
+              currentMonth={selectedMonth}
+              currentYear={selectedYear}
+              settings={settings}
+              goals={goals}
+              monthlyIncome={monthlyIncome}
+              baseCurrency={settings.baseCurrency}
+              onDeleteBudget={budgetActions.handleDelete}
+              onCompleteBudget={(id) => budgetActions.handleStatusChange(id, 'completed')}
+              onCreateBudget={() => {
+                budgetActions.setEditingBudget(null);
+                setShowQuickAddBudget(true);
+              }}
+            />
+          </div>
 
-        <RecentTransactions
-          transactions={paidTransactions}
-          categories={categories}
-          settings={settings}
-        />
+          <div className="lg:col-span-1">
+            <RecentTransactions
+              transactions={paidTransactions}
+              categories={categories}
+              settings={settings}
+            />
+          </div>
+        </div>
 
         <QuickAddTransaction
           open={showQuickAdd}
