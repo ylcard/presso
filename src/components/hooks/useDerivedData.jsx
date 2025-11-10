@@ -9,7 +9,7 @@ import {
   getSystemBudgetStats,
   getCustomBudgetStats,
   getDirectUnpaidExpenses,
-  calculateWantsExpectedAmount, // ADDED
+  calculateWantsExpectedAmount,
   createEntityMap,
   filterActiveCustomBudgets,
   // Added based on outline for useDashboardSummary
@@ -86,9 +86,9 @@ export const useDashboardSummary = (transactions, selectedMonth, selectedYear, a
       .filter(t => t.type === 'expense' && shouldCountTowardBudget(t))
       .reduce((sum, t) => sum + t.amount, 0);
     
-    // Get unpaid direct expenses
+    // Get unpaid direct expenses (excluding those in custom budgets)
     const unpaidExpenses = getUnpaidExpensesForMonth(transactions, selectedMonth, selectedYear)
-      .filter(t => shouldCountTowardBudget(t))
+      .filter(t => shouldCountTowardBudget(t) && !t.customBudgetId)
       .reduce((sum, t) => sum + t.amount, 0);
     
     // Get REMAINING amounts from active custom budgets within this period
@@ -103,8 +103,14 @@ export const useDashboardSummary = (transactions, selectedMonth, selectedYear, a
     
     const customBudgetRemaining = activeCustomBudgets.reduce((sum, cb) => {
       const stats = getCustomBudgetStats(cb, transactions);
-      // Use remaining amount instead of total allocation to avoid double counting
-      return sum + Math.max(0, stats.remaining);
+      // Calculate total remaining from digital and cash
+      let totalRemaining = stats.digital.remaining;
+      if (stats.cashByCurrency) {
+        Object.values(stats.cashByCurrency).forEach(cashData => {
+          totalRemaining += cashData.remaining;
+        });
+      }
+      return sum + Math.max(0, totalRemaining);
     }, 0);
     
     return paidExpenses + unpaidExpenses + customBudgetRemaining;
