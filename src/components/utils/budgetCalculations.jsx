@@ -1,5 +1,4 @@
 
-import { calculateAggregatedRemainingAmounts } from './budgetAggregations';
 import { getCurrencySymbol } from './currencyUtils';
 
 // Utility function to create a map from an array of entities
@@ -204,7 +203,7 @@ export const getSystemBudgetStats = (
     categories, 
     allCustomBudgets = [], 
     baseCurrency = 'USD',
-    includeAggregatedRemaining = true
+    includeAggregatedRemaining = false // DEPRECATED 2025-01-12: Parameter kept for compatibility but no longer used
 ) => {
     const budgetStart = parseDate(systemBudget.startDate);
     const budgetEnd = parseDate(systemBudget.endDate);
@@ -287,8 +286,10 @@ export const getSystemBudgetStats = (
         }
     });
 
-    // CRITICAL FIX (2025-01-12): Only add aggregated remaining if explicitly requested
-    // This prevents double-counting on Budgets page while keeping Dashboard calculation correct
+    // COMMENTED OUT 2025-01-12: Removed aggregatedRemainingAmounts logic
+    // This was adding "ghost amounts" (remaining budget allocations) to unpaid expenses
+    // Now we only return actual transaction data
+    /*
     if (includeAggregatedRemaining) {
         const aggregatedRemaining = calculateAggregatedRemainingAmounts(
             allCustomBudgets,
@@ -296,10 +297,8 @@ export const getSystemBudgetStats = (
             baseCurrency
         );
 
-        // Add the main sum (base currency) to unpaid total
         unpaidTotalBaseCurrency += aggregatedRemaining.mainSum;
 
-        // Add foreign currency amounts to unpaid foreign currencies
         aggregatedRemaining.separateCashAmounts.forEach(cashAmount => {
             unpaidForeignCurrencies.push({
                 currencyCode: cashAmount.currencyCode,
@@ -307,6 +306,7 @@ export const getSystemBudgetStats = (
             });
         });
     }
+    */
 
     // Structure the response
     const paid = {
