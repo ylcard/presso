@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -15,8 +15,16 @@ import {
 
 export default function MonthYearPickerPopover({ currentMonth, currentYear, onMonthChange, children }) {
   const [open, setOpen] = useState(false);
-  const [tempMonth, setTempMonth] = useState(currentMonth);
-  const [tempYear, setTempYear] = useState(currentYear);
+  const [tempMonth, setTempMonth] = useState(currentMonth ?? 0);
+  const [tempYear, setTempYear] = useState(currentYear ?? new Date().getFullYear());
+
+  // CRITICAL FIX (2025-01-12): Sync temp state when props change or when popover opens
+  useEffect(() => {
+    if (open) {
+      setTempMonth(currentMonth ?? 0);
+      setTempYear(currentYear ?? new Date().getFullYear());
+    }
+  }, [open, currentMonth, currentYear]);
 
   const monthNames = [
     "January", "February", "March", "April", "May", "June",
@@ -36,10 +44,14 @@ export default function MonthYearPickerPopover({ currentMonth, currentYear, onMo
   };
 
   const handleCancel = () => {
-    setTempMonth(currentMonth);
-    setTempYear(currentYear);
+    setTempMonth(currentMonth ?? 0);
+    setTempYear(currentYear ?? new Date().getFullYear());
     setOpen(false);
   };
+
+  // ADDED (2025-01-12): Safeguard to prevent undefined values
+  const safeMonth = tempMonth ?? 0;
+  const safeYear = tempYear ?? new Date().getFullYear();
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -53,7 +65,7 @@ export default function MonthYearPickerPopover({ currentMonth, currentYear, onMo
           <div className="space-y-2">
             <label className="text-xs font-medium text-gray-600">Month</label>
             <Select
-              value={tempMonth.toString()}
+              value={safeMonth.toString()}
               onValueChange={(value) => setTempMonth(parseInt(value))}
             >
               <SelectTrigger>
@@ -72,7 +84,7 @@ export default function MonthYearPickerPopover({ currentMonth, currentYear, onMo
           <div className="space-y-2">
             <label className="text-xs font-medium text-gray-600">Year</label>
             <Select
-              value={tempYear.toString()}
+              value={safeYear.toString()}
               onValueChange={(value) => setTempYear(parseInt(value))}
             >
               <SelectTrigger>
@@ -114,3 +126,8 @@ export default function MonthYearPickerPopover({ currentMonth, currentYear, onMo
 // NEW COMPONENT (2025-01-12): MonthYearPickerPopover
 // Reusable popover for selecting month and year with dropdown selects
 // Used by MonthNavigator to make month name clickable
+// 
+// CRITICAL FIX (2025-01-12): Added useEffect to sync temp state when popover opens
+// - Prevents "undefined is not an object" error when tempMonth/tempYear are undefined
+// - Added nullish coalescing (??) operators for safe fallback values
+// - Syncs temp state with current props whenever popover opens
