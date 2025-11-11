@@ -1,10 +1,3 @@
-// DEPRECATED (2025-01-11): This file has been renamed to components/budgets/BudgetCard.jsx
-// Reason: The name "CompactCustomBudgetCard" was misleading as it handles both system and custom budgets
-// New location: components/budgets/BudgetCard.jsx
-// This file is scheduled for deletion after all import references are updated globally
-// DO NOT USE THIS FILE - Import from components/budgets/BudgetCard.jsx instead
-
-/*
 import React, { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
@@ -14,7 +7,7 @@ import { getCurrencySymbol } from "../utils/currencyUtils";
 import { motion } from "framer-motion";
 import { CheckCircle, Clock } from "lucide-react";
 
-export default function CompactCustomBudgetCard({ budget, stats, settings }) {
+export default function BudgetCard({ budget, stats, settings }) {
   const baseCurrency = settings?.baseCurrency || 'USD';
   const isSystemBudget = budget.isSystemBudget || false;
 
@@ -115,6 +108,7 @@ export default function CompactCustomBudgetCard({ budget, stats, settings }) {
               <h3 className="font-bold text-gray-900 text-sm hover:text-blue-600 transition-colors truncate flex-1">
                 {budget.name}
               </h3>
+              {/* ENHANCEMENT (2025-01-11): Hide icons for system budgets */}
               {!isSystemBudget && (
                 <>
                   {budget.status === 'completed' && (
@@ -128,9 +122,11 @@ export default function CompactCustomBudgetCard({ budget, stats, settings }) {
             </div>
           </Link>
 
+          {/* Circular Progress */}
           <div className="flex items-center justify-center mb-3 flex-1">
             <div className="relative w-24 h-24">
               <svg className="w-24 h-24 transform -rotate-90">
+                {/* Background circle */}
                 <circle
                   cx="48"
                   cy="48"
@@ -139,6 +135,7 @@ export default function CompactCustomBudgetCard({ budget, stats, settings }) {
                   strokeWidth="6"
                   fill="none"
                 />
+                {/* Paid progress */}
                 {paidPercentage > 0 && (
                   <circle
                     cx="48"
@@ -153,6 +150,7 @@ export default function CompactCustomBudgetCard({ budget, stats, settings }) {
                     className="transition-all duration-500"
                   />
                 )}
+                {/* Unpaid progress */}
                 {unpaidPercentage > 0 && (
                   <circle
                     cx="48"
@@ -168,6 +166,7 @@ export default function CompactCustomBudgetCard({ budget, stats, settings }) {
                   />
                 )}
               </svg>
+              {/* Percentage text */}
               <div className="absolute inset-0 flex items-center justify-center">
                 <span className="text-base font-bold text-gray-900">
                   {Math.round(percentageUsed)}%
@@ -176,9 +175,11 @@ export default function CompactCustomBudgetCard({ budget, stats, settings }) {
             </div>
           </div>
 
+          {/* ENHANCEMENT (2025-01-11): Center-aligned paid/unpaid sections */}
           <div className={`text-xs min-h-[60px] ${hasPaid && hasUnpaid ? 'grid grid-cols-2 gap-3' : 'flex flex-col items-center justify-center'}`}>
+            {/* Paid section */}
             {hasPaid && (
-              <div className={hasUnpaid ? '' : 'text-center'}>
+              <div className="text-center">
                 <p className="text-gray-500 mb-1">Paid</p>
                 {Object.entries(paidAmounts)
                   .filter(([_, amount]) => amount > 0)
@@ -196,8 +197,9 @@ export default function CompactCustomBudgetCard({ budget, stats, settings }) {
               </div>
             )}
 
+            {/* Unpaid section */}
             {hasUnpaid && (
-              <div className={hasPaid ? '' : 'text-center'}>
+              <div className="text-center">
                 <p className="text-gray-500 mb-1">Unpaid</p>
                 <p className="font-semibold text-orange-600 truncate">
                   {formatCurrency(unpaidAmount, settings)}
@@ -210,4 +212,12 @@ export default function CompactCustomBudgetCard({ budget, stats, settings }) {
     </motion.div>
   );
 }
-*/
+
+// RENAMED (2025-01-11): CompactCustomBudgetCard -> BudgetCard
+// This component handles BOTH system and custom budgets, so the name was misleading
+// ENHANCEMENTS (2025-01-11):
+// 1. Fixed system budget stats display by checking budget.isSystemBudget and using correct fields
+// 2. Dynamic layout: centers single amounts, uses grid for side-by-side when both paid/unpaid exist
+// 3. Removed icons (CheckCircle, Clock) for system budgets
+// 4. Maintains consistent card height with min-h-[240px] and flex layout
+// 5. FIXED: Center-aligned text for both paid and unpaid sections (Screenshot #7)

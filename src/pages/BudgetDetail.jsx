@@ -20,672 +20,649 @@ import { useCustomBudgetActions } from "../components/hooks/useActions";
 import QuickAddTransaction from "../components/transactions/QuickAddTransaction";
 import TransactionCard from "../components/transactions/TransactionCard";
 import AllocationManager from "../components/custombudgets/AllocationManager";
-import CompactCustomBudgetCard from "../components/custombudgets/CompactCustomBudgetCard";
+import BudgetCard from "../components/budgets/BudgetCard"; // RENAMED (2025-01-11): CompactCustomBudgetCard -> BudgetCard
 import CustomBudgetForm from "../components/custombudgets/CustomBudgetForm";
 import ExpensesCardContent from "../components/budgetdetail/ExpensesCardContent";
 import { QUERY_KEYS } from "../components/hooks/queryKeys";
 
 export default function BudgetDetail() {
-    const { settings, user } = useSettings();
-    const queryClient = useQueryClient();
-    const location = useLocation();
-    const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const { settings, user } = useSettings();
+  const queryClient = useQueryClient();
+  const location = useLocation();
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const budgetId = urlParams.get('id');
+  const urlParams = new URLSearchParams(window.location.search);
+  const budgetId = urlParams.get('id');
 
-    const { cashWallet } = useCashWallet(user);
+  const { cashWallet } = useCashWallet(user);
 
-    // Force query refetch when URL changes
-    useEffect(() => {
-        if (budgetId) {
-          queryClient.invalidateQueries({ queryKey: ['budget', budgetId] });
-        }
-    }, [budgetId, location, queryClient]);
-
-    const { data: budget, isLoading: budgetLoading } = useQuery({
-        queryKey: ['budget', budgetId],
-        queryFn: async () => {
-            if (!budgetId) return null;
-
-            const allCustomBudgets = await base44.entities.CustomBudget.list();
-            const customBudget = allCustomBudgets.find(cb => cb.id === budgetId);
-
-            if (customBudget) {
-                return { ...customBudget, isSystemBudget: customBudget.isSystemBudget || false };
-            }
-
-            const allSystemBudgets = await base44.entities.SystemBudget.list();
-            const systemBudget = allSystemBudgets.find(sb => sb.id === budgetId);
-
-            if (systemBudget) {
-                return {
-                    ...systemBudget,
-                    isSystemBudget: true,
-                    allocatedAmount: systemBudget.budgetAmount
-                };
-            }
-
-            return null;
-        },
-        enabled: !!budgetId,
-        retry: false,
-    });
-
-    const { data: transactions = [] } = useQuery({
-        queryKey: ['transactions'],
-        queryFn: () => base44.entities.Transaction.list('date', 1000),
-        initialData: [],
-    });
-
-    const { data: categories = [] } = useQuery({
-        queryKey: ['categories'],
-        queryFn: () => base44.entities.Category.list(),
-        initialData: [],
-    });
-
-    const { data: allBudgets = [] } = useQuery({
-        queryKey: ['allBudgets'],
-        queryFn: async () => {
-            const customB = await base44.entities.CustomBudget.list();
-            const sysB = await base44.entities.SystemBudget.list();
-            return [...customB, ...sysB.map(sb => ({ ...sb, isSystemBudget: true, allocatedAmount: sb.budgetAmount }))];
-        },
-        initialData: [],
-    });
-
-    const { data: allCustomBudgets = [] } = useQuery({
-        queryKey: ['allCustomBudgets'],
-        queryFn: async () => {
-            const all = await base44.entities.CustomBudget.list();
-            return all;
-        },
-        initialData: [],
-    });
-
-    const { data: allocations = [] } = useQuery({
-        queryKey: ['allocations', budgetId],
-        queryFn: async () => {
-            const all = await base44.entities.CustomBudgetAllocation.list();
-            return all.filter(a => a.customBudgetId === budgetId);
-        },
-        initialData: [],
-        enabled: !!budgetId && budget && !budget.isSystemBudget,
-    });
-
-    // Use proper budget actions hook with cash allocation handling
-    const budgetActions = useCustomBudgetActions(user, transactions, cashWallet);
-
-    // Use proper transaction actions hook for handling edits/deletes
-    const transactionActions = useTransactionActions(null, null, cashWallet);
-
-    const createTransactionMutation = useMutation({
-        mutationFn: (data) => base44.entities.Transaction.create(data),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['transactions'] });
-            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CASH_WALLET] });
-            setShowQuickAdd(false);
-        },
-    });
-
-    const createAllocationMutation = useMutation({
-        mutationFn: (data) => base44.entities.CustomBudgetAllocation.create(data),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['allocations', budgetId] });
-        },
-    });
-
-    const updateAllocationMutation = useMutation({
-        mutationFn: ({ id, data }) => base44.entities.CustomBudgetAllocation.update(id, data),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['allocations', budgetId] });
-        },
-    });
-
-    const deleteAllocationMutation = useMutation({
-        mutationFn: (id) => base44.entities.CustomBudgetAllocation.delete(id),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['allocations', budgetId] });
-        },
-    });
-
-    const completeBudgetMutation = useMutation({
-        mutationFn: async (id) => {
-            const budgetToComplete = budget;
-            if (!budgetToComplete) return;
-
-            // Return remaining cash to wallet if any
-            if (budgetToComplete.cashAllocations && budgetToComplete.cashAllocations.length > 0 && user) {
-              const remaining = calculateRemainingCashAllocations(budgetToComplete, transactions);
-              if (remaining.length > 0) {
-                await returnCashToWallet(
-                  user.email,
-                  remaining
-                );
-              }
-            }
-
-            const actualSpent = getCustomBudgetStats(budgetToComplete, transactions).totalSpent;
-
-            await base44.entities.CustomBudget.update(id, {
-                status: 'completed',
-                allocatedAmount: actualSpent,
-                originalAllocatedAmount: budgetToComplete.originalAllocatedAmount || budgetToComplete.allocatedAmount,
-                cashAllocations: []
-            });
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['budget', budgetId] });
-            queryClient.invalidateQueries({ queryKey: ['customBudgets'] });
-            queryClient.invalidateQueries({ queryKey: ['cashWallet'] });
-            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CASH_WALLET] });
-        },
-    });
-
-    const reactivateBudgetMutation = useMutation({
-        mutationFn: async (id) => {
-            const budgetToReactivate = budget;
-            if (!budgetToReactivate) return;
-
-            await base44.entities.CustomBudget.update(id, {
-                status: 'active',
-                allocatedAmount: budgetToReactivate.originalAllocatedAmount || budgetToReactivate.allocatedAmount,
-                originalAllocatedAmount: null,
-                cashAllocations: []
-            });
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['budget', budgetId] });
-            queryClient.invalidateQueries({ queryKey: ['customBudgets'] });
-        },
-    });
-
-    const budgetTransactions = useMemo(() => {
-        if (!budget) return [];
-
-        if (budget.isSystemBudget) {
-            const budgetStart = new Date(budget.startDate);
-            const budgetEnd = new Date(budget.endDate);
-
-            const allCustomBudgetIds = allCustomBudgets.map(cb => cb.id);
-
-            return transactions.filter(t => {
-                if (t.type !== 'expense' || !t.category_id) return false;
-
-                const category = categories.find(c => c.id === t.category_id);
-                if (!category || category.priority !== budget.systemBudgetType) return false;
-
-                if (t.customBudgetId && allCustomBudgetIds.includes(t.customBudgetId)) {
-                    return false;
-                }
-
-                if (t.isPaid && t.paidDate) {
-                    const paidDate = new Date(t.paidDate);
-                    return paidDate >= budgetStart && paidDate <= budgetEnd;
-                }
-
-                if (!t.isPaid) {
-                    const transactionDate = new Date(t.date);
-                    return transactionDate >= budgetStart && transactionDate <= budgetEnd;
-                }
-
-                return false;
-            });
-        } else {
-            return transactions.filter(t => t.customBudgetId === budgetId);
-        }
-    }, [transactions, budgetId, budget, categories, allCustomBudgets]);
-
-    // ENHANCEMENT (2025-01-11): Sort custom budgets - active first, then by closest date
-    const relatedCustomBudgetsForDisplay = useMemo(() => {
-        if (!budget || !budget.isSystemBudget) return [];
-
-        if (budget.systemBudgetType === 'needs') {
-            return [];
-        }
-
-        if (budget.systemBudgetType === 'wants') {
-            const budgetStart = new Date(budget.startDate);
-            const budgetEnd = new Date(budget.endDate);
-            const now = new Date();
-
-            const filtered = allCustomBudgets.filter(cb => {
-                if (cb.status !== 'active' && cb.status !== 'completed') return false;
-                if (cb.isSystemBudget) return false;
-
-                const cbStart = new Date(cb.startDate);
-                const cbEnd = new Date(cb.endDate);
-                return cbStart <= budgetEnd && cbEnd >= budgetStart;
-            });
-
-            // Sort: active first, then by distance from current date for closest start date
-            return filtered.sort((a, b) => {
-                // First: sort by status (active before completed)
-                if (a.status !== b.status) {
-                    return a.status === 'active' ? -1 : 1;
-                }
-
-                // Second: if statuses are the same, sort by distance from current date
-                const aStart = new Date(a.startDate);
-                const bStart = new Date(b.startDate);
-                const aDistance = Math.abs(aStart.getTime() - now.getTime());
-                const bDistance = Math.abs(bStart.getTime() - now.getTime());
-                
-                return aDistance - bDistance;
-            });
-        }
-
-        return [];
-    }, [budget, allCustomBudgets]);
-
-    const stats = useMemo(() => {
-        if (!budget) return null;
-
-        if (budget.isSystemBudget) {
-            return getSystemBudgetStats(budget, transactions, categories, allCustomBudgets, settings?.baseCurrency || 'USD');
-        } else {
-            return getCustomBudgetStats(budget, transactions);
-        }
-    }, [budget, transactions, categories, allCustomBudgets, settings]);
-
-    const allocationStats = useMemo(() => {
-        if (!budget || budget.isSystemBudget) return null;
-        return getCustomBudgetAllocationStats(budget, allocations, transactions);
-    }, [budget, allocations, transactions]);
-
-    const categoryMap = categories.reduce((acc, cat) => {
-        acc[cat.id] = cat;
-        return acc;
-    }, {});
-
-    const handleEditBudget = (data) => {
-        budgetActions.handleSubmit(data, budget);
-    };
-
-    const handleDeleteBudget = async () => {
-        if (confirm('Are you sure you want to delete this budget? All associated transactions will also be deleted.')) {
-            await budgetActions.handleDelete(budgetId);
-            window.location.href = createPageUrl("Budgets");
-        }
-    };
-
-    useEffect(() => {
-        if (!budgetId || (budget === null && !budgetLoading)) {
-            const timer = setTimeout(() => {
-                window.location.href = createPageUrl("Budgets");
-            }, 2000);
-            return () => clearTimeout(timer);
-        }
-    }, [budgetId, budget, budgetLoading]);
-
-    if (!budgetId || (budget === null && !budgetLoading)) {
-        return (
-            <div className="min-h-screen p-4 md:p-8">
-                <div className="max-w-7xl mx-auto">
-                    <Card className="border-none shadow-lg">
-                        <CardContent className="p-12 text-center">
-                            <AlertCircle className="w-16 h-16 text-orange-500 mx-auto mb-4" />
-                            <h2 className="text-2xl font-bold text-gray-900 mb-2">Budget Not Found</h2>
-                            <p className="text-gray-600 mb-4">
-                                The budget you're looking for doesn't exist or has been deleted.
-                            </p>
-                            <p className="text-sm text-gray-500">
-                                Redirecting to budgets page...
-                            </p>
-                        </CardContent>
-                    </Card>
-                </div>
-            </div>
-        );
+  useEffect(() => {
+    if (budgetId) {
+      queryClient.invalidateQueries({ queryKey: ['budget', budgetId] });
     }
+  }, [budgetId, location, queryClient]);
 
-    if (budgetLoading || !budget || !stats) {
-        return (
-            <div className="min-h-screen p-4 md:p-8">
-                <div className="max-w-7xl mx-auto space-y-6">
-                    <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-gray-200 rounded animate-pulse" />
-                        <div className="flex-1">
-                            <div className="h-8 w-64 bg-gray-200 rounded animate-pulse mb-2" />
-                            <div className="h-4 w-48 bg-gray-200 rounded animate-pulse" />
-                        </div>
-                    </div>
+  const { data: budget, isLoading: budgetLoading } = useQuery({
+    queryKey: ['budget', budgetId],
+    queryFn: async () => {
+      if (!budgetId) return null;
 
-                    <div className="grid md:grid-cols-4 gap-4">
-                        {[1, 2, 3, 4].map((i) => (
-                            <Card key={i} className="border-none shadow-lg">
-                                <CardContent className="p-6">
-                                    <div className="h-4 w-24 bg-gray-200 rounded animate-pulse mb-2" />
-                                    <div className="h-8 w-32 bg-gray-200 rounded animate-pulse" />
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
+      const allCustomBudgets = await base44.entities.CustomBudget.list();
+      const customBudget = allCustomBudgets.find(cb => cb.id === budgetId);
 
-                    <Card className="border-none shadow-lg">
-                        <CardContent className="p-6">
-                            <div className="h-4 w-32 bg-gray-200 rounded animate-pulse mb-4" />
-                            <div className="h-12 w-full bg-gray-200 rounded animate-pulse" />
-                        </CardContent>
-                    </Card>
-                </div>
-            </div>
-        );
-    }
+      if (customBudget) {
+        return { ...customBudget, isSystemBudget: customBudget.isSystemBudget || false };
+      }
 
-    const canDelete = !budget.isSystemBudget;
-    const isCompleted = budget.status === 'completed';
-    const canEdit = !budget.isSystemBudget;
+      const allSystemBudgets = await base44.entities.SystemBudget.list();
+      const systemBudget = allSystemBudgets.find(sb => sb.id === budgetId);
 
-    // Calculate totals for display with safety checks
-    let totalBudget = 0;
-    let totalRemaining = 0;
-    
+      if (systemBudget) {
+        return {
+          ...systemBudget,
+          isSystemBudget: true,
+          allocatedAmount: systemBudget.budgetAmount
+        };
+      }
+
+      return null;
+    },
+    enabled: !!budgetId,
+    retry: false,
+  });
+
+  const { data: transactions = [] } = useQuery({
+    queryKey: ['transactions'],
+    queryFn: () => base44.entities.Transaction.list('date', 1000),
+    initialData: [],
+  });
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => base44.entities.Category.list(),
+    initialData: [],
+  });
+
+  const { data: allBudgets = [] } = useQuery({
+    queryKey: ['allBudgets'],
+    queryFn: async () => {
+      const customB = await base44.entities.CustomBudget.list();
+      const sysB = await base44.entities.SystemBudget.list();
+      return [...customB, ...sysB.map(sb => ({ ...sb, isSystemBudget: true, allocatedAmount: sb.budgetAmount }))];
+    },
+    initialData: [],
+  });
+
+  const { data: allCustomBudgets = [] } = useQuery({
+    queryKey: ['allCustomBudgets'],
+    queryFn: async () => {
+      const all = await base44.entities.CustomBudget.list();
+      return all;
+    },
+    initialData: [],
+  });
+
+  const { data: allocations = [] } = useQuery({
+    queryKey: ['allocations', budgetId],
+    queryFn: async () => {
+      const all = await base44.entities.CustomBudgetAllocation.list();
+      return all.filter(a => a.customBudgetId === budgetId);
+    },
+    initialData: [],
+    enabled: !!budgetId && budget && !budget.isSystemBudget,
+  });
+
+  const budgetActions = useCustomBudgetActions(user, transactions, cashWallet);
+
+  const transactionActions = useTransactionActions(null, null, cashWallet);
+
+  const createTransactionMutation = useMutation({
+    mutationFn: (data) => base44.entities.Transaction.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CASH_WALLET] });
+      setShowQuickAdd(false);
+    },
+  });
+
+  const createAllocationMutation = useMutation({
+    mutationFn: (data) => base44.entities.CustomBudgetAllocation.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allocations', budgetId] });
+    },
+  });
+
+  const updateAllocationMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.CustomBudgetAllocation.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allocations', budgetId] });
+    },
+  });
+
+  const deleteAllocationMutation = useMutation({
+    mutationFn: (id) => base44.entities.CustomBudgetAllocation.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allocations', budgetId] });
+    },
+  });
+
+  const completeBudgetMutation = useMutation({
+    mutationFn: async (id) => {
+      const budgetToComplete = budget;
+      if (!budgetToComplete) return;
+
+      if (budgetToComplete.cashAllocations && budgetToComplete.cashAllocations.length > 0 && user) {
+        const remaining = calculateRemainingCashAllocations(budgetToComplete, transactions);
+        if (remaining.length > 0) {
+          await returnCashToWallet(
+            user.email,
+            remaining
+          );
+        }
+      }
+
+      const actualSpent = getCustomBudgetStats(budgetToComplete, transactions).totalSpent;
+
+      await base44.entities.CustomBudget.update(id, {
+        status: 'completed',
+        allocatedAmount: actualSpent,
+        originalAllocatedAmount: budgetToComplete.originalAllocatedAmount || budgetToComplete.allocatedAmount,
+        cashAllocations: []
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['budget', budgetId] });
+      queryClient.invalidateQueries({ queryKey: ['customBudgets'] });
+      queryClient.invalidateQueries({ queryKey: ['cashWallet'] });
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CASH_WALLET] });
+    },
+  });
+
+  const reactivateBudgetMutation = useMutation({
+    mutationFn: async (id) => {
+      const budgetToReactivate = budget;
+      if (!budgetToReactivate) return;
+
+      await base44.entities.CustomBudget.update(id, {
+        status: 'active',
+        allocatedAmount: budgetToReactivate.originalAllocatedAmount || budgetToReactivate.allocatedAmount,
+        originalAllocatedAmount: null,
+        cashAllocations: []
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['budget', budgetId] });
+      queryClient.invalidateQueries({ queryKey: ['customBudgets'] });
+    },
+  });
+
+  const budgetTransactions = useMemo(() => {
+    if (!budget) return [];
+
     if (budget.isSystemBudget) {
-        totalBudget = budget.budgetAmount || 0;
-        totalRemaining = stats.remaining || 0;
-    } else {
-        // For custom budgets, use unit-based totals
-        totalBudget = stats?.totalAllocatedUnits || 0;
-        
-        // Calculate remaining from digital and cash
-        totalRemaining = stats?.digital?.remaining || 0;
-        if (stats?.cashByCurrency) {
-            Object.values(stats.cashByCurrency).forEach(cashData => {
-                totalRemaining += cashData?.remaining || 0;
-            });
+      const budgetStart = new Date(budget.startDate);
+      const budgetEnd = new Date(budget.endDate);
+
+      const allCustomBudgetIds = allCustomBudgets.map(cb => cb.id);
+
+      return transactions.filter(t => {
+        if (t.type !== 'expense' || !t.category_id) return false;
+
+        const category = categories.find(c => c.id === t.category_id);
+        if (!category || category.priority !== budget.systemBudgetType) return false;
+
+        if (t.customBudgetId && allCustomBudgetIds.includes(t.customBudgetId)) {
+          return false;
         }
+
+        if (t.isPaid && t.paidDate) {
+          const paidDate = new Date(t.paidDate);
+          return paidDate >= budgetStart && paidDate <= budgetEnd;
+        }
+
+        if (!t.isPaid) {
+          const transactionDate = new Date(t.date);
+          return transactionDate >= budgetStart && transactionDate <= budgetEnd;
+        }
+
+        return false;
+      });
+    } else {
+      return transactions.filter(t => t.customBudgetId === budgetId);
+    }
+  }, [transactions, budgetId, budget, categories, allCustomBudgets]);
+
+  const relatedCustomBudgetsForDisplay = useMemo(() => {
+    if (!budget || !budget.isSystemBudget) return [];
+
+    if (budget.systemBudgetType === 'needs') {
+      return [];
     }
 
-    // ENHANCEMENT (2025-01-11): Helper to check if we have both digital and cash amounts for custom budgets
-    const hasBothDigitalAndCash = !budget.isSystemBudget && 
-        stats?.digital !== undefined && 
-        stats?.cashByCurrency && 
-        Object.keys(stats.cashByCurrency).length > 0 &&
-        // Also check if both have actual allocated/remaining amounts greater than 0,
-        // otherwise a zero-value 'cash' or 'digital' allocation might trigger split view unnecessarily.
-        (stats.digital.allocated > 0 || Object.values(stats.cashByCurrency).some(cashData => cashData.allocated > 0));
+    if (budget.systemBudgetType === 'wants') {
+      const budgetStart = new Date(budget.startDate);
+      const budgetEnd = new Date(budget.endDate);
+      const now = new Date();
 
+      const filtered = allCustomBudgets.filter(cb => {
+        if (cb.status !== 'active' && cb.status !== 'completed') return false;
+        if (cb.isSystemBudget) return false;
 
+        const cbStart = new Date(cb.startDate);
+        const cbEnd = new Date(cb.endDate);
+        return cbStart <= budgetEnd && cbEnd >= budgetStart;
+      });
+
+      return filtered.sort((a, b) => {
+        if (a.status !== b.status) {
+          return a.status === 'active' ? -1 : 1;
+        }
+
+        const aStart = new Date(a.startDate);
+        const bStart = new Date(b.startDate);
+        const aDistance = Math.abs(aStart.getTime() - now.getTime());
+        const bDistance = Math.abs(bStart.getTime() - now.getTime());
+        
+        return aDistance - bDistance;
+      });
+    }
+
+    return [];
+  }, [budget, allCustomBudgets]);
+
+  const stats = useMemo(() => {
+    if (!budget) return null;
+
+    if (budget.isSystemBudget) {
+      return getSystemBudgetStats(budget, transactions, categories, allCustomBudgets, settings?.baseCurrency || 'USD');
+    } else {
+      return getCustomBudgetStats(budget, transactions);
+    }
+  }, [budget, transactions, categories, allCustomBudgets, settings]);
+
+  const allocationStats = useMemo(() => {
+    if (!budget || budget.isSystemBudget) return null;
+    return getCustomBudgetAllocationStats(budget, allocations, transactions);
+  }, [budget, allocations, transactions]);
+
+  const categoryMap = categories.reduce((acc, cat) => {
+    acc[cat.id] = cat;
+    return acc;
+  }, {});
+
+  const handleEditBudget = (data) => {
+    budgetActions.handleSubmit(data, budget);
+  };
+
+  const handleDeleteBudget = async () => {
+    if (confirm('Are you sure you want to delete this budget? All associated transactions will also be deleted.')) {
+      await budgetActions.handleDelete(budgetId);
+      window.location.href = createPageUrl("Budgets");
+    }
+  };
+
+  useEffect(() => {
+    if (!budgetId || (budget === null && !budgetLoading)) {
+      const timer = setTimeout(() => {
+        window.location.href = createPageUrl("Budgets");
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [budgetId, budget, budgetLoading]);
+
+  if (!budgetId || (budget === null && !budgetLoading)) {
     return (
-        <div className="min-h-screen p-4 md:p-8">
-            <div className="max-w-7xl mx-auto space-y-6">
-                <div className="flex items-center gap-4">
-                    <Link to={createPageUrl("Budgets")}>
-                        <Button variant="ghost" size="icon">
-                            <ArrowLeft className="w-5 h-5" />
-                        </Button>
-                    </Link>
-                    <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                            <h1 className="text-3xl md:text-4xl font-bold text-gray-900">{budget.name}</h1>
-                            {budget.isSystemBudget && (
-                                <Badge variant="outline">System</Badge>
-                            )}
-                            {isCompleted && (
-                                <Badge className="bg-green-100 text-green-800">Completed</Badge>
-                            )}
-                        </div>
-                        <p className="text-gray-500 mt-1">
-                            {formatDate(budget.startDate, settings.dateFormat)} - {formatDate(budget.endDate, settings.dateFormat)}
-                        </p>
-                    </div>
-                    <div className="flex gap-2">
-                        {canEdit && !isCompleted && (
-                            <Button
-                                onClick={() => budgetActions.setShowForm(true)}
-                                variant="outline"
-                            >
-                                Edit Budget
-                            </Button>
-                        )}
-                        {!budget.isSystemBudget && budget.status === 'active' && (
-                            <Button
-                                onClick={() => completeBudgetMutation.mutate(budgetId)}
-                                disabled={completeBudgetMutation.isPending}
-                                className="bg-green-600 hover:bg-green-700 text-white"
-                            >
-                                <CheckCircle className="w-4 h-4 mr-2" />
-                                Complete
-                            </Button>
-                        )}
-                        {!budget.isSystemBudget && budget.status === 'completed' && (
-                            <Button
-                                onClick={() => reactivateBudgetMutation.mutate(budgetId)}
-                                disabled={reactivateBudgetMutation.isPending}
-                                className="bg-blue-600 hover:bg-blue-700 text-white"
-                            >
-                                Reactivate
-                            </Button>
-                        )}
-                        {canDelete && (
-                            <Button
-                                onClick={handleDeleteBudget}
-                                variant="outline"
-                                className="text-red-600 border-red-600 hover:bg-red-50"
-                            >
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Delete
-                            </Button>
-                        )}
-                    </div>
-                </div>
-
-                {/* ENHANCEMENT (2025-01-11): Budget and Remaining cards with digital/cash split when applicable */}
-                <div className="grid md:grid-cols-3 gap-4">
-                    {/* Budget Card */}
-                    <Card className="border-none shadow-lg">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium text-gray-500">Budget</CardTitle>
-                            <DollarSign className="w-4 h-4 text-blue-500" />
-                        </CardHeader>
-                        <CardContent>
-                            {hasBothDigitalAndCash ? (
-                                // Split layout: Digital and Cash side by side
-                                <div className="space-y-3">
-                                    <div className="text-center pb-2 border-b">
-                                        <p className="text-sm text-gray-500 mb-1">Total</p>
-                                        <div className="text-lg font-bold text-gray-900">
-                                            {formatCurrency(totalBudget, settings)}
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div className="flex flex-col items-center justify-center">
-                                            <p className="text-xs text-gray-500 mb-1">Digital</p>
-                                            <div className="text-base font-semibold text-gray-900">
-                                                {formatCurrency(stats.digital.allocated, settings)}
-                                            </div>
-                                        </div>
-                                        <div className="flex flex-col items-center justify-center">
-                                            <p className="text-xs text-gray-500 mb-1">Cash</p>
-                                            {Object.entries(stats.cashByCurrency).map(([currency, data]) => (
-                                                <div key={currency} className="text-base font-semibold text-gray-900">
-                                                    {formatCurrency(data.allocated, { ...settings, currencySymbol: getCurrencySymbol(currency) })}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            ) : (
-                                // Single centered amount
-                                <div className="text-center">
-                                    <div className="text-lg font-bold text-gray-900">
-                                        {formatCurrency(totalBudget, settings)}
-                                    </div>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    {/* Expenses Card */}
-                    <Card className="border-none shadow-lg">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium text-gray-500">Expenses</CardTitle>
-                            <TrendingDown className="w-4 h-4 text-red-500" />
-                        </CardHeader>
-                        <CardContent>
-                            <ExpensesCardContent budget={budget} stats={stats} settings={settings} />
-                        </CardContent>
-                    </Card>
-
-                    {/* Remaining Card */}
-                    <Card className="border-none shadow-lg">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium text-gray-500">Remaining</CardTitle>
-                            <CheckCircle className="w-4 h-4 text-green-500" />
-                        </CardHeader>
-                        <CardContent>
-                            {hasBothDigitalAndCash ? (
-                                // Split layout: Digital and Cash side by side
-                                <div className="space-y-3">
-                                    <div className="text-center pb-2 border-b">
-                                        <p className="text-sm text-gray-500 mb-1">Total</p>
-                                        <div className={`text-lg font-bold ${totalRemaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                            {formatCurrency(totalRemaining, settings)}
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div className="flex flex-col items-center justify-center">
-                                            <p className="text-xs text-gray-500 mb-1">Digital</p>
-                                            <div className={`text-base font-semibold ${stats.digital.remaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                {formatCurrency(stats.digital.remaining, settings)}
-                                            </div>
-                                        </div>
-                                        <div className="flex flex-col items-center justify-center">
-                                            <p className="text-xs text-gray-500 mb-1">Cash</p>
-                                            {Object.entries(stats.cashByCurrency).map(([currency, data]) => (
-                                                <div key={currency} className={`text-base font-semibold ${data.remaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                    {formatCurrency(data.remaining, { ...settings, currencySymbol: getCurrencySymbol(currency) })}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            ) : (
-                                // Single centered amount
-                                <div className="text-center">
-                                    <div className={`text-lg font-bold ${totalRemaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                        {formatCurrency(totalRemaining, settings)}
-                                    </div>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {budget.description && (
-                    <Card className="border-none shadow-lg">
-                        <CardHeader>
-                            <CardTitle>Description</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-gray-700">{budget.description}</p>
-                        </CardContent>
-                    </Card>
-                )}
-
-                {!budget.isSystemBudget && budget.status !== 'completed' && allocationStats && (
-                    <AllocationManager
-                        customBudget={budget}
-                        allocations={allocations}
-                        categories={categories}
-                        allocationStats={allocationStats}
-                        onCreateAllocation={(data) => createAllocationMutation.mutate(data)}
-                        onUpdateAllocation={({ id, data }) => updateAllocationMutation.mutate({ id, data })}
-                        onDeleteAllocation={(id) => deleteAllocationMutation.mutate(id)}
-                        isSubmitting={createAllocationMutation.isPending || updateAllocationMutation.isPending}
-                    />
-                )}
-
-                {budget.isSystemBudget && relatedCustomBudgetsForDisplay.length > 0 && (
-                    <Card className="border-none shadow-lg">
-                        <CardHeader>
-                            <CardTitle>Custom Budgets ({relatedCustomBudgetsForDisplay.length})</CardTitle>
-                            <p className="text-sm text-gray-500 mt-1">
-                                Custom budgets containing {budget.systemBudgetType} expenses
-                            </p>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                                {relatedCustomBudgetsForDisplay.map((customBudget) => {
-                                    const customBudgetStats = getCustomBudgetStats(customBudget, transactions);
-
-                                    return (
-                                        <CompactCustomBudgetCard
-                                            key={customBudget.id}
-                                            budget={customBudget}
-                                            stats={customBudgetStats}
-                                            settings={settings}
-                                        />
-                                    );
-                                })}
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
-
-                <Card className="border-none shadow-lg">
-                    <CardHeader className="flex flex-row items-center justify-between">
-                        <div>
-                            <CardTitle>
-                                {budget.isSystemBudget ? 'Direct Expenses' : 'Expenses'} ({budgetTransactions.length})
-                            </CardTitle>
-                            {budget.isSystemBudget && (
-                                <p className="text-sm text-gray-500 mt-1">
-                                    Expenses not part of any custom budget
-                                </p>
-                            )}
-                        </div>
-                        <QuickAddTransaction
-                            open={showQuickAdd}
-                            onOpenChange={setShowQuickAdd}
-                            categories={categories}
-                            customBudgets={allBudgets}
-                            defaultCustomBudgetId={budgetId}
-                            onSubmit={(data) => createTransactionMutation.mutate(data)}
-                            isSubmitting={createTransactionMutation.isPending}
-                            transactions={transactions}
-                        />
-                    </CardHeader>
-                    <CardContent>
-                        {budgetTransactions.length === 0 ? (
-                            <div className="h-40 flex items-center justify-center text-gray-400">
-                                <p>No {budget.isSystemBudget ? 'direct ' : ''}expenses yet. Add your first one!</p>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                                {budgetTransactions.map((transaction) => (
-                                    <TransactionCard
-                                        key={transaction.id}
-                                        transaction={transaction}
-                                        category={categoryMap[transaction.category_id]}
-                                        onEdit={(t, data) => {
-                                            transactionActions.handleSubmit(data, t);
-                                        }}
-                                        onDelete={() => transactionActions.handleDelete(transaction)}
-                                    />
-                                ))}
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-
-                {budgetActions.showForm && !budget.isSystemBudget && (
-                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                        <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                            <CustomBudgetForm
-                                budget={budget}
-                                onSubmit={handleEditBudget}
-                                onCancel={() => budgetActions.setShowForm(false)}
-                                isSubmitting={budgetActions.isSubmitting}
-                                cashWallet={cashWallet}
-                                baseCurrency={settings.baseCurrency}
-                                settings={settings}
-                            />
-                        </div>
-                    </div>
-                )}
-            </div>
+      <div className="min-h-screen p-4 md:p-8">
+        <div className="max-w-7xl mx-auto">
+          <Card className="border-none shadow-lg">
+            <CardContent className="p-12 text-center">
+              <AlertCircle className="w-16 h-16 text-orange-500 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Budget Not Found</h2>
+              <p className="text-gray-600 mb-4">
+                The budget you're looking for doesn't exist or has been deleted.
+              </p>
+              <p className="text-sm text-gray-500">
+                Redirecting to budgets page...
+              </p>
+            </CardContent>
+          </Card>
         </div>
+      </div>
     );
+  }
+
+  if (budgetLoading || !budget || !stats) {
+    return (
+      <div className="min-h-screen p-4 md:p-8">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-gray-200 rounded animate-pulse" />
+            <div className="flex-1">
+              <div className="h-8 w-64 bg-gray-200 rounded animate-pulse mb-2" />
+              <div className="h-4 w-48 bg-gray-200 rounded animate-pulse" />
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i} className="border-none shadow-lg">
+                <CardContent className="p-6">
+                  <div className="h-4 w-24 bg-gray-200 rounded animate-pulse mb-2" />
+                  <div className="h-8 w-32 bg-gray-200 rounded animate-pulse" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <Card className="border-none shadow-lg">
+            <CardContent className="p-6">
+              <div className="h-4 w-32 bg-gray-200 rounded animate-pulse mb-4" />
+              <div className="h-12 w-full bg-gray-200 rounded animate-pulse" />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  const canDelete = !budget.isSystemBudget;
+  const isCompleted = budget.status === 'completed';
+  const canEdit = !budget.isSystemBudget;
+
+  let totalBudget = 0;
+  let totalRemaining = 0;
+  
+  if (budget.isSystemBudget) {
+    totalBudget = budget.budgetAmount || 0;
+    totalRemaining = stats.remaining || 0;
+  } else {
+    totalBudget = stats?.totalAllocatedUnits || 0;
+    
+    totalRemaining = stats?.digital?.remaining || 0;
+    if (stats?.cashByCurrency) {
+      Object.values(stats.cashByCurrency).forEach(cashData => {
+        totalRemaining += cashData?.remaining || 0;
+      });
+    }
+  }
+
+  const hasBothDigitalAndCash = !budget.isSystemBudget && 
+    stats?.digital !== undefined && 
+    stats?.cashByCurrency && 
+    Object.keys(stats.cashByCurrency).length > 0 &&
+    (stats.digital.allocated > 0 || Object.values(stats.cashByCurrency).some(cashData => cashData.allocated > 0));
+
+  return (
+    <div className="min-h-screen p-4 md:p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="flex items-center gap-4">
+          <Link to={createPageUrl("Budgets")}>
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+          </Link>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-900">{budget.name}</h1>
+              {budget.isSystemBudget && (
+                <Badge variant="outline">System</Badge>
+              )}
+              {isCompleted && (
+                <Badge className="bg-green-100 text-green-800">Completed</Badge>
+              )}
+            </div>
+            <p className="text-gray-500 mt-1">
+              {formatDate(budget.startDate, settings.dateFormat)} - {formatDate(budget.endDate, settings.dateFormat)}
+            </p>
+          </div>
+          <div className="flex gap-2">
+            {canEdit && !isCompleted && (
+              <Button
+                onClick={() => budgetActions.setShowForm(true)}
+                variant="outline"
+              >
+                Edit Budget
+              </Button>
+            )}
+            {!budget.isSystemBudget && budget.status === 'active' && (
+              <Button
+                onClick={() => completeBudgetMutation.mutate(budgetId)}
+                disabled={completeBudgetMutation.isPending}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Complete
+              </Button>
+            )}
+            {!budget.isSystemBudget && budget.status === 'completed' && (
+              <Button
+                onClick={() => reactivateBudgetMutation.mutate(budgetId)}
+                disabled={reactivateBudgetMutation.isPending}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                Reactivate
+              </Button>
+            )}
+            {canDelete && (
+              <Button
+                onClick={handleDeleteBudget}
+                variant="outline"
+                className="text-red-600 border-red-600 hover:bg-red-50"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-4">
+          <Card className="border-none shadow-lg">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-500">Budget</CardTitle>
+              <DollarSign className="w-4 h-4 text-blue-500" />
+            </CardHeader>
+            <CardContent>
+              {hasBothDigitalAndCash ? (
+                <div className="space-y-3">
+                  <div className="text-center pb-2 border-b">
+                    <p className="text-sm text-gray-500 mb-1">Total</p>
+                    <div className="text-lg font-bold text-gray-900">
+                      {formatCurrency(totalBudget, settings)}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex flex-col items-center justify-center">
+                      <p className="text-xs text-gray-500 mb-1">Digital</p>
+                      <div className="text-base font-semibold text-gray-900">
+                        {formatCurrency(stats.digital.allocated, settings)}
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-center justify-center">
+                      <p className="text-xs text-gray-500 mb-1">Cash</p>
+                      {Object.entries(stats.cashByCurrency).map(([currency, data]) => (
+                        <div key={currency} className="text-base font-semibold text-gray-900">
+                          {formatCurrency(data.allocated, { ...settings, currencySymbol: getCurrencySymbol(currency) })}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center">
+                  <div className="text-lg font-bold text-gray-900">
+                    {formatCurrency(totalBudget, settings)}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="border-none shadow-lg">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-500">Expenses</CardTitle>
+              <TrendingDown className="w-4 h-4 text-red-500" />
+            </CardHeader>
+            <CardContent>
+              <ExpensesCardContent budget={budget} stats={stats} settings={settings} />
+            </CardContent>
+          </Card>
+
+          <Card className="border-none shadow-lg">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-500">Remaining</CardTitle>
+              <CheckCircle className="w-4 h-4 text-green-500" />
+            </CardHeader>
+            <CardContent>
+              {hasBothDigitalAndCash ? (
+                <div className="space-y-3">
+                  <div className="text-center pb-2 border-b">
+                    <p className="text-sm text-gray-500 mb-1">Total</p>
+                    <div className={`text-lg font-bold ${totalRemaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {formatCurrency(totalRemaining, settings)}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex flex-col items-center justify-center">
+                      <p className="text-xs text-gray-500 mb-1">Digital</p>
+                      <div className={`text-base font-semibold ${stats.digital.remaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {formatCurrency(stats.digital.remaining, settings)}
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-center justify-center">
+                      <p className="text-xs text-gray-500 mb-1">Cash</p>
+                      {Object.entries(stats.cashByCurrency).map(([currency, data]) => (
+                        <div key={currency} className={`text-base font-semibold ${data.remaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {formatCurrency(data.remaining, { ...settings, currencySymbol: getCurrencySymbol(currency) })}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center">
+                  <div className={`text-lg font-bold ${totalRemaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {formatCurrency(totalRemaining, settings)}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {budget.description && (
+          <Card className="border-none shadow-lg">
+            <CardHeader>
+              <CardTitle>Description</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-700">{budget.description}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {!budget.isSystemBudget && budget.status !== 'completed' && allocationStats && (
+          <AllocationManager
+            customBudget={budget}
+            allocations={allocations}
+            categories={categories}
+            allocationStats={allocationStats}
+            onCreateAllocation={(data) => createAllocationMutation.mutate(data)}
+            onUpdateAllocation={({ id, data }) => updateAllocationMutation.mutate({ id, data })}
+            onDeleteAllocation={(id) => deleteAllocationMutation.mutate(id)}
+            isSubmitting={createAllocationMutation.isPending || updateAllocationMutation.isPending}
+          />
+        )}
+
+        {budget.isSystemBudget && relatedCustomBudgetsForDisplay.length > 0 && (
+          <Card className="border-none shadow-lg">
+            <CardHeader>
+              <CardTitle>Custom Budgets ({relatedCustomBudgetsForDisplay.length})</CardTitle>
+              <p className="text-sm text-gray-500 mt-1">
+                Custom budgets containing {budget.systemBudgetType} expenses
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                {relatedCustomBudgetsForDisplay.map((customBudget) => {
+                  const customBudgetStats = getCustomBudgetStats(customBudget, transactions);
+
+                  return (
+                    <BudgetCard
+                      key={customBudget.id}
+                      budget={customBudget}
+                      stats={customBudgetStats}
+                      settings={settings}
+                    />
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        <Card className="border-none shadow-lg">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>
+                {budget.isSystemBudget ? 'Direct Expenses' : 'Expenses'} ({budgetTransactions.length})
+              </CardTitle>
+              {budget.isSystemBudget && (
+                <p className="text-sm text-gray-500 mt-1">
+                  Expenses not part of any custom budget
+                </p>
+              )}
+            </div>
+            <QuickAddTransaction
+              open={showQuickAdd}
+              onOpenChange={setShowQuickAdd}
+              categories={categories}
+              customBudgets={allBudgets}
+              defaultCustomBudgetId={budgetId}
+              onSubmit={(data) => createTransactionMutation.mutate(data)}
+              isSubmitting={createTransactionMutation.isPending}
+              transactions={transactions}
+            />
+          </CardHeader>
+          <CardContent>
+            {budgetTransactions.length === 0 ? (
+              <div className="h-40 flex items-center justify-center text-gray-400">
+                <p>No {budget.isSystemBudget ? 'direct ' : ''}expenses yet. Add your first one!</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {budgetTransactions.map((transaction) => (
+                  <TransactionCard
+                    key={transaction.id}
+                    transaction={transaction}
+                    category={categoryMap[transaction.category_id]}
+                    onEdit={(t, data) => {
+                      transactionActions.handleSubmit(data, t);
+                    }}
+                    onDelete={() => transactionActions.handleDelete(transaction)}
+                  />
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {budgetActions.showForm && !budget.isSystemBudget && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <CustomBudgetForm
+                budget={budget}
+                onSubmit={handleEditBudget}
+                onCancel={() => budgetActions.setShowForm(false)}
+                isSubmitting={budgetActions.isSubmitting}
+                cashWallet={cashWallet}
+                baseCurrency={settings.baseCurrency}
+                settings={settings}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }

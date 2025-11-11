@@ -27,13 +27,8 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import CustomBudgetForm from "../components/custombudgets/CustomBudgetForm";
-import CompactCustomBudgetCard from "../components/custombudgets/CompactCustomBudgetCard";
+import BudgetCard from "../components/budgets/BudgetCard"; // RENAMED (2025-01-11): CompactCustomBudgetCard -> BudgetCard
 import MonthNavigator from "../components/ui/MonthNavigator";
-
-const statusConfig = {
-  active: { label: "Active", color: "text-green-600", bg: "bg-green-50" },
-  completed: { label: "Completed", color: "text-blue-600", bg: "bg-blue-50" }
-};
 
 export default function Budgets() {
   const { user, settings } = useSettings();
@@ -140,7 +135,7 @@ export default function Budgets() {
           />
         )}
 
-        {/* System Budgets Section */}
+        {/* System Budgets Section - UPDATED: Using BudgetCard */}
         {systemBudgetsWithStats.length > 0 && (
           <Card className="border-none shadow-lg">
             <CardHeader>
@@ -157,15 +152,16 @@ export default function Budgets() {
             <CardContent>
               <div className="grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                 {systemBudgetsWithStats.map((budget) => {
-                  // Adapt system budget data for CompactCustomBudgetCard
+                  // Adapt system budget data for BudgetCard
                   const adaptedBudget = {
                     ...budget,
                     allocatedAmount: budget.budgetAmount,
-                    status: 'active'
+                    status: 'active',
+                    isSystemBudget: true // Indicate it's a system budget
                   };
                   
                   return (
-                    <CompactCustomBudgetCard
+                    <BudgetCard
                       key={budget.id}
                       budget={adaptedBudget}
                       stats={budget.preCalculatedStats}
@@ -178,7 +174,7 @@ export default function Budgets() {
           </Card>
         )}
 
-        {/* Single consolidated custom budgets section with sorting */}
+        {/* ENHANCEMENT (2025-01-11): Single consolidated custom budgets section with sorting */}
         {sortedCustomBudgets.length === 0 ? (
           <Card className="border-none shadow-lg">
             <CardHeader>
@@ -213,7 +209,7 @@ export default function Budgets() {
                   const stats = getCustomBudgetStats(budget, transactions);
                   
                   return (
-                    <CompactCustomBudgetCard
+                    <BudgetCard
                       key={budget.id}
                       budget={budget}
                       stats={stats}

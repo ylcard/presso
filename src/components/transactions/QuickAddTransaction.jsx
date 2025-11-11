@@ -1,11 +1,10 @@
 import React from "react";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useSettings } from "../utils/SettingsContext";
 import { useCashWallet } from "../hooks/useBase44Entities";
 import TransactionFormContent from "./TransactionFormContent";
@@ -24,34 +23,29 @@ export default function QuickAddTransaction({
   const { cashWallet } = useCashWallet(user);
 
   return (
-    <Popover open={open} onOpenChange={onOpenChange}>
-      <PopoverTrigger asChild>
-        <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg">
-          <Plus className="w-4 h-4 mr-2" />
-          Add Expense
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[400px]" align="end">
-        <div className="space-y-4">
-          <h3 className="font-semibold text-lg">Quick Add Expense</h3>
-          <TransactionFormContent
-            initialTransaction={defaultCustomBudgetId ? {
-              customBudgetId: defaultCustomBudgetId,
-              date: customBudgets.find(b => b.id === defaultCustomBudgetId)?.startDate
-            } : null}
-            categories={categories}
-            allBudgets={customBudgets}
-            onSubmit={onSubmit}
-            onCancel={() => onOpenChange(false)}
-            isSubmitting={isSubmitting}
-            cashWallet={cashWallet}
-            transactions={transactions}
-          />
-        </div>
-      </PopoverContent>
-    </Popover>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Quick Add Expense</DialogTitle>
+        </DialogHeader>
+        <TransactionFormContent
+          initialTransaction={defaultCustomBudgetId ? {
+            customBudgetId: defaultCustomBudgetId,
+            date: customBudgets.find(b => b.id === defaultCustomBudgetId)?.startDate
+          } : null}
+          categories={categories}
+          allBudgets={customBudgets}
+          onSubmit={onSubmit}
+          onCancel={() => onOpenChange(false)}
+          isSubmitting={isSubmitting}
+          cashWallet={cashWallet}
+          transactions={transactions}
+        />
+      </DialogContent>
+    </Dialog>
   );
 }
 
-// ISSUE FIX (2025-01-11): Removed max-h-[600px] and overflow-y-auto from PopoverContent
-// to ensure action buttons are always visible without needing to scroll
+// ISSUE FIX (2025-01-11): Changed from Popover to Dialog to match QuickAddIncome design
+// Removed the PopoverTrigger button that was causing an orphaned "Add Expense" button at the bottom
+// Now properly controlled via open/onOpenChange props like QuickAddIncome
