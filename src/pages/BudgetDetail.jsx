@@ -406,7 +406,7 @@ export default function BudgetDetail() {
       const now = new Date();
 
       const filtered = allCustomBudgets.filter(cb => {
-        if (cb.status !== 'active' && cb.status !== 'completed') return false;
+        if (cb.status !== 'active' && cb.status !== 'completed' && cb.status !== 'planned') return false;
         if (cb.isSystemBudget) return false;
 
         const cbStart = new Date(cb.startDate);
