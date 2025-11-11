@@ -1,9 +1,11 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { formatCurrency } from "../utils/formatCurrency";
+// UPDATED 12-Jan-2025: Changed import from formatCurrency.jsx to currencyUtils.js
+import { formatCurrency } from "../utils/currencyUtils";
 
 export default function BudgetBar({ 
   budget, 
