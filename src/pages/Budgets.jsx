@@ -17,8 +17,9 @@ import {
   useCashWallet,
 } from "../components/hooks/useBase44Entities";
 import { useBudgetsAggregates } from "../components/hooks/useDerivedData";
+// COMMENTED OUT 11-Nov-2025: Removed getCustomBudgetStats import from budgetCalculations
+// import { getCustomBudgetStats } from "../components/utils/budgetCalculations";
 import { useCustomBudgetActions } from "../components/hooks/useActions";
-import { getCustomBudgetStats } from "../components/utils/budgetCalculations";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,6 +34,69 @@ import {
 import CustomBudgetForm from "../components/custombudgets/CustomBudgetForm";
 import BudgetCard from "../components/budgets/BudgetCard";
 import MonthNavigator from "../components/ui/MonthNavigator";
+
+// REFACTORED 11-Nov-2025: Helper to calculate custom budget stats directly
+const getCustomBudgetStats = (customBudget, transactions) => {
+  const budgetTransactions = transactions.filter(t => t.customBudgetId === customBudget.id);
+
+  // Separate digital and cash transactions
+  const digitalTransactions = budgetTransactions.filter(
+    t => !t.isCashTransaction || t.cashTransactionType !== 'expense_from_wallet'
+  );
+  const cashTransactions = budgetTransactions.filter(
+    t => t.isCashTransaction && t.cashTransactionType === 'expense_from_wallet'
+  );
+
+  // Calculate digital stats
+  const digitalAllocated = customBudget.allocatedAmount || 0;
+  const digitalSpent = digitalTransactions
+    .filter(t => t.type === 'expense')
+    .reduce((sum, t) => sum + (t.originalAmount || t.amount), 0);
+  const digitalUnpaid = digitalTransactions
+    .filter(t => t.type === 'expense' && !t.isPaid)
+    .reduce((sum, t) => sum + (t.originalAmount || t.amount), 0);
+  const digitalRemaining = digitalAllocated - digitalSpent;
+
+  // Calculate cash stats by currency
+  const cashByCurrency = {};
+  const cashAllocations = customBudget.cashAllocations || [];
+  
+  cashAllocations.forEach(allocation => {
+    const currencyCode = allocation.currencyCode;
+    const allocated = allocation.amount || 0;
+    
+    const spent = cashTransactions
+      .filter(t => t.type === 'expense' && t.cashCurrency === currencyCode)
+      .reduce((sum, t) => sum + (t.cashAmount || 0), 0);
+    
+    const remaining = allocated - spent;
+    
+    cashByCurrency[currencyCode] = {
+      allocated,
+      spent,
+      remaining
+    };
+  });
+
+  // Calculate unit-based totals
+  const totalAllocatedUnits = digitalAllocated + cashAllocations.reduce((sum, alloc) => sum + alloc.amount, 0);
+  const totalSpentUnits = digitalSpent + Object.values(cashByCurrency).reduce((sum, cashData) => sum + cashData.spent, 0);
+  const totalUnpaidUnits = digitalUnpaid;
+
+  return {
+    digital: {
+      allocated: digitalAllocated,
+      spent: digitalSpent,
+      unpaid: digitalUnpaid,
+      remaining: digitalRemaining
+    },
+    cashByCurrency,
+    totalAllocatedUnits,
+    totalSpentUnits,
+    totalUnpaidUnits,
+    totalTransactionCount: budgetTransactions.length
+  };
+};
 
 export default function Budgets() {
   const { user, settings } = useSettings();
@@ -142,7 +206,7 @@ export default function Budgets() {
           </Card>
         )}
 
-        {/* ENHANCEMENT (2025-01-12): Custom Budgets with Popover form */}
+        {/* Custom Budgets Section */}
         {sortedCustomBudgets.length === 0 ? (
           <Card className="border-none shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between">
@@ -277,12 +341,4 @@ export default function Budgets() {
   );
 }
 
-// ENHANCEMENT (2025-01-12): Converted form to Popover
-// - Form now appears in popover instead of full-screen Card
-// - Popover width set to 600px for optimal form layout
-// - Aligned to "end" for right-side appearance
-// - No scrolling required due to compact form design
-// FIX (2025-01-12): Fixed popover jumping issue
-// - PopoverContent now uses fixed positioning with centering transforms
-// - Added max-height with overflow-y-auto for long forms
-// - Form stays in place when content expands (e.g., adding cash allocations)
+// REFACTORED 11-Nov-2025: Removed budgetCalculations dependency, now calculates custom budget stats directly in this file

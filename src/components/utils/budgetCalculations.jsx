@@ -1,4 +1,14 @@
+// COMMENTED OUT 11-Nov-2025: This file is obsolete and has been refactored.
+// General utility functions (date parsing, entity mapping, amount normalization) have been moved to:
+//   - components/utils/dateUtils.js (parseDate, formatDateString, getFirstDayOfMonth, getLastDayOfMonth)
+//   - components/utils/generalUtils.js (createEntityMap, normalizeAmount)
+// All budget and expense calculation logic has been consolidated into components/utils/expenseCalculations.js
+// Data aggregation hooks in components/hooks/useDerivedData.js now use expenseCalculations.js directly.
+//
+// This architectural change eliminates redundancy and ensures a single source of truth for expense calculations,
+// resolving discrepancies like the "Wants" budget paid amount issue (€1,241.14 vs €671.71).
 
+/*
 import { getCurrencySymbol } from './currencyUtils';
 
 // Utility function to create a map from an array of entities
@@ -289,24 +299,6 @@ export const getSystemBudgetStats = (
     // COMMENTED OUT 2025-01-12: Removed aggregatedRemainingAmounts logic
     // This was adding "ghost amounts" (remaining budget allocations) to unpaid expenses
     // Now we only return actual transaction data
-    /*
-    if (includeAggregatedRemaining) {
-        const aggregatedRemaining = calculateAggregatedRemainingAmounts(
-            allCustomBudgets,
-            transactions,
-            baseCurrency
-        );
-
-        unpaidTotalBaseCurrency += aggregatedRemaining.mainSum;
-
-        aggregatedRemaining.separateCashAmounts.forEach(cashAmount => {
-            unpaidForeignCurrencies.push({
-                currencyCode: cashAmount.currencyCode,
-                amount: cashAmount.amount
-            });
-        });
-    }
-    */
 
     // Structure the response
     const paid = {
@@ -464,3 +456,4 @@ export const filterBudgetsByTransactionDate = (customBudgets, transactionDate) =
         return txDate >= startDate && txDate <= endDate;
     });
 };
+*/
