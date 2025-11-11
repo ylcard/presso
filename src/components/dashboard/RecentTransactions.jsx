@@ -6,11 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { formatCurrency } from "../utils/formatCurrency";
+// UPDATED 12-Jan-2025: Changed imports to use currencyUtils.js and generalUtils.js
+import { formatCurrency } from "../utils/currencyUtils";
 import { iconMap, IncomeIcon } from "../utils/iconMapConfig";
 import { useSettings } from "../utils/SettingsContext";
 import { usePeriod } from "../hooks/usePeriod";
-import { createEntityMap } from "../utils/budgetCalculations";
+import { createEntityMap } from "../utils/generalUtils";
 
 export default function RecentTransactions({ transactions, categories, customBudgets }) {
   const { settings } = useSettings();
