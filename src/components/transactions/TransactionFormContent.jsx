@@ -19,7 +19,9 @@ import { useExchangeRates } from "../hooks/useExchangeRates";
 import { getCurrencyBalance, getRemainingAllocatedCash } from "../utils/cashAllocationUtils";
 import { getCurrencySymbol } from "../utils/currencyUtils";
 import { calculateConvertedAmount, getRateForDate, SUPPORTED_CURRENCIES } from "../utils/currencyCalculations";
-import { formatDateString, normalizeAmount } from "../utils/budgetCalculations";
+// UPDATED 12-Jan-2025: Changed imports to use dateUtils.js and generalUtils.js
+import { formatDateString } from "../utils/dateUtils";
+import { normalizeAmount } from "../utils/generalUtils";
 
 export default function TransactionFormContent({
   initialTransaction = null,
@@ -458,3 +460,4 @@ export default function TransactionFormContent({
 // Removed date-based filtering (filterBudgetsByTransactionDate) in favor of status-based filtering
 // This allows users to link transactions to future events (planned budgets) or current events (active budgets)
 // Pre-selected budget for editing is always included regardless of status
+// UPDATED 12-Jan-2025: Changed imports to use dateUtils.js and generalUtils.js instead of budgetCalculations.js
