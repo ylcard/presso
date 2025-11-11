@@ -7,22 +7,6 @@ import { getCurrencySymbol } from "../utils/currencyUtils";
 import { motion } from "framer-motion";
 import { CheckCircle, Clock } from "lucide-react";
 
-// DEPRECATED: getCurrencySymbol function moved to components/utils/currencyUtils.js
-// This helper is now imported from the centralized utility file
-// Scheduled for removal in next refactoring cycle
-/*
-const getCurrencySymbol = (currencyCode) => {
-  const currencySymbols = {
-    'USD': '$', 'EUR': '€', 'GBP': '£', 'JPY': '¥', 'CAD': 'CA$', 'AUD': 'A$',
-    'CHF': 'CHF', 'CNY': '¥', 'INR': '₹', 'MXN': 'MX$', 'BRL': 'R$', 'ZAR': 'R',
-    'KRW': '₩', 'SGD': 'S$', 'NZD': 'NZ$', 'HKD': 'HK$', 'SEK': 'kr', 'NOK': 'kr',
-    'DKK': 'kr', 'PLN': 'zł', 'THB': '฿', 'MYR': 'RM', 'IDR': 'Rp', 'PHP': '₱',
-    'CZK': 'Kč', 'ILS': '₪', 'CLP': 'CLP$', 'AED': 'د.إ', 'SAR': '﷼', 'TWD': 'NT$', 'TRY': '₺'
-  };
-  return currencySymbols[currencyCode] || currencyCode;
-};
-*/
-
 export default function CompactCustomBudgetCard({ budget, stats, settings }) {
   const baseCurrency = settings?.baseCurrency || 'USD';
 
@@ -58,7 +42,7 @@ export default function CompactCustomBudgetCard({ budget, stats, settings }) {
   // Unpaid amount (digital only, in base currency)
   const unpaidAmount = stats?.digital?.unpaid || 0;
 
-  // Circular progress SVG - FIXED: Increased container size to prevent clipping
+  // Circular progress SVG
   const radius = 38;
   const circumference = 2 * Math.PI * radius;
   const paidPercentage = (stats?.totalAllocatedUnits || 0) > 0 
@@ -83,9 +67,10 @@ export default function CompactCustomBudgetCard({ budget, stats, settings }) {
       animate={{ opacity: 1, scale: 1 }}
       whileHover={{ scale: 1.02 }}
     >
-      <Card className="border-none shadow-md hover:shadow-lg transition-all overflow-hidden">
+      {/* ENHANCEMENT (2025-01-11): Added min-h-[240px] for consistent card heights */}
+      <Card className="border-none shadow-md hover:shadow-lg transition-all overflow-hidden min-h-[240px] flex flex-col">
         <div className="h-1 w-full" style={{ backgroundColor: color }} />
-        <CardContent className="p-4">
+        <CardContent className="p-4 flex-1 flex flex-col">
           <Link to={createPageUrl(`BudgetDetail?id=${budget.id}`)}>
             <div className="flex items-center gap-2 mb-3">
               <h3 className="font-bold text-gray-900 text-sm hover:text-blue-600 transition-colors truncate flex-1">
@@ -100,8 +85,8 @@ export default function CompactCustomBudgetCard({ budget, stats, settings }) {
             </div>
           </Link>
 
-          {/* Circular Progress - FIXED: Increased container from w-20 h-20 to w-24 h-24 */}
-          <div className="flex items-center justify-center mb-3">
+          {/* Circular Progress */}
+          <div className="flex items-center justify-center mb-3 flex-1">
             <div className="relative w-24 h-24">
               <svg className="w-24 h-24 transform -rotate-90">
                 {/* Background circle */}
@@ -151,40 +136,44 @@ export default function CompactCustomBudgetCard({ budget, stats, settings }) {
             </div>
           </div>
 
-          {/* Paid and Unpaid Amounts - Side by Side */}
-          <div className="grid grid-cols-2 gap-3 text-xs">
+          {/* Paid and Unpaid Amounts - Side by Side OR Single Centered */}
+          {/* ENHANCEMENT (2025-01-11): Always render grid to maintain consistent height */}
+          <div className="grid grid-cols-2 gap-3 text-xs min-h-[60px]">
             {/* Paid column */}
-            {hasPaid && (
-              <div>
-                <p className="text-gray-500 mb-1">Paid</p>
-                {Object.entries(paidAmounts)
-                  .filter(([_, amount]) => amount > 0)
-                  .map(([currency, amount]) => {
-                    const symbol = getCurrencySymbol(currency);
-                    return (
-                      <p key={currency} className="font-semibold text-gray-900">
-                        {currency === baseCurrency 
-                          ? formatCurrency(amount, settings)
-                          : `${symbol}${amount.toFixed(2)}`
-                        }
-                      </p>
-                    );
-                  })}
-              </div>
-            )}
+            <div className={hasPaid ? '' : 'opacity-0'}>
+              <p className="text-gray-500 mb-1">Paid</p>
+              {Object.entries(paidAmounts)
+                .filter(([_, amount]) => amount > 0)
+                .map(([currency, amount]) => {
+                  const symbol = getCurrencySymbol(currency);
+                  return (
+                    <p key={currency} className="font-semibold text-gray-900 truncate">
+                      {currency === baseCurrency 
+                        ? formatCurrency(amount, settings)
+                        : `${symbol}${amount.toFixed(2)}`
+                      }
+                    </p>
+                  );
+                })}
+            </div>
 
             {/* Unpaid column */}
-            {hasUnpaid && (
-              <div>
-                <p className="text-gray-500 mb-1">Unpaid</p>
-                <p className="font-semibold text-orange-600">
-                  {formatCurrency(unpaidAmount, settings)}
-                </p>
-              </div>
-            )}
+            <div className={hasUnpaid ? '' : 'opacity-0'}>
+              <p className="text-gray-500 mb-1">Unpaid</p>
+              <p className="font-semibold text-orange-600 truncate">
+                {formatCurrency(unpaidAmount, settings)}
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
     </motion.div>
   );
 }
+
+// ENHANCEMENT (2025-01-11):
+// Issue #4 - Fixed inconsistent card sizes by:
+// 1. Adding min-h-[240px] to ensure all cards have the same minimum height
+// 2. Using flex layout to distribute space properly
+// 3. Always rendering the grid with min-h-[60px] for the amounts section
+// 4. Using opacity-0 instead of conditional rendering to maintain layout consistency

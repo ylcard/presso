@@ -1,33 +1,82 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { X } from "lucide-react";
 import { motion } from "framer-motion";
 import AmountInput from "../ui/AmountInput";
 import CategorySelect from "../ui/CategorySelect";
+import CurrencySelect from "../ui/CurrencySelect";
+import { normalizeAmount } from "../utils/budgetCalculations";
+import { getCurrencySymbol } from "../utils/currencyUtils";
+import { formatCurrency } from "../utils/formatCurrency";
 
-export default function AllocationForm({ allocation, customBudgetId, categories, onSubmit, onCancel, isSubmitting }) {
+export default function AllocationForm({ 
+  allocation, 
+  customBudget,
+  categories, 
+  onSubmit, 
+  onCancel, 
+  isSubmitting,
+  settings,
+  cashWallet
+}) {
+  const baseCurrency = settings?.baseCurrency || 'USD';
+  const hasCashAllocations = customBudget?.cashAllocations && customBudget.cashAllocations.length > 0;
+
   const [formData, setFormData] = useState({
     categoryId: '',
-    allocatedAmount: ''
+    allocatedAmount: '',
+    allocationType: 'digital',
+    currency: baseCurrency
   });
 
   useEffect(() => {
     if (allocation) {
       setFormData({
         categoryId: allocation.categoryId || '',
-        allocatedAmount: allocation.allocatedAmount?.toString() || ''
+        allocatedAmount: allocation.allocatedAmount?.toString() || '',
+        allocationType: allocation.allocationType || 'digital',
+        currency: allocation.currency || baseCurrency
+      });
+    } else {
+      setFormData({
+        categoryId: '',
+        allocatedAmount: '',
+        allocationType: 'digital',
+        currency: baseCurrency
       });
     }
-  }, [allocation]);
+  }, [allocation, baseCurrency]);
+
+  // Calculate available funds
+  const availableDigital = customBudget?.allocatedAmount || 0;
+  
+  const availableCashByCurrency = {};
+  if (hasCashAllocations) {
+    customBudget.cashAllocations.forEach(alloc => {
+      availableCashByCurrency[alloc.currencyCode] = alloc.amount;
+    });
+  }
+
+  // Get wallet cash (for display only - not for validation since allocations come from budget)
+  const walletCashByCurrency = {};
+  if (cashWallet?.balances) {
+    cashWallet.balances.forEach(balance => {
+      walletCashByCurrency[balance.currencyCode] = balance.amount;
+    });
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    const normalizedAmount = normalizeAmount(formData.allocatedAmount);
+    
     onSubmit({
-      customBudgetId,
-      categoryId: formData.categoryId,
-      allocatedAmount: parseFloat(formData.allocatedAmount)
+      ...formData,
+      allocatedAmount: parseFloat(normalizedAmount),
+      currency: formData.allocationType === 'digital' ? baseCurrency : formData.currency
     });
   };
 
@@ -37,45 +86,117 @@ export default function AllocationForm({ allocation, customBudgetId, categories,
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
     >
-      <Card className="border border-blue-200 bg-blue-50/50">
-        <CardHeader className="flex flex-row items-center justify-between pb-3">
-          <CardTitle className="text-lg">{allocation ? 'Edit' : 'Add'} Allocation</CardTitle>
-          <Button variant="ghost" size="icon" onClick={onCancel} className="h-8 w-8">
+      <Card className="border-none shadow-lg">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>{allocation ? 'Edit' : 'Add'} Allocation</CardTitle>
+          <Button variant="ghost" size="icon" onClick={onCancel}>
             <X className="w-4 h-4" />
           </Button>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Allocation Type - Only show if cash allocations exist */}
+            {hasCashAllocations && (
+              <div className="space-y-2">
+                <Label>Allocation Type</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    variant={formData.allocationType === 'digital' ? 'default' : 'outline'}
+                    onClick={() => setFormData({ ...formData, allocationType: 'digital', currency: baseCurrency })}
+                    className="w-full"
+                  >
+                    Digital (Card/Bank)
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={formData.allocationType === 'cash' ? 'default' : 'outline'}
+                    onClick={() => setFormData({ ...formData, allocationType: 'cash' })}
+                    className="w-full"
+                  >
+                    Cash
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Available Funds Display */}
+            <div className="p-3 bg-blue-50 rounded-lg space-y-1">
+              <p className="text-sm font-medium text-gray-700">Available to Allocate:</p>
+              {formData.allocationType === 'digital' ? (
+                <p className="text-lg font-bold text-blue-600">
+                  {formatCurrency(availableDigital, settings)}
+                </p>
+              ) : (
+                <div className="space-y-1">
+                  {Object.entries(availableCashByCurrency).map(([currency, amount]) => (
+                    <p key={currency} className="text-sm font-semibold text-blue-600">
+                      {currency}: {formatCurrency(amount, { ...settings, currencySymbol: getCurrencySymbol(currency) })}
+                    </p>
+                  ))}
+                  {Object.keys(availableCashByCurrency).length === 0 && (
+                    <p className="text-sm text-gray-500">No cash allocated to this budget</p>
+                  )}
+                </div>
+              )}
+              
+              {/* Also show wallet cash for reference */}
+              {formData.allocationType === 'cash' && Object.keys(walletCashByCurrency).length > 0 && (
+                <div className="mt-2 pt-2 border-t border-blue-200">
+                  <p className="text-xs text-gray-600 mb-1">Wallet Cash (for reference):</p>
+                  {Object.entries(walletCashByCurrency).map(([currency, amount]) => (
+                    <p key={currency} className="text-xs text-gray-600">
+                      {currency}: {formatCurrency(amount, { ...settings, currencySymbol: getCurrencySymbol(currency) })}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Category Selection */}
             <div className="space-y-2">
-              <Label htmlFor="category">Category *</Label>
+              <Label htmlFor="categoryId">Category *</Label>
               <CategorySelect
                 value={formData.categoryId}
                 onValueChange={(value) => setFormData({ ...formData, categoryId: value })}
                 categories={categories}
-                placeholder="Select a category"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="amount">Allocated Amount *</Label>
-              <AmountInput
-                id="amount"
-                value={formData.allocatedAmount}
-                onChange={(e) => setFormData({ ...formData, allocatedAmount: e.target.value })}
-                placeholder="0.00"
-                required
-              />
+            {/* Amount and Currency */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="allocatedAmount">Amount *</Label>
+                <AmountInput
+                  id="allocatedAmount"
+                  value={formData.allocatedAmount}
+                  onChange={(e) => setFormData({ ...formData, allocatedAmount: e.target.value })}
+                  placeholder="0.00"
+                  currencySymbol={formData.allocationType === 'digital' ? settings?.currencySymbol : getCurrencySymbol(formData.currency)}
+                  required
+                />
+              </div>
+
+              {/* Currency - Only show for cash allocations */}
+              {formData.allocationType === 'cash' && (
+                <div className="space-y-2">
+                  <Label htmlFor="currency">Currency *</Label>
+                  <CurrencySelect
+                    value={formData.currency}
+                    onValueChange={(value) => setFormData({ ...formData, currency: value })}
+                  />
+                </div>
+              )}
             </div>
 
-            <div className="flex justify-end gap-3 pt-2">
-              <Button type="button" variant="outline" onClick={onCancel} size="sm">
+            <div className="flex justify-end gap-3 pt-4">
+              <Button type="button" variant="outline" onClick={onCancel}>
                 Cancel
               </Button>
               <Button
                 type="submit"
-                disabled={isSubmitting || !formData.categoryId || !formData.allocatedAmount}
+                disabled={isSubmitting}
                 className="bg-gradient-to-r from-blue-600 to-purple-600"
-                size="sm"
               >
                 {isSubmitting ? 'Saving...' : allocation ? 'Update' : 'Add'}
               </Button>
@@ -86,3 +207,10 @@ export default function AllocationForm({ allocation, customBudgetId, categories,
     </motion.div>
   );
 }
+
+// ENHANCEMENT (2025-01-11): 
+// 1. Added allocation type selector (Digital vs Cash) - only visible when budget has cash allocations
+// 2. Added currency selector for cash allocations
+// 3. Added "Available to Allocate" display showing budget's available digital/cash funds
+// 4. Also displays wallet cash balance for reference when allocating cash
+// 5. Updated entity schema to include allocationType and currency fields

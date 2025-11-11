@@ -22,7 +22,7 @@ import TransactionCard from "../components/transactions/TransactionCard";
 import AllocationManager from "../components/custombudgets/AllocationManager";
 import CompactCustomBudgetCard from "../components/custombudgets/CompactCustomBudgetCard";
 import CustomBudgetForm from "../components/custombudgets/CustomBudgetForm";
-import ExpensesCardContent from "../components/budgetdetail/ExpensesCardContent"; // Added this import
+import ExpensesCardContent from "../components/budgetdetail/ExpensesCardContent";
 import { QUERY_KEYS } from "../components/hooks/queryKeys";
 
 export default function BudgetDetail() {
@@ -236,6 +236,7 @@ export default function BudgetDetail() {
         }
     }, [transactions, budgetId, budget, categories, allCustomBudgets]);
 
+    // ENHANCEMENT (2025-01-11): Sort custom budgets - active first, then by closest date
     const relatedCustomBudgetsForDisplay = useMemo(() => {
         if (!budget || !budget.isSystemBudget) return [];
 
@@ -246,15 +247,31 @@ export default function BudgetDetail() {
         if (budget.systemBudgetType === 'wants') {
             const budgetStart = new Date(budget.startDate);
             const budgetEnd = new Date(budget.endDate);
+            const now = new Date();
 
-            return allCustomBudgets.filter(cb => {
+            const filtered = allCustomBudgets.filter(cb => {
                 if (cb.status !== 'active' && cb.status !== 'completed') return false;
-
                 if (cb.isSystemBudget) return false;
 
                 const cbStart = new Date(cb.startDate);
                 const cbEnd = new Date(cb.endDate);
                 return cbStart <= budgetEnd && cbEnd >= budgetStart;
+            });
+
+            // Sort: active first, then by distance from current date for closest start date
+            return filtered.sort((a, b) => {
+                // First: sort by status (active before completed)
+                if (a.status !== b.status) {
+                    return a.status === 'active' ? -1 : 1;
+                }
+
+                // Second: if statuses are the same, sort by distance from current date
+                const aStart = new Date(a.startDate);
+                const bStart = new Date(b.startDate);
+                const aDistance = Math.abs(aStart.getTime() - now.getTime());
+                const bDistance = Math.abs(bStart.getTime() - now.getTime());
+                
+                return aDistance - bDistance;
             });
         }
 
@@ -380,6 +397,16 @@ export default function BudgetDetail() {
         }
     }
 
+    // ENHANCEMENT (2025-01-11): Helper to check if we have both digital and cash amounts for custom budgets
+    const hasBothDigitalAndCash = !budget.isSystemBudget && 
+        stats?.digital !== undefined && 
+        stats?.cashByCurrency && 
+        Object.keys(stats.cashByCurrency).length > 0 &&
+        // Also check if both have actual allocated/remaining amounts greater than 0,
+        // otherwise a zero-value 'cash' or 'digital' allocation might trigger split view unnecessarily.
+        (stats.digital.allocated > 0 || Object.values(stats.cashByCurrency).some(cashData => cashData.allocated > 0));
+
+
     return (
         <div className="min-h-screen p-4 md:p-8">
             <div className="max-w-7xl mx-auto space-y-6">
@@ -444,30 +471,53 @@ export default function BudgetDetail() {
                     </div>
                 </div>
 
-                {/* Summary Cards - REFACTORED: Extracted Expenses card content to separate component (2025-01-11) */}
+                {/* ENHANCEMENT (2025-01-11): Budget and Remaining cards with digital/cash split when applicable */}
                 <div className="grid md:grid-cols-3 gap-4">
+                    {/* Budget Card */}
                     <Card className="border-none shadow-lg">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium text-gray-500">Budget</CardTitle>
                             <DollarSign className="w-4 h-4 text-blue-500" />
                         </CardHeader>
-                        <CardContent className="text-center">
-                            <div className="text-lg font-bold text-gray-900">
-                                {formatCurrency(totalBudget, settings)}
-                            </div>
-                            {!budget.isSystemBudget && stats?.cashByCurrency && Object.keys(stats.cashByCurrency).length > 0 && (
-                                <div className="mt-2 text-xs text-gray-600 space-y-1">
-                                    <p>Digital: {formatCurrency(stats?.digital?.allocated || 0, settings)}</p>
-                                    {Object.entries(stats.cashByCurrency).map(([currency, data]) => (
-                                        <p key={currency}>
-                                            Cash ({currency}): {formatCurrency(data?.allocated || 0, { ...settings, currencySymbol: getCurrencySymbol(currency) })}
-                                        </p>
-                                    ))}
+                        <CardContent>
+                            {hasBothDigitalAndCash ? (
+                                // Split layout: Digital and Cash side by side
+                                <div className="space-y-3">
+                                    <div className="text-center pb-2 border-b">
+                                        <p className="text-sm text-gray-500 mb-1">Total</p>
+                                        <div className="text-lg font-bold text-gray-900">
+                                            {formatCurrency(totalBudget, settings)}
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="flex flex-col items-center justify-center">
+                                            <p className="text-xs text-gray-500 mb-1">Digital</p>
+                                            <div className="text-base font-semibold text-gray-900">
+                                                {formatCurrency(stats.digital.allocated, settings)}
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col items-center justify-center">
+                                            <p className="text-xs text-gray-500 mb-1">Cash</p>
+                                            {Object.entries(stats.cashByCurrency).map(([currency, data]) => (
+                                                <div key={currency} className="text-base font-semibold text-gray-900">
+                                                    {formatCurrency(data.allocated, { ...settings, currencySymbol: getCurrencySymbol(currency) })}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                // Single centered amount
+                                <div className="text-center">
+                                    <div className="text-lg font-bold text-gray-900">
+                                        {formatCurrency(totalBudget, settings)}
+                                    </div>
                                 </div>
                             )}
                         </CardContent>
                     </Card>
 
+                    {/* Expenses Card */}
                     <Card className="border-none shadow-lg">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium text-gray-500">Expenses</CardTitle>
@@ -478,23 +528,45 @@ export default function BudgetDetail() {
                         </CardContent>
                     </Card>
 
+                    {/* Remaining Card */}
                     <Card className="border-none shadow-lg">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium text-gray-500">Remaining</CardTitle>
                             <CheckCircle className="w-4 h-4 text-green-500" />
                         </CardHeader>
-                        <CardContent className="text-center">
-                            <div className={`text-lg font-bold ${totalRemaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                {formatCurrency(totalRemaining, settings)}
-                            </div>
-                            {!budget.isSystemBudget && stats?.cashByCurrency && Object.keys(stats.cashByCurrency).length > 0 && (
-                                <div className="mt-2 text-xs text-gray-600 space-y-1">
-                                    <p>Digital: {formatCurrency(stats?.digital?.remaining || 0, settings)}</p>
-                                    {Object.entries(stats.cashByCurrency).map(([currency, data]) => (
-                                        <p key={currency}>
-                                            Cash ({currency}): {formatCurrency(data?.remaining || 0, { ...settings, currencySymbol: getCurrencySymbol(currency) })}
-                                        </p>
-                                    ))}
+                        <CardContent>
+                            {hasBothDigitalAndCash ? (
+                                // Split layout: Digital and Cash side by side
+                                <div className="space-y-3">
+                                    <div className="text-center pb-2 border-b">
+                                        <p className="text-sm text-gray-500 mb-1">Total</p>
+                                        <div className={`text-lg font-bold ${totalRemaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                            {formatCurrency(totalRemaining, settings)}
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="flex flex-col items-center justify-center">
+                                            <p className="text-xs text-gray-500 mb-1">Digital</p>
+                                            <div className={`text-base font-semibold ${stats.digital.remaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                {formatCurrency(stats.digital.remaining, settings)}
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col items-center justify-center">
+                                            <p className="text-xs text-gray-500 mb-1">Cash</p>
+                                            {Object.entries(stats.cashByCurrency).map(([currency, data]) => (
+                                                <div key={currency} className={`text-base font-semibold ${data.remaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                    {formatCurrency(data.remaining, { ...settings, currencySymbol: getCurrencySymbol(currency) })}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                // Single centered amount
+                                <div className="text-center">
+                                    <div className={`text-lg font-bold ${totalRemaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                        {formatCurrency(totalRemaining, settings)}
+                                    </div>
                                 </div>
                             )}
                         </CardContent>
