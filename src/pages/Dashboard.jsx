@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -86,23 +87,15 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
+        {/* ENHANCEMENT (2025-01-11): Simplified header - removed month navigator (moved to card) */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Dashboard</h1>
             <p className="text-gray-500 mt-1">Welcome back, {user?.full_name || 'User'}!</p>
           </div>
-          {/* REMOVED: Add Income button moved to RemainingBudgetCard (2025-01-11) */}
         </div>
 
-        <MonthNavigator
-          currentMonth={selectedMonth}
-          currentYear={selectedYear}
-          onMonthChange={(month, year) => {
-            setSelectedMonth(month);
-            setSelectedYear(year);
-          }}
-        />
-
+        {/* ENHANCEMENT (2025-01-11): Main cards with integrated month navigator and action buttons */}
         <div className="grid md:grid-cols-3 gap-6">
           <div className="md:col-span-2">
             <RemainingBudgetCard
@@ -110,6 +103,16 @@ export default function Dashboard() {
               currentMonthIncome={currentMonthIncome}
               currentMonthExpenses={currentMonthExpenses}
               settings={settings}
+              monthNavigator={
+                <MonthNavigator
+                  currentMonth={selectedMonth}
+                  currentYear={selectedYear}
+                  onMonthChange={(month, year) => {
+                    setSelectedMonth(month);
+                    setSelectedYear(year);
+                  }}
+                />
+              }
               addIncomeButton={
                 <Button
                   onClick={() => setShowQuickAddIncome(true)}
@@ -119,6 +122,17 @@ export default function Dashboard() {
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Add Income
+                </Button>
+              }
+              addExpenseButton={
+                <Button
+                  onClick={() => setShowQuickAdd(true)}
+                  variant="ghost"
+                  className="text-white border-white/30 hover:bg-white/20 hover:border-white/50"
+                  size="sm"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Expense
                 </Button>
               }
             />
@@ -132,8 +146,9 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* ENHANCEMENT (2025-01-11): Budget bars and recent transactions with matched heights */}
         <div className="grid lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 flex flex-col">
             <BudgetBars
               systemBudgets={systemBudgets}
               customBudgets={activeCustomBudgets}
@@ -155,7 +170,7 @@ export default function Dashboard() {
             />
           </div>
 
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 flex flex-col">
             <RecentTransactions
               transactions={paidTransactions}
               categories={categories}
@@ -213,6 +228,3 @@ export default function Dashboard() {
     </div>
   );
 }
-
-// ISSUE FIX (2025-01-11): Moved Add Income button from page header to RemainingBudgetCard
-// Button now appears in top-right of the card with styling that matches the card's gradient theme
