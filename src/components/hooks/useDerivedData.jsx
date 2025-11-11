@@ -1,22 +1,6 @@
-
 import { useMemo, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-// COMMENTED OUT 11-Nov-2025: Removed budgetCalculations imports, now using dateUtils, generalUtils, and expenseCalculations
-// import {
-//   calculateRemainingBudget,
-//   getCurrentMonthTransactions,
-//   getFirstDayOfMonth,
-//   getLastDayOfMonth,
-//   getUnpaidExpensesForMonth,
-//   getSystemBudgetStats,
-//   getCustomBudgetStats,
-//   getDirectUnpaidExpenses,
-//   createEntityMap,
-//   filterActiveCustomBudgets,
-//   shouldCountTowardBudget,
-//   parseDate,
-// } from "../utils/budgetCalculations";
 import { parseDate, getFirstDayOfMonth, getLastDayOfMonth } from "../utils/dateUtils";
 import { createEntityMap } from "../utils/generalUtils";
 // UPDATED 12-Jan-2025: Changed import from expenseCalculations to financialCalculations
@@ -30,7 +14,6 @@ import {
   getUnpaidCustomBudgetExpenses,
   getMonthlyIncome,
   getMonthlyPaidExpenses,
-  // REMOVED 11-Nov-2025: getPaidSavingsExpenses doesn't exist in expenseCalculations
 } from "../utils/financialCalculations";
 import { PRIORITY_ORDER, PRIORITY_CONFIG } from "../utils/constants";
 import { iconMap } from "../utils/iconMapConfig";
@@ -96,7 +79,7 @@ export const useMonthlyIncome = (monthlyTransactions) => {
   }, [monthlyTransactions]);
 };
 
-// REFACTORED 11-Nov-2025: Simplified to use centralized expense calculation functions
+// REFACTORED 12-Jan-2025: Uses financialCalculations for income and expense aggregates
 export const useDashboardSummary = (transactions, selectedMonth, selectedYear, allCustomBudgets, systemBudgets, categories) => {
   const remainingBudget = useMemo(() => {
     const monthStart = getFirstDayOfMonth(selectedMonth, selectedYear);
@@ -113,7 +96,9 @@ export const useDashboardSummary = (transactions, selectedMonth, selectedYear, a
         if (t.isCashTransaction && t.cashTransactionType === 'expense_from_wallet') return false;
 
         const transactionDate = parseDate(t.date);
-        return transactionDate >= monthStart && transactionDate <= monthEnd;
+        const monthStartDate = parseDate(monthStart);
+        const monthEndDate = parseDate(monthEnd);
+        return transactionDate >= monthStartDate && transactionDate <= monthEndDate;
       })
       .reduce((sum, t) => sum + t.amount, 0);
 
@@ -211,7 +196,7 @@ export const useCustomBudgetsFiltered = (allCustomBudgets, selectedMonth, select
   }, [allCustomBudgets, selectedMonth, selectedYear]);
 };
 
-// REFACTORED 11-Nov-2025: Now uses expenseCalculations directly instead of budgetCalculations
+// REFACTORED 12-Jan-2025: Now uses financialCalculations directly
 export const useBudgetsAggregates = (
   transactions,
   categories,
@@ -232,7 +217,7 @@ export const useBudgetsAggregates = (
     });
   }, [allCustomBudgets, selectedMonth, selectedYear]);
 
-  // REFACTORED 11-Nov-2025: Calculate system budget stats using expenseCalculations functions directly
+  // REFACTORED 12-Jan-2025: Calculate system budget stats using financialCalculations functions directly
   const systemBudgetsWithStats = useMemo(() => {
     const monthStart = getFirstDayOfMonth(selectedMonth, selectedYear);
     const monthEnd = getLastDayOfMonth(selectedMonth, selectedYear);
@@ -241,7 +226,7 @@ export const useBudgetsAggregates = (
       let paidAmount = 0;
       let unpaidAmount = 0;
 
-      // Calculate paid and unpaid amounts using granular expenseCalculations functions
+      // Calculate paid and unpaid amounts using granular financialCalculations functions
       if (sb.systemBudgetType === 'needs') {
         paidAmount = getPaidNeedsExpenses(transactions, categories, monthStart, monthEnd, allCustomBudgets);
         unpaidAmount = getUnpaidNeedsExpenses(transactions, categories, monthStart, monthEnd, allCustomBudgets);
@@ -254,7 +239,7 @@ export const useBudgetsAggregates = (
         const customUnpaid = getUnpaidCustomBudgetExpenses(transactions, allCustomBudgets, monthStart, monthEnd);
         unpaidAmount = directUnpaid + customUnpaid;
       } else if (sb.systemBudgetType === 'savings') {
-        // FIXED 11-Nov-2025: Savings uses needs calculation (manually track savings transfers)
+        // Savings uses needs calculation (manually track savings transfers)
         paidAmount = getPaidNeedsExpenses(transactions, categories, monthStart, monthEnd, allCustomBudgets);
         unpaidAmount = 0; // Savings typically doesn't have unpaid expenses
       }
@@ -354,7 +339,7 @@ export const useTransactionFiltering = (transactions) => {
   };
 };
 
-// REFACTORED 11-Nov-2025: Updated to use granular expense functions from expenseCalculations
+// REFACTORED 12-Jan-2025: Updated to use granular expense functions from financialCalculations
 export const useBudgetBarsData = (
   systemBudgets,
   customBudgets,
@@ -385,7 +370,7 @@ export const useBudgetBarsData = (
       let paidAmount = 0;
       let expectedAmount = 0;
 
-      // Calculate using granular expenseCalculations functions
+      // Calculate using granular financialCalculations functions
       if (sb.systemBudgetType === 'wants') {
         const directPaid = getDirectPaidWantsExpenses(transactions, categories, startDate, endDate, allCustomBudgets);
         const customPaid = getPaidCustomBudgetExpenses(transactions, allCustomBudgets, startDate, endDate);
@@ -398,7 +383,6 @@ export const useBudgetBarsData = (
         paidAmount = getPaidNeedsExpenses(transactions, categories, startDate, endDate, allCustomBudgets);
         expectedAmount = getUnpaidNeedsExpenses(transactions, categories, startDate, endDate, allCustomBudgets);
       } else if (sb.systemBudgetType === 'savings') {
-        // FIXED 11-Nov-2025: Savings uses needs calculation
         paidAmount = getPaidNeedsExpenses(transactions, categories, startDate, endDate, allCustomBudgets);
         expectedAmount = 0;
       }
@@ -428,10 +412,8 @@ export const useBudgetBarsData = (
       };
     });
 
-    // Custom budgets calculation (using existing getCustomBudgetStats from budgetCalculations for now)
-    // TODO: This could also be refactored to use expenseCalculations if needed
+    // Custom budgets calculation
     const customBudgetsData = custom.map(cb => {
-      // For custom budgets, we calculate digital spent/unpaid directly
       const budgetTransactions = transactions.filter(t => t.customBudgetId === cb.id);
       
       const digitalTransactions = budgetTransactions.filter(
@@ -613,9 +595,8 @@ export const usePriorityChartData = (transactions, categories, goals, monthlyInc
   }, [transactions, categories, goals, monthlyIncome]);
 };
 
-// REFACTORED 11-Nov-2025: Comprehensive refactoring complete
-// - All date utilities moved to dateUtils.js
-// - All general utilities moved to generalUtils.js
-// - All expense calculations now use expenseCalculations.js directly
-// - Removed all dependencies on budgetCalculations.js
-// FIXED 11-Nov-2025: Removed non-existent getPaidSavingsExpenses import - savings uses needs calculation
+// REFACTORED 12-Jan-2025: Comprehensive refactoring complete
+// - All date utilities use dateUtils.js
+// - All general utilities use generalUtils.js
+// - All financial calculations now use financialCalculations.js (unified income + expense)
+// - Eliminated redundant getCurrentMonthTransactions from generalUtils.js

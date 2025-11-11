@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -177,7 +176,6 @@ export const useSystemBudgetManagement = (
       
       // CRITICAL FIX (2025-01-12): Only create system budgets for the CURRENT month/year
       const now = new Date();
-      // getMonth() returns 0-11, so it matches selectedMonth directly (which is also 0-11)
       const currentMonth = now.getMonth(); 
       const currentYear = now.getFullYear();
       
@@ -191,8 +189,8 @@ export const useSystemBudgetManagement = (
         const systemTypes = ['needs', 'wants', 'savings'];
         const colors = { needs: '#EF4444', wants: '#F59E0B', savings: '#10B981' };
         
-        // REPLACED getCurrentMonthTransactions with getMonthlyIncome
-        const currentMonthIncome = getMonthlyIncome(transactions, selectedMonth, selectedYear);
+        // UPDATED 12-Jan-2025: Use getMonthlyIncome from financialCalculations
+        const currentMonthIncome = getMonthlyIncome(transactions, monthStart, monthEnd);
 
         const goalMap = goals.reduce((acc, goal) => {
           acc[goal.priority] = goal.target_percentage;
@@ -254,3 +252,5 @@ export const useSystemBudgetManagement = (
     }
   }, [user, selectedMonth, selectedYear, goals, systemBudgets, monthStart, monthEnd, queryClient, transactions]);
 };
+
+// UPDATED 12-Jan-2025: Changed to use getMonthlyIncome from financialCalculations.js

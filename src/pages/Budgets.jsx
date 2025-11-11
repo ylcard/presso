@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -34,7 +33,7 @@ import CustomBudgetForm from "../components/custombudgets/CustomBudgetForm";
 import BudgetCard from "../components/budgets/BudgetCard";
 import MonthNavigator from "../components/ui/MonthNavigator";
 
-// REFACTORED 11-Nov-2025: Helper to calculate custom budget stats directly
+// Helper to calculate custom budget stats directly
 const getCustomBudgetStats = (customBudget, transactions) => {
   const budgetTransactions = transactions.filter(t => t.customBudgetId === customBudget.id);
 
@@ -53,7 +52,7 @@ const getCustomBudgetStats = (customBudget, transactions) => {
     .reduce((sum, t) => sum + (t.originalAmount || t.amount), 0);
   const digitalUnpaid = digitalTransactions
     .filter(t => t.type === 'expense' && !t.isPaid)
-    .reduce((sum, t => sum + (t.originalAmount || t.amount)), 0);
+    .reduce((sum, t) => sum + (t.originalAmount || t.amount), 0);
   const digitalRemaining = digitalAllocated - digitalSpent;
 
   // Calculate cash stats by currency
@@ -339,5 +338,3 @@ export default function Budgets() {
     </div>
   );
 }
-
-// REFACTORED 11-Nov-2025: Removed budgetCalculations dependency, now calculates custom budget stats directly in this file
