@@ -1,3 +1,4 @@
+
 import { useMemo, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -18,6 +19,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 // } from "../utils/budgetCalculations";
 import { parseDate, getFirstDayOfMonth, getLastDayOfMonth } from "../utils/dateUtils";
 import { createEntityMap } from "../utils/generalUtils";
+// UPDATED 12-Jan-2025: Changed import from expenseCalculations to financialCalculations
 import {
   getTotalMonthExpenses,
   getPaidNeedsExpenses,
@@ -26,8 +28,10 @@ import {
   getDirectUnpaidWantsExpenses,
   getPaidCustomBudgetExpenses,
   getUnpaidCustomBudgetExpenses,
+  getMonthlyIncome,
+  getMonthlyPaidExpenses,
   // REMOVED 11-Nov-2025: getPaidSavingsExpenses doesn't exist in expenseCalculations
-} from "../utils/expenseCalculations";
+} from "../utils/financialCalculations";
 import { PRIORITY_ORDER, PRIORITY_CONFIG } from "../utils/constants";
 import { iconMap } from "../utils/iconMapConfig";
 import { Circle } from "lucide-react";
@@ -95,33 +99,11 @@ export const useMonthlyIncome = (monthlyTransactions) => {
 // REFACTORED 11-Nov-2025: Simplified to use centralized expense calculation functions
 export const useDashboardSummary = (transactions, selectedMonth, selectedYear, allCustomBudgets, systemBudgets, categories) => {
   const remainingBudget = useMemo(() => {
-    const monthStart = new Date(selectedYear, selectedMonth, 1);
-    const monthEnd = new Date(selectedYear, selectedMonth + 1, 0);
+    const monthStart = getFirstDayOfMonth(selectedMonth, selectedYear);
+    const monthEnd = getLastDayOfMonth(selectedMonth, selectedYear);
 
-    const currentMonthTransactions = transactions.filter(t => {
-      if (t.type === 'income') {
-        const transactionDate = parseDate(t.date);
-        return transactionDate >= monthStart && transactionDate <= monthEnd;
-      }
-
-      if (!t.isPaid || !t.paidDate) return false;
-      const paidDate = parseDate(t.paidDate);
-      return paidDate >= monthStart && paidDate <= monthEnd;
-    });
-
-    const income = currentMonthTransactions
-      .filter(t => t.type === 'income')
-      .reduce((sum, t) => sum + t.amount, 0);
-
-    // Only count expenses that should be counted toward budget (excludes cash expenses from wallet)
-    const paidExpenses = currentMonthTransactions
-      .filter(t => {
-        if (t.type !== 'expense') return false;
-        // Exclude cash expenses from wallet
-        if (t.isCashTransaction && t.cashTransactionType === 'expense_from_wallet') return false;
-        return true;
-      })
-      .reduce((sum, t) => sum + t.amount, 0);
+    const income = getMonthlyIncome(transactions, monthStart, monthEnd);
+    const paidExpenses = getMonthlyPaidExpenses(transactions, monthStart, monthEnd);
 
     // Add unpaid expenses for the month (exclude cash expenses from wallet)
     const unpaidExpenses = transactions
@@ -139,16 +121,9 @@ export const useDashboardSummary = (transactions, selectedMonth, selectedYear, a
   }, [transactions, selectedMonth, selectedYear]);
 
   const currentMonthIncome = useMemo(() => {
-    const monthStart = new Date(selectedYear, selectedMonth, 1);
-    const monthEnd = new Date(selectedYear, selectedMonth + 1, 0);
-
-    return transactions
-      .filter(t => {
-        if (t.type !== 'income') return false;
-        const transactionDate = parseDate(t.date);
-        return transactionDate >= monthStart && transactionDate <= monthEnd;
-      })
-      .reduce((sum, t) => sum + t.amount, 0);
+    const monthStart = getFirstDayOfMonth(selectedMonth, selectedYear);
+    const monthEnd = getLastDayOfMonth(selectedMonth, selectedYear);
+    return getMonthlyIncome(transactions, monthStart, monthEnd);
   }, [transactions, selectedMonth, selectedYear]);
 
   const currentMonthExpenses = useMemo(() => {

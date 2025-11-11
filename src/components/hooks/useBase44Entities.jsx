@@ -1,9 +1,11 @@
+
 import { useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { QUERY_KEYS } from "./queryKeys";
-// UPDATED 11-Nov-2025: Changed import from budgetCalculations to generalUtils
-import { getCurrentMonthTransactions } from "../utils/generalUtils";
+// UPDATED 12-Jan-2025: Changed to use getMonthlyIncome from financialCalculations instead of getCurrentMonthTransactions
+import { getMonthlyIncome } from "../utils/financialCalculations";
+import { getFirstDayOfMonth, getLastDayOfMonth } from "../utils/dateUtils";
 
 // Hook to fetch transactions
 export const useTransactions = () => {
@@ -189,9 +191,8 @@ export const useSystemBudgetManagement = (
         const systemTypes = ['needs', 'wants', 'savings'];
         const colors = { needs: '#EF4444', wants: '#F59E0B', savings: '#10B981' };
         
-        const currentMonthIncome = getCurrentMonthTransactions(transactions, selectedMonth, selectedYear)
-          .filter(t => t.type === 'income')
-          .reduce((sum, t) => sum + t.amount, 0);
+        // REPLACED getCurrentMonthTransactions with getMonthlyIncome
+        const currentMonthIncome = getMonthlyIncome(transactions, selectedMonth, selectedYear);
 
         const goalMap = goals.reduce((acc, goal) => {
           acc[goal.priority] = goal.target_percentage;
@@ -253,5 +254,3 @@ export const useSystemBudgetManagement = (
     }
   }, [user, selectedMonth, selectedYear, goals, systemBudgets, monthStart, monthEnd, queryClient, transactions]);
 };
-
-// UPDATED 11-Nov-2025: Changed getCurrentMonthTransactions import from budgetCalculations.js to generalUtils.js

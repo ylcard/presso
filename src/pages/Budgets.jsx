@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -17,8 +18,6 @@ import {
   useCashWallet,
 } from "../components/hooks/useBase44Entities";
 import { useBudgetsAggregates } from "../components/hooks/useDerivedData";
-// COMMENTED OUT 11-Nov-2025: Removed getCustomBudgetStats import from budgetCalculations
-// import { getCustomBudgetStats } from "../components/utils/budgetCalculations";
 import { useCustomBudgetActions } from "../components/hooks/useActions";
 import {
   AlertDialog,
@@ -54,7 +53,7 @@ const getCustomBudgetStats = (customBudget, transactions) => {
     .reduce((sum, t) => sum + (t.originalAmount || t.amount), 0);
   const digitalUnpaid = digitalTransactions
     .filter(t => t.type === 'expense' && !t.isPaid)
-    .reduce((sum, t) => sum + (t.originalAmount || t.amount), 0);
+    .reduce((sum, t => sum + (t.originalAmount || t.amount)), 0);
   const digitalRemaining = digitalAllocated - digitalSpent;
 
   // Calculate cash stats by currency

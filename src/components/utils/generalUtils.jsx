@@ -1,19 +1,17 @@
-/**
- * General utility functions
- * Non-domain-specific helpers for common operations
- * Created: 11-Nov-2025 - Extracted from budgetCalculations.js
- * Updated: 11-Nov-2025 - Added getCurrentMonthTransactions
- */
+// CREATED: 2025-01-11
+// General utility functions that are domain-agnostic
+// For financial-specific calculations, see financialCalculations.js
 
 import { parseDate } from './dateUtils';
 
 /**
- * Create a map from an array of entities
+ * Utility function to create a map from an array of entities
  * Can optionally extract a specific field value instead of the whole entity
+ * 
  * @param {Array} entities - Array of entity objects
- * @param {string} keyField - Field to use as map key (default: 'id')
+ * @param {string} keyField - Field to use as the map key (default: 'id')
  * @param {Function} valueExtractor - Optional function to extract/transform the value
- * @returns {Object} Map of key to entity/value
+ * @returns {Object} Map of key -> entity (or extracted value)
  */
 export const createEntityMap = (entities, keyField = 'id', valueExtractor = null) => {
     if (!Array.isArray(entities)) return {};
@@ -28,6 +26,7 @@ export const createEntityMap = (entities, keyField = 'id', valueExtractor = null
 /**
  * Normalize amount input by removing non-numeric characters except decimal separators
  * Converts comma to period for standardization
+ * 
  * @param {string|number} amount - Amount to normalize
  * @returns {string} Normalized amount string
  */
@@ -36,14 +35,13 @@ export const normalizeAmount = (amount) => {
     return amount.toString().replace(/[^\d.,]/g, '').replace(',', '.');
 };
 
-/**
- * Get transactions for the current month
- * Filters transactions by month and year, using paid date for paid expenses
- * @param {Array} transactions - Array of transaction objects
- * @param {number} month - Month (0-11)
- * @param {number} year - Year
- * @returns {Array} Filtered transactions for the specified month
- */
+// DEPRECATED: 2025-01-12
+// This function has been replaced by getMonthlyIncome and getMonthlyPaidExpenses 
+// in components/utils/financialCalculations.js
+// The mixed responsibility of filtering both income AND expenses in a single function
+// created confusion and redundancy. Financial calculations are now centralized.
+// This function is scheduled for deletion after confirming all references are updated
+/*
 export const getCurrentMonthTransactions = (transactions, month, year) => {
     const monthStart = new Date(year, month, 1);
     const monthEnd = new Date(year, month + 1, 0);
@@ -61,3 +59,4 @@ export const getCurrentMonthTransactions = (transactions, month, year) => {
         return paidDate >= monthStart && paidDate <= monthEnd;
     });
 };
+*/
