@@ -149,13 +149,18 @@ export const getDirectUnpaidWantsExpenses = (transactions, categories, startDate
 
 /**
  * 5. Get Paid Expenses in all custom budgets
- * Returns sum of all paid, non-cash expenses linked to custom budgets that overlap with the period
+ * FIXED 2025-01-12: Removed budget date range filtering to allow pre-paid expenses
+ * Now includes all paid non-cash expenses linked to ANY custom budget, regardless of budget's own date range
+ * The expense's paidDate determines when it impacts the month, not the budget's event dates
  */
 export const getPaidCustomBudgetExpenses = (transactions, allCustomBudgets, startDate, endDate) => {
+  // REMOVED 2025-01-12: Budget date range filtering
+  // Old logic filtered custom budgets by date overlap, which excluded pre-paid expenses
+  // like a flight paid in November for a June event
+  /*
   const rangeStart = parseDate(startDate);
   const rangeEnd = parseDate(endDate);
 
-  // Get custom budgets that overlap with the period
   const relevantBudgetIds = allCustomBudgets
     .filter(cb => {
       if (cb.status !== 'active' && cb.status !== 'completed' && cb.status !== 'planned') return false;
@@ -164,17 +169,20 @@ export const getPaidCustomBudgetExpenses = (transactions, allCustomBudgets, star
       return cbStart <= rangeEnd && cbEnd >= rangeStart;
     })
     .map(cb => cb.id);
+  */
 
+  // NEW 2025-01-12: Any expense with a customBudgetId is considered a custom budget expense
+  // regardless of the budget's own date range. We only check the transaction's paid date.
   return transactions
     .filter(t => {
       if (t.type !== 'expense') return false;
       if (isCashExpense(t)) return false;
       if (!t.isPaid || !t.paidDate) return false;
       
-      // Must be tied to a relevant custom budget
-      if (!t.customBudgetId || !relevantBudgetIds.includes(t.customBudgetId)) return false;
+      // Must be tied to ANY custom budget (no date range check on budget itself)
+      if (!t.customBudgetId) return false;
       
-      // Check if paid within date range
+      // Check if paid within the specified date range
       return isWithinDateRange(t, startDate, endDate, true);
     })
     .reduce((sum, t) => sum + t.amount, 0);
@@ -182,13 +190,16 @@ export const getPaidCustomBudgetExpenses = (transactions, allCustomBudgets, star
 
 /**
  * 6. Get Unpaid Expenses in all custom budgets
- * Returns sum of all unpaid, non-cash expenses linked to custom budgets that overlap with the period
+ * FIXED 2025-01-12: Removed budget date range filtering to allow future expenses
+ * Now includes all unpaid non-cash expenses linked to ANY custom budget, regardless of budget's own date range
+ * The expense's transaction date determines when it impacts the month, not the budget's event dates
  */
 export const getUnpaidCustomBudgetExpenses = (transactions, allCustomBudgets, startDate, endDate) => {
+  // REMOVED 2025-01-12: Budget date range filtering (same reasoning as getPaidCustomBudgetExpenses)
+  /*
   const rangeStart = parseDate(startDate);
   const rangeEnd = parseDate(endDate);
 
-  // Get custom budgets that overlap with the period
   const relevantBudgetIds = allCustomBudgets
     .filter(cb => {
       if (cb.status !== 'active' && cb.status !== 'completed' && cb.status !== 'planned') return false;
@@ -197,15 +208,17 @@ export const getUnpaidCustomBudgetExpenses = (transactions, allCustomBudgets, st
       return cbStart <= rangeEnd && cbEnd >= rangeStart;
     })
     .map(cb => cb.id);
+  */
 
+  // NEW 2025-01-12: Any unpaid expense with a customBudgetId counts toward that month's expenses
   return transactions
     .filter(t => {
       if (t.type !== 'expense') return false;
       if (isCashExpense(t)) return false;
       if (t.isPaid) return false; // Only unpaid
       
-      // Must be tied to a relevant custom budget
-      if (!t.customBudgetId || !relevantBudgetIds.includes(t.customBudgetId)) return false;
+      // Must be tied to ANY custom budget (no date range check on budget itself)
+      if (!t.customBudgetId) return false;
       
       // Check if transaction date within range
       return isWithinDateRange(t, startDate, endDate, false);
@@ -245,3 +258,13 @@ export const getTotalMonthExpenses = (transactions, categories, allCustomBudgets
 
   return paidNeeds + unpaidNeeds + paidWants + unpaidWants + paidCustom + unpaidCustom;
 };
+
+// FIXED 2025-01-12: Pre-paid expense support
+// Removed budget date range filtering from getPaidCustomBudgetExpenses and getUnpaidCustomBudgetExpenses
+// This allows expenses like "flight paid in Nov 2025 for June 2026 trip" to be correctly included
+// in November's expenses, even though the trip's budget period is in June 2026
+//
+// KEY INSIGHT: An expense's payment/incurrence date determines WHEN it impacts finances (the month view),
+// while its customBudgetId determines WHAT KIND of expense it is (which budget category it belongs to).
+// The budget's own startDate/endDate determine when the budget is "active" for planning purposes,
+// but should NOT restrict when linked expenses are counted.
