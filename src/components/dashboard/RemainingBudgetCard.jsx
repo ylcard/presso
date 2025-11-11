@@ -72,6 +72,8 @@ export default function RemainingBudgetCard({
           </div>
         </div>
 
+        // Removing since I don't want that progress bar.
+        /*
         <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 max-w-3xl mx-auto w-full">
           <div className="flex items-center justify-between mb-2">
             <span className="text-white/80 text-sm">Progress</span>
@@ -84,6 +86,7 @@ export default function RemainingBudgetCard({
             />
           </div>
         </div>
+        */
       </CardContent>
     </Card>
   );
