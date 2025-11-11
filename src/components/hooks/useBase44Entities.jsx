@@ -1,9 +1,9 @@
-
 import { useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { QUERY_KEYS } from "./queryKeys";
-import { getCurrentMonthTransactions } from "../utils/budgetCalculations";
+// UPDATED 11-Nov-2025: Changed import from budgetCalculations to generalUtils
+import { getCurrentMonthTransactions } from "../utils/generalUtils";
 
 // Hook to fetch transactions
 export const useTransactions = () => {
@@ -253,3 +253,5 @@ export const useSystemBudgetManagement = (
     }
   }, [user, selectedMonth, selectedYear, goals, systemBudgets, monthStart, monthEnd, queryClient, transactions]);
 };
+
+// UPDATED 11-Nov-2025: Changed getCurrentMonthTransactions import from budgetCalculations.js to generalUtils.js

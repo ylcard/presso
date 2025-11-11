@@ -2,7 +2,10 @@
  * General utility functions
  * Non-domain-specific helpers for common operations
  * Created: 11-Nov-2025 - Extracted from budgetCalculations.js
+ * Updated: 11-Nov-2025 - Added getCurrentMonthTransactions
  */
+
+import { parseDate } from './dateUtils';
 
 /**
  * Create a map from an array of entities
@@ -31,4 +34,30 @@ export const createEntityMap = (entities, keyField = 'id', valueExtractor = null
 export const normalizeAmount = (amount) => {
     if (!amount) return '';
     return amount.toString().replace(/[^\d.,]/g, '').replace(',', '.');
+};
+
+/**
+ * Get transactions for the current month
+ * Filters transactions by month and year, using paid date for paid expenses
+ * @param {Array} transactions - Array of transaction objects
+ * @param {number} month - Month (0-11)
+ * @param {number} year - Year
+ * @returns {Array} Filtered transactions for the specified month
+ */
+export const getCurrentMonthTransactions = (transactions, month, year) => {
+    const monthStart = new Date(year, month, 1);
+    const monthEnd = new Date(year, month + 1, 0);
+
+    return transactions.filter(t => {
+        // For income, just check the date
+        if (t.type === 'income') {
+            const transactionDate = parseDate(t.date);
+            return transactionDate >= monthStart && transactionDate <= monthEnd;
+        }
+
+        // For expenses, check if paid in this month
+        if (!t.isPaid || !t.paidDate) return false;
+        const paidDate = parseDate(t.paidDate);
+        return paidDate >= monthStart && paidDate <= monthEnd;
+    });
 };
