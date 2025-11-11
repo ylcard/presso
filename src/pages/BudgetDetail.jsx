@@ -25,7 +25,7 @@ import { useCustomBudgetActions } from "../components/hooks/useActions";
 import QuickAddTransaction from "../components/transactions/QuickAddTransaction";
 import TransactionCard from "../components/transactions/TransactionCard";
 import AllocationManager from "../components/custombudgets/AllocationManager";
-import BudgetCard from "../components/budgets/BudgetCard"; // RENAMED (2025-01-11): CompactCustomBudgetCard -> BudgetCard
+import BudgetCard from "../components/budgets/BudgetCard";
 import CustomBudgetForm from "../components/custombudgets/CustomBudgetForm";
 import ExpensesCardContent from "../components/budgetdetail/ExpensesCardContent";
 import { QUERY_KEYS } from "../components/hooks/queryKeys";
@@ -428,7 +428,12 @@ export default function BudgetDetail() {
                     Edit Budget
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[600px]" align="end">
+                <PopoverContent 
+                  className="w-[600px] fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 max-h-[90vh] overflow-y-auto z-50" 
+                  align="center"
+                  side="top"
+                  sideOffset={0}
+                >
                   <div className="space-y-2">
                     <h3 className="font-semibold text-lg">Edit Budget</h3>
                     <CustomBudgetForm
@@ -670,10 +675,3 @@ export default function BudgetDetail() {
     </div>
   );
 }
-
-// MAJOR REFACTOR (2025-01-12): Converted Edit Budget to Popover
-// - Removed fixed overlay (div with "fixed inset-0 bg-black/50")
-// - Now uses Popover component with 600px width
-// - Consistent with Create Budget popover design
-// - No backdrop darkening issue
-// - No cutoff issues - properly positioned

@@ -217,7 +217,7 @@ export const useCustomBudgetsFiltered = (allCustomBudgets, selectedMonth, select
 };
 
 // Hook for processing budgets data (for Budgets page)
-// CRITICAL FIX (2025-01-12): Pass includeAggregatedRemaining=false to prevent double-counting
+// CRITICAL FIX (2025-01-12): Use granular expense functions for Wants budget
 export const useBudgetsAggregates = (
   transactions,
   categories,
@@ -239,14 +239,18 @@ export const useBudgetsAggregates = (
   }, [allCustomBudgets, selectedMonth, selectedYear]);
 
   // Pre-calculate system budget stats
+  // CRITICAL FIX (2025-01-12): Use granular expense functions for Wants budget paid amount
   const systemBudgetsWithStats = useMemo(() => {
+    const monthStart = getFirstDayOfMonth(selectedMonth, selectedYear);
+    const monthEnd = getLastDayOfMonth(selectedMonth, selectedYear);
+
     return systemBudgets.map(sb => {
       const budgetForStats = {
         ...sb,
         allocatedAmount: sb.budgetAmount
       };
 
-      // CRITICAL FIX: Pass false to prevent including aggregated remaining in Budgets page cards
+      // Get base stats from getSystemBudgetStats
       const stats = getSystemBudgetStats(
         budgetForStats, 
         transactions, 
@@ -255,13 +259,24 @@ export const useBudgetsAggregates = (
         'USD', // This will be overridden by user's baseCurrency from settings
         false  // includeAggregatedRemaining = false for Budgets page
       );
+
+      // CRITICAL FIX (2025-01-12): Override paidAmount for Wants budget with granular functions
+      // This ensures prepayments and system budget exclusions are properly handled
+      if (sb.systemBudgetType === 'wants') {
+        const directPaid = getDirectPaidWantsExpenses(transactions, categories, monthStart, monthEnd, allCustomBudgets);
+        const customPaid = getPaidCustomBudgetExpenses(transactions, allCustomBudgets, monthStart, monthEnd);
+        
+        // Override the paidAmount in stats with the correctly calculated value
+        stats.paidAmount = directPaid + customPaid;
+      }
+
       return {
         ...sb,
         allocatedAmount: sb.budgetAmount,
         preCalculatedStats: stats
       };
     });
-  }, [systemBudgets, transactions, categories, allCustomBudgets]);
+  }, [systemBudgets, transactions, categories, allCustomBudgets, selectedMonth, selectedYear]);
 
   // Group custom budgets by status
   const groupedCustomBudgets = useMemo(() => {
@@ -560,3 +575,5 @@ export const usePriorityChartData = (transactions, categories, goals, monthlyInc
 // - useDashboardSummary now uses getTotalMonthExpenses (only actual transactions, no cash, no remaining allocations)
 // - useBudgetBarsData now uses granular expense functions and removes aggregatedRemainingAmounts
 // - "Expected" amounts now only reflect actual unpaid expenses (will be renamed to "Unpaid" in UI)
+// CRITICAL FIX (2025-01-12): useBudgetsAggregates now uses granular functions for Wants budget paid amount
+// - This ensures prepayments are included and system budget expenses are properly excluded

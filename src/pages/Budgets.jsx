@@ -160,7 +160,12 @@ export default function Budgets() {
                     Create Custom Budget
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[600px]" align="end">
+                <PopoverContent 
+                  className="w-[600px] fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 max-h-[90vh] overflow-y-auto z-50" 
+                  align="center"
+                  side="top"
+                  sideOffset={0}
+                >
                   <div className="space-y-2">
                     <h3 className="font-semibold text-lg">Create Custom Budget</h3>
                     <CustomBudgetForm
@@ -208,7 +213,12 @@ export default function Budgets() {
                     Create Custom Budget
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[600px]" align="end">
+                <PopoverContent 
+                  className="w-[600px] fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 max-h-[90vh] overflow-y-auto z-50" 
+                  align="center"
+                  side="top"
+                  sideOffset={0}
+                >
                   <div className="space-y-2">
                     <h3 className="font-semibold text-lg">Create Custom Budget</h3>
                     <CustomBudgetForm
@@ -272,3 +282,7 @@ export default function Budgets() {
 // - Popover width set to 600px for optimal form layout
 // - Aligned to "end" for right-side appearance
 // - No scrolling required due to compact form design
+// FIX (2025-01-12): Fixed popover jumping issue
+// - PopoverContent now uses fixed positioning with centering transforms
+// - Added max-height with overflow-y-auto for long forms
+// - Form stays in place when content expands (e.g., adding cash allocations)
