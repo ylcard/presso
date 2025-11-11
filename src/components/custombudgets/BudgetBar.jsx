@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Trash2 } from "lucide-react";
@@ -168,6 +169,7 @@ export default function BudgetBar({
           )}
         </div>
         
+        {/* ENHANCEMENT (2025-01-11): Conditionally hide "Paid: 0" labels */}
         <div className="text-center w-full px-2">
           <p className="font-bold text-gray-900 text-sm truncate mb-1">{budget.name}</p>
           {isSystemSavings ? (
@@ -206,9 +208,12 @@ export default function BudgetBar({
                   )}
                 </div>
               )}
-              <p className="text-xs text-gray-600">
-                Paid: {formatCurrency(paidAmount, settings)}
-              </p>
+              {/* ENHANCEMENT (2025-01-11): Only show "Paid" if amount is greater than 0 */}
+              {paidAmount > 0 && (
+                <p className="text-xs text-gray-600">
+                  Paid: {formatCurrency(paidAmount, settings)}
+                </p>
+              )}
               <p className={`text-sm font-medium mt-1 ${remaining < 0 ? 'text-red-600' : 'text-gray-900'}`}>
                 {remaining < 0 ? `Over by ${formatCurrency(Math.abs(remaining), settings)}` : `Remaining: ${formatCurrency(remaining, settings)}`}
               </p>
@@ -231,9 +236,12 @@ export default function BudgetBar({
                   Unpaid: {formatCurrency(expectedAmount, settings)}
                 </p>
               )}
-              <p className="text-xs text-gray-600">
-                Paid: {formatCurrency(paidAmount, settings)}
-              </p>
+              {/* ENHANCEMENT (2025-01-11): Only show "Paid" if amount is greater than 0 */}
+              {paidAmount > 0 && (
+                <p className="text-xs text-gray-600">
+                  Paid: {formatCurrency(paidAmount, settings)}
+                </p>
+              )}
               <p className={`text-sm font-medium mt-1 ${remaining < 0 ? 'text-red-600' : 'text-gray-900'}`}>
                 {remaining < 0 ? `Over by ${formatCurrency(Math.abs(remaining), settings)}` : `Remaining: ${formatCurrency(remaining, settings)}`}
               </p>
