@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSettings } from "../components/utils/SettingsContext";
 import { useSettingsForm } from "../components/hooks/useActions";
-import { formatCurrency } from "../components/utils/formatCurrency";
+// UPDATED 12-Jan-2025: Changed import from formatCurrency.jsx to currencyUtils.js
+import { formatCurrency } from "../components/utils/currencyUtils";
 import { Settings as SettingsIcon, Check } from "lucide-react";
 
 const CURRENCY_OPTIONS = [
@@ -204,3 +204,5 @@ export default function Settings() {
     </div>
   );
 }
+
+// UPDATED 12-Jan-2025: Changed import from formatCurrency.jsx to currencyUtils.js
