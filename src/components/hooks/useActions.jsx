@@ -144,6 +144,7 @@ export const useBudgetMutationsDashboard = (user, transactions, allCustomBudgets
 };
 
 // Hook for transaction actions (CRUD operations - Transactions page)
+// ENHANCED: Now handles complex cash transaction changes
 export const useTransactionActions = (setShowForm, setEditingTransaction, cashWallet) => {
   const queryClient = useQueryClient();
 
@@ -171,29 +172,47 @@ export const useTransactionActions = (setShowForm, setEditingTransaction, cashWa
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data, oldTransaction }) => {
-      // Handle cash wallet balance adjustments for cash expense edits
-      if (oldTransaction?.isCashTransaction && 
-          oldTransaction?.cashTransactionType === 'expense_from_wallet' &&
-          oldTransaction?.cashAmount && 
-          oldTransaction?.cashCurrency &&
-          cashWallet) {
-        
-        const oldAmount = oldTransaction.cashAmount;
-        const newAmount = data.cashAmount || oldAmount;
-        const oldCurrency = oldTransaction.cashCurrency;
-        const newCurrency = data.cashCurrency || oldCurrency;
-        
-        // If amount or currency changed
-        if (oldAmount !== newAmount || oldCurrency !== newCurrency) {
-          const balances = cashWallet.balances || [];
-          let updatedBalances = [...balances];
-          
-          // Return old amount to wallet (reversing the previous expense)
-          updatedBalances = updateCurrencyBalance(updatedBalances, oldCurrency, oldAmount);
-          
-          // Deduct new amount from wallet (applying the new expense)
-          updatedBalances = updateCurrencyBalance(updatedBalances, newCurrency, -newAmount);
-          
+      // ENHANCED: Handle complex cash transaction status changes
+      if (cashWallet && oldTransaction) {
+        const balances = cashWallet.balances || [];
+        let updatedBalances = [...balances];
+        let needsWalletUpdate = false;
+
+        const wasDigital = !oldTransaction.isCashTransaction;
+        const isNowDigital = !data.isCashTransaction;
+        const wasCash = oldTransaction.isCashTransaction && oldTransaction.cashTransactionType === 'expense_from_wallet';
+        const isNowCash = data.isCashTransaction && data.cashTransactionType === 'expense_from_wallet';
+
+        // Scenario 1: Digital to Cash
+        if (wasDigital && isNowCash) {
+          // Deduct new cash amount from wallet
+          updatedBalances = updateCurrencyBalance(updatedBalances, data.cashCurrency, -data.cashAmount);
+          needsWalletUpdate = true;
+        }
+        // Scenario 2: Cash to Digital
+        else if (wasCash && isNowDigital) {
+          // Return old cash amount to wallet
+          updatedBalances = updateCurrencyBalance(updatedBalances, oldTransaction.cashCurrency, oldTransaction.cashAmount);
+          needsWalletUpdate = true;
+        }
+        // Scenario 3: Cash Transaction Update (amount or currency change)
+        else if (wasCash && isNowCash) {
+          const oldAmount = oldTransaction.cashAmount;
+          const newAmount = data.cashAmount;
+          const oldCurrency = oldTransaction.cashCurrency;
+          const newCurrency = data.cashCurrency;
+
+          if (oldAmount !== newAmount || oldCurrency !== newCurrency) {
+            // Return old amount to wallet
+            updatedBalances = updateCurrencyBalance(updatedBalances, oldCurrency, oldAmount);
+            // Deduct new amount from wallet
+            updatedBalances = updateCurrencyBalance(updatedBalances, newCurrency, -newAmount);
+            needsWalletUpdate = true;
+          }
+        }
+
+        // Update wallet if changes were made
+        if (needsWalletUpdate) {
           await base44.entities.CashWallet.update(cashWallet.id, {
             balances: updatedBalances
           });
@@ -294,6 +313,28 @@ export const useTransactionActions = (setShowForm, setEditingTransaction, cashWa
     isSubmitting: createMutation.isPending || updateMutation.isPending,
   };
 };
+
+// DEPRECATED: updateCurrencyBalance helper function has been moved to
+// components/utils/cashAllocationUtils.js for better reusability
+// Import it from there instead of defining it locally
+// Scheduled for removal in next refactoring cycle
+/*
+const updateCurrencyBalance = (balances, currencyCode, amountChange) => {
+  const existingBalanceIndex = balances.findIndex(b => b.currencyCode === currencyCode);
+  
+  if (existingBalanceIndex !== -1) {
+    const updatedBalances = balances.map((b, index) => 
+      index === existingBalanceIndex 
+        ? { ...b, amount: b.amount + amountChange }
+        : b
+    );
+    return updatedBalances.filter(b => b.amount > 0.01); 
+  } else if (amountChange > 0) {
+    return [...balances, { currencyCode, amount: amountChange }];
+  }
+  return balances;
+};
+*/
 
 // Hook for category actions (CRUD operations)
 export const useCategoryActions = (setShowForm, setEditingCategory) => {

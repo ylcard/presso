@@ -1,22 +1,24 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { useTransactions, useCategories } from "../components/hooks/useBase44Entities";
+import { useTransactions, useCategories, useCashWallet } from "../components/hooks/useBase44Entities";
 import { useTransactionFiltering } from "../components/hooks/useDerivedData";
 import { useTransactionActions } from "../components/hooks/useActions";
+import { useSettings } from "../components/utils/SettingsContext";
 
 import TransactionForm from "../components/transactions/TransactionForm";
 import TransactionList from "../components/transactions/TransactionList";
 import TransactionFilters from "../components/transactions/TransactionFilters";
 
 export default function Transactions() {
-  // UI state
+  const { user } = useSettings();
   const [showForm, setShowForm] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
 
   // Data fetching
   const { transactions, isLoading } = useTransactions();
   const { categories } = useCategories();
+  const { cashWallet } = useCashWallet(user);
 
   // Filtering logic
   const { filters, setFilters, filteredTransactions } = useTransactionFiltering(transactions);
@@ -24,7 +26,8 @@ export default function Transactions() {
   // Actions (mutations and handlers)
   const { handleSubmit, handleEdit, handleDelete, isSubmitting } = useTransactionActions(
     setShowForm,
-    setEditingTransaction
+    setEditingTransaction,
+    cashWallet
   );
 
   return (
@@ -35,30 +38,21 @@ export default function Transactions() {
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Transactions</h1>
             <p className="text-gray-500 mt-1">Track your income and expenses</p>
           </div>
-          <Button
-            onClick={() => {
-              setEditingTransaction(null);
-              setShowForm(!showForm);
-            }}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Transaction
-          </Button>
-        </div>
-
-        {showForm && (
           <TransactionForm
-            transaction={editingTransaction}
+            transaction={null}
             categories={categories}
-            onSubmit={(data) => handleSubmit(data, editingTransaction)}
-            onCancel={() => {
-              setShowForm(false);
-              setEditingTransaction(null);
-            }}
+            onSubmit={(data) => handleSubmit(data, null)}
+            onCancel={() => setShowForm(false)}
             isSubmitting={isSubmitting}
+            transactions={transactions}
+            trigger={
+              <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Transaction
+              </Button>
+            }
           />
-        )}
+        </div>
 
         <TransactionFilters
           filters={filters}
@@ -69,7 +63,7 @@ export default function Transactions() {
         <TransactionList
           transactions={filteredTransactions}
           categories={categories}
-          onEdit={handleEdit}
+          onEdit={(transaction, data) => handleSubmit(data, transaction)}
           onDelete={handleDelete}
           isLoading={isLoading}
         />
@@ -77,3 +71,7 @@ export default function Transactions() {
     </div>
   );
 }
+
+// DEPRECATED: The old showForm state and TransactionForm wrapper has been removed
+// Now using TransactionForm component with popover trigger directly
+// The form now handles its own state and visibility through the Popover component

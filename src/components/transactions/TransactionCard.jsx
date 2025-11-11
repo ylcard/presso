@@ -1,15 +1,17 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, Circle, Check, Clock } from "lucide-react";
+import { Trash2, Circle, Check, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import { useSettings } from "../utils/SettingsContext";
 import { formatCurrency } from "../utils/formatCurrency";
 import { iconMap, IncomeIcon } from "../utils/iconMapConfig";
+import TransactionForm from "./TransactionForm";
+import { useTransactions } from "../hooks/useBase44Entities";
 
 export default function TransactionCard({ transaction, category, onEdit, onDelete }) {
   const { settings } = useSettings();
+  const { transactions } = useTransactions();
   
   const isIncome = transaction.type === 'income';
   const isPaid = transaction.isPaid;
@@ -29,22 +31,20 @@ export default function TransactionCard({ transaction, category, onEdit, onDelet
         <CardContent className="p-6 flex flex-col h-full min-h-[180px]">
           {/* Action buttons */}
           <div className="flex justify-end gap-1 mb-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onEdit(transaction)}
-              className="hover:bg-blue-50 hover:text-blue-600 h-7 w-7"
-            >
-              <Pencil className="w-3 h-3" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
+            <TransactionForm
+              transaction={transaction}
+              categories={[]} // Will be fetched inside the form
+              onSubmit={(data) => onEdit(transaction, data)}
+              onCancel={() => {}}
+              isSubmitting={false}
+              transactions={transactions}
+            />
+            <button
               onClick={() => onDelete(transaction.id)}
-              className="hover:bg-red-50 hover:text-red-600 h-7 w-7"
+              className="hover:bg-red-50 hover:text-red-600 h-7 w-7 rounded flex items-center justify-center"
             >
               <Trash2 className="w-3 h-3" />
-            </Button>
+            </button>
           </div>
 
           {/* Icon and category section */}
@@ -107,3 +107,6 @@ export default function TransactionCard({ transaction, category, onEdit, onDelet
     </motion.div>
   );
 }
+
+// DEPRECATED: Pencil button removed - now using TransactionForm popover directly
+// The old Button with Pencil icon has been replaced with TransactionForm component as the trigger
