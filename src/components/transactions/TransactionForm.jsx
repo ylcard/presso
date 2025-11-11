@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Popover,
   PopoverContent,
@@ -22,12 +22,23 @@ export default function TransactionForm({
   const { user } = useSettings();
   const { cashWallet } = useCashWallet(user);
   const { allBudgets } = useAllBudgets(user);
+  const [open, setOpen] = useState(false);
+
+  const handleCancel = () => {
+    setOpen(false);
+    if (onCancel) onCancel();
+  };
+
+  const handleSubmit = (data) => {
+    onSubmit(data);
+    setOpen(false);
+  };
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         {trigger || (
-          <Button variant="ghost" size="icon" className="hover:bg-blue-50 hover:text-blue-600">
+          <Button variant="ghost" size="icon" className="hover:bg-blue-50 hover:text-blue-600 h-7 w-7">
             <Pencil className="w-4 h-4" />
           </Button>
         )}
@@ -41,8 +52,8 @@ export default function TransactionForm({
             initialTransaction={transaction}
             categories={categories}
             allBudgets={allBudgets}
-            onSubmit={onSubmit}
-            onCancel={onCancel}
+            onSubmit={handleSubmit}
+            onCancel={handleCancel}
             isSubmitting={isSubmitting}
             cashWallet={cashWallet}
             transactions={transactions}
@@ -56,3 +67,4 @@ export default function TransactionForm({
 // DEPRECATED: This file has been refactored to use a Popover and the unified TransactionFormContent component.
 // The old Card-based modal implementation with inline form logic has been replaced.
 // Previous implementation used motion.div with Card and had all form logic inline - now uses Popover wrapper with TransactionFormContent.
+// ISSUE FIX (2025-01-11): Added controlled state for Popover open/close to fix Cancel button not closing the form

@@ -7,11 +7,12 @@ import { useSettings } from "../utils/SettingsContext";
 import { formatCurrency } from "../utils/formatCurrency";
 import { iconMap, IncomeIcon } from "../utils/iconMapConfig";
 import TransactionForm from "./TransactionForm";
-import { useTransactions } from "../hooks/useBase44Entities";
+import { useTransactions, useCategories } from "../hooks/useBase44Entities";
 
 export default function TransactionCard({ transaction, category, onEdit, onDelete }) {
   const { settings } = useSettings();
   const { transactions } = useTransactions();
+  const { categories } = useCategories();
   
   const isIncome = transaction.type === 'income';
   const isPaid = transaction.isPaid;
@@ -33,7 +34,7 @@ export default function TransactionCard({ transaction, category, onEdit, onDelet
           <div className="flex justify-end gap-1 mb-2 opacity-0 group-hover:opacity-100 transition-opacity">
             <TransactionForm
               transaction={transaction}
-              categories={[]} // Will be fetched inside the form
+              categories={categories}
               onSubmit={(data) => onEdit(transaction, data)}
               onCancel={() => {}}
               isSubmitting={false}
@@ -110,3 +111,5 @@ export default function TransactionCard({ transaction, category, onEdit, onDelet
 
 // DEPRECATED: Pencil button removed - now using TransactionForm popover directly
 // The old Button with Pencil icon has been replaced with TransactionForm component as the trigger
+// ISSUE FIX (2025-01-11): Added useCategories() hook to fetch categories data instead of empty array
+// This fixes the "No category found" issue in the edit transaction form

@@ -100,13 +100,17 @@ export default function Dashboard() {
               <Plus className="w-4 h-4 mr-2" />
               Add Income
             </Button>
-            <Button
+            {/* REMOVED: Orphaned "Add Expense" button - 2025-01-11
+                This button was orphaned and not properly integrated with QuickAddTransaction component
+                The QuickAddTransaction component now renders its own trigger button within BudgetBars
+            */}
+            {/* <Button
               onClick={() => setShowQuickAdd(true)}
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Expense
-            </Button>
+            </Button> */}
           </div>
         </div>
 
@@ -176,6 +180,7 @@ export default function Dashboard() {
           customBudgets={allActiveBudgets}
           onSubmit={transactionActions.createTransaction}
           isSubmitting={transactionActions.isCreating}
+          transactions={transactions}
         />
 
         <QuickAddIncome

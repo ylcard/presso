@@ -12,6 +12,7 @@ import AmountInput from "../ui/AmountInput";
 import DatePicker from "../ui/DatePicker";
 import CategorySelect from "../ui/CategorySelect";
 import CurrencySelect from "../ui/CurrencySelect";
+import AnimatePresenceContainer from "../ui/AnimatePresenceContainer";
 import { useSettings } from "../utils/SettingsContext";
 import { useExchangeRates } from "../hooks/useExchangeRates";
 import { getCurrencyBalance, getRemainingAllocatedCash } from "../utils/cashAllocationUtils";
@@ -262,9 +263,9 @@ export default function TransactionFormContent({
         />
       </div>
 
-      {/* Amount and Currency (side by side) */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
+      {/* Amount and Currency (side by side with proper alignment) */}
+      <div className="flex gap-4 items-end">
+        <div className="flex-1 space-y-2">
           <Label htmlFor="amount">Amount</Label>
           <AmountInput
             id="amount"
@@ -276,7 +277,7 @@ export default function TransactionFormContent({
           />
         </div>
 
-        <div className="space-y-2">
+        <div className="flex-1 space-y-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="currency">Currency</Label>
             {isForeignCurrency && !formData.isCashExpense && (
@@ -299,88 +300,114 @@ export default function TransactionFormContent({
         </div>
       </div>
 
-      {/* Date and Mark as Paid (side by side) */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="date">Date</Label>
-          <DatePicker
-            value={formData.date}
-            onChange={(value) => setFormData({ ...formData, date: value })}
-            placeholder="Select date"
+      {/* Paid with cash checkbox - right below amount/currency */}
+      {formData.type === 'expense' && (
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="isCashExpense"
+            checked={formData.isCashExpense}
+            onCheckedChange={(checked) => setFormData({ 
+              ...formData, 
+              isCashExpense: checked,
+              isPaid: checked ? true : formData.isPaid
+            })}
           />
+          <Label htmlFor="isCashExpense" className="cursor-pointer flex items-center gap-2">
+            Paid with cash
+            {formData.isCashExpense && (
+              <span className="text-xs text-gray-500">
+                (Available: {selectedCurrencySymbol}{availableBalance.toFixed(2)})
+              </span>
+            )}
+          </Label>
+        </div>
+      )}
+
+      {/* Date picker and Mark as paid checkbox */}
+      <div className="space-y-2">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="date">Date</Label>
+            <DatePicker
+              value={formData.date}
+              onChange={(value) => setFormData({ ...formData, date: value })}
+              placeholder="Select date"
+            />
+          </div>
+
+          {/* Payment Date - appears next to Date when isPaid is checked */}
+          <AnimatePresenceContainer show={formData.type === 'expense' && formData.isPaid && !formData.isCashExpense}>
+            <div className="space-y-2">
+              <Label htmlFor="paidDate">Payment Date</Label>
+              <DatePicker
+                value={formData.paidDate || formData.date}
+                onChange={(value) => setFormData({ ...formData, paidDate: value })}
+                placeholder="Payment date"
+              />
+            </div>
+          </AnimatePresenceContainer>
         </div>
 
+        {/* Mark as paid checkbox - below date fields */}
         {formData.type === 'expense' && !formData.isCashExpense && (
-          <div className="space-y-2">
-            <Label>&nbsp;</Label>
-            <div className="flex items-center h-10 space-x-2">
-              <Checkbox
-                id="isPaid"
-                checked={formData.isPaid}
-                onCheckedChange={(checked) => setFormData({ 
-                  ...formData, 
-                  isPaid: checked,
-                  paidDate: checked ? (formData.paidDate || formData.date) : ''
-                })}
-              />
-              <Label htmlFor="isPaid" className="cursor-pointer">
-                Mark as paid
-              </Label>
-            </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="isPaid"
+              checked={formData.isPaid}
+              onCheckedChange={(checked) => setFormData({ 
+                ...formData, 
+                isPaid: checked,
+                paidDate: checked ? (formData.paidDate || formData.date) : ''
+              })}
+            />
+            <Label htmlFor="isPaid" className="cursor-pointer">
+              Mark as paid
+            </Label>
           </div>
         )}
       </div>
 
-      {/* Payment Date (conditionally shown) */}
-      {formData.type === 'expense' && formData.isPaid && !formData.isCashExpense && (
-        <div className="space-y-2">
-          <Label htmlFor="paidDate">Payment Date</Label>
-          <DatePicker
-            value={formData.paidDate || formData.date}
-            onChange={(value) => setFormData({ ...formData, paidDate: value })}
-            placeholder="Select payment date"
-          />
-        </div>
-      )}
+      {/* Type and Category (side by side) */}
+      <div className="grid md:grid-cols-2 gap-4">
+        {/* Type (for editing - can change income/expense) */}
+        {initialTransaction && (
+          <div className="space-y-2">
+            <Label htmlFor="type">Type</Label>
+            <Select
+              value={formData.type}
+              onValueChange={(value) => setFormData({ 
+                ...formData, 
+                type: value,
+                category_id: value === 'income' ? '' : formData.category_id,
+                customBudgetId: value === 'income' ? '' : formData.customBudgetId,
+                isPaid: value === 'income' ? false : formData.isPaid,
+                paidDate: value === 'income' ? '' : formData.paidDate,
+                isCashExpense: value === 'income' ? false : formData.isCashExpense
+              })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="income">Income</SelectItem>
+                <SelectItem value="expense">Expense</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
-      {/* Type (for editing - can change income/expense) */}
-      {initialTransaction && (
-        <div className="space-y-2">
-          <Label htmlFor="type">Type</Label>
-          <Select
-            value={formData.type}
-            onValueChange={(value) => setFormData({ 
-              ...formData, 
-              type: value,
-              category_id: value === 'income' ? '' : formData.category_id,
-              customBudgetId: value === 'income' ? '' : formData.customBudgetId,
-              isPaid: value === 'income' ? false : formData.isPaid,
-              paidDate: value === 'income' ? '' : formData.paidDate,
-              isCashExpense: value === 'income' ? false : formData.isCashExpense
-            })}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="income">Income</SelectItem>
-              <SelectItem value="expense">Expense</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-
-      {/* Category */}
-      {formData.type === 'expense' && (
-        <div className="space-y-2">
-          <Label htmlFor="category">Category</Label>
-          <CategorySelect
-            value={formData.category_id}
-            onValueChange={(value) => setFormData({ ...formData, category_id: value })}
-            categories={categories}
-          />
-        </div>
-      )}
+        {/* Category */}
+        {formData.type === 'expense' && (
+          <div className="space-y-2">
+            <Label htmlFor="category">Category</Label>
+            <CategorySelect
+              value={formData.category_id}
+              onValueChange={(value) => setFormData({ ...formData, category_id: value })}
+              categories={categories}
+            />
+          </div>
+        )}
+      </div>
 
       {/* Budget (REQUIRED for expenses) */}
       {formData.type === 'expense' && (
@@ -403,29 +430,6 @@ export default function TransactionFormContent({
               ))}
             </SelectContent>
           </Select>
-        </div>
-      )}
-
-      {/* Cash Expense Checkbox */}
-      {formData.type === 'expense' && (
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="isCashExpense"
-            checked={formData.isCashExpense}
-            onCheckedChange={(checked) => setFormData({ 
-              ...formData, 
-              isCashExpense: checked,
-              isPaid: checked ? true : formData.isPaid
-            })}
-          />
-          <Label htmlFor="isCashExpense" className="cursor-pointer flex items-center gap-2">
-            Paid with cash
-            {formData.isCashExpense && (
-              <span className="text-xs text-gray-500">
-                (Available: {selectedCurrencySymbol}{availableBalance.toFixed(2)})
-              </span>
-            )}
-          </Label>
         </div>
       )}
 
