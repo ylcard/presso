@@ -102,8 +102,21 @@ export default function TransactionFormContent({
     c => c.code === formData.originalCurrency
   )?.symbol || getCurrencySymbol(formData.originalCurrency);
 
-  // Filter budgets by transaction date
-  const filteredBudgets = filterBudgetsByTransactionDate(allBudgets, formData.date);
+  // Filter budgets by transaction date, but ALWAYS include the pre-selected budget for editing
+  const filteredBudgets = (() => {
+    const dateFiltered = filterBudgetsByTransactionDate(allBudgets, formData.date);
+    
+    // If editing and the transaction has a budget, ensure it's always in the list
+    if (initialTransaction?.customBudgetId) {
+      const preSelectedBudget = allBudgets.find(b => b.id === initialTransaction.customBudgetId);
+      if (preSelectedBudget && !dateFiltered.find(b => b.id === preSelectedBudget.id)) {
+        // Add the pre-selected budget at the beginning
+        return [preSelectedBudget, ...dateFiltered];
+      }
+    }
+    
+    return dateFiltered;
+  })();
 
   // Calculate available cash balance dynamically
   const availableBalance = (() => {
@@ -367,37 +380,12 @@ export default function TransactionFormContent({
         )}
       </div>
 
-      {/* Type and Category (side by side) */}
-      <div className="grid md:grid-cols-2 gap-4">
-        {/* Type (for editing - can change income/expense) */}
-        {initialTransaction && (
-          <div className="space-y-2">
-            <Label htmlFor="type">Type</Label>
-            <Select
-              value={formData.type}
-              onValueChange={(value) => setFormData({ 
-                ...formData, 
-                type: value,
-                category_id: value === 'income' ? '' : formData.category_id,
-                customBudgetId: value === 'income' ? '' : formData.customBudgetId,
-                isPaid: value === 'income' ? false : formData.isPaid,
-                paidDate: value === 'income' ? '' : formData.paidDate,
-                isCashExpense: value === 'income' ? false : formData.isCashExpense
-              })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="income">Income</SelectItem>
-                <SelectItem value="expense">Expense</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        )}
+      {/* REMOVED: Type field completely - expenses cannot be converted to income or vice versa (2025-01-11) */}
 
-        {/* Category */}
-        {formData.type === 'expense' && (
+      {/* Category and Budget (side by side) */}
+      {formData.type === 'expense' && (
+        <div className="grid md:grid-cols-2 gap-4">
+          {/* Category */}
           <div className="space-y-2">
             <Label htmlFor="category">Category</Label>
             <CategorySelect
@@ -406,30 +394,28 @@ export default function TransactionFormContent({
               categories={categories}
             />
           </div>
-        )}
-      </div>
 
-      {/* Budget (REQUIRED for expenses) */}
-      {formData.type === 'expense' && (
-        <div className="space-y-2">
-          <Label htmlFor="customBudget">Budget</Label>
-          <Select
-            value={formData.customBudgetId || ''}
-            onValueChange={(value) => setFormData({ ...formData, customBudgetId: value || '' })}
-            required
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select a budget" />
-            </SelectTrigger>
-            <SelectContent>
-              {filteredBudgets.map((budget) => (
-                <SelectItem key={budget.id} value={budget.id}>
-                  {budget.isSystemBudget && <span className="text-blue-600 mr-1">★</span>}
-                  {budget.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {/* Budget (REQUIRED for expenses) */}
+          <div className="space-y-2">
+            <Label htmlFor="customBudget">Budget</Label>
+            <Select
+              value={formData.customBudgetId || ''}
+              onValueChange={(value) => setFormData({ ...formData, customBudgetId: value || '' })}
+              required
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select a budget" />
+              </SelectTrigger>
+              <SelectContent>
+                {filteredBudgets.map((budget) => (
+                  <SelectItem key={budget.id} value={budget.id}>
+                    {budget.isSystemBudget && <span className="text-blue-600 mr-1">★</span>}
+                    {budget.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       )}
 
@@ -461,3 +447,9 @@ export default function TransactionFormContent({
     </form>
   );
 }
+
+// ISSUE FIX (2025-01-11):
+// 1. Removed Type field completely - transactions cannot be converted between expense/income
+// 2. Made Category and Budget fields side-by-side in a grid for better space utilization
+// 3. Fixed budget pre-selection: filteredBudgets now ALWAYS includes the pre-selected budget for editing,
+//    even if it's filtered out by date - preventing race conditions and ensuring proper pre-selection

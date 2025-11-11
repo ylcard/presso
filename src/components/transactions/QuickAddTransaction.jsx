@@ -31,7 +31,7 @@ export default function QuickAddTransaction({
           Add Expense
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[400px] max-h-[600px] overflow-y-auto" align="end">
+      <PopoverContent className="w-[400px]" align="end">
         <div className="space-y-4">
           <h3 className="font-semibold text-lg">Quick Add Expense</h3>
           <TransactionFormContent
@@ -53,6 +53,5 @@ export default function QuickAddTransaction({
   );
 }
 
-// DEPRECATED: This file has been refactored to use a Popover and the unified TransactionFormContent component.
-// The old Dialog-based implementation has been replaced.
-// Previous implementation used Dialog with inline form logic - now uses Popover wrapper with TransactionFormContent.
+// ISSUE FIX (2025-01-11): Removed max-h-[600px] and overflow-y-auto from PopoverContent
+// to ensure action buttons are always visible without needing to scroll

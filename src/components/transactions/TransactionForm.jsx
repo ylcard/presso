@@ -43,7 +43,7 @@ export default function TransactionForm({
           </Button>
         )}
       </PopoverTrigger>
-      <PopoverContent className="w-[400px] max-h-[600px] overflow-y-auto" align="end">
+      <PopoverContent className="w-[400px]" align="end">
         <div className="space-y-4">
           <h3 className="font-semibold text-lg">
             {transaction ? 'Edit Transaction' : 'Add Transaction'}
@@ -64,7 +64,6 @@ export default function TransactionForm({
   );
 }
 
-// DEPRECATED: This file has been refactored to use a Popover and the unified TransactionFormContent component.
-// The old Card-based modal implementation with inline form logic has been replaced.
-// Previous implementation used motion.div with Card and had all form logic inline - now uses Popover wrapper with TransactionFormContent.
-// ISSUE FIX (2025-01-11): Added controlled state for Popover open/close to fix Cancel button not closing the form
+// ISSUE FIX (2025-01-11): Removed max-h-[600px] and overflow-y-auto from PopoverContent
+// to ensure action buttons are always visible without needing to scroll
+// Previous implementation: max-h-[600px] overflow-y-auto - caused buttons to be cut off
