@@ -2,6 +2,11 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useSettings } from "../components/utils/SettingsContext";
 import { usePeriod } from "../components/hooks/usePeriod";
 import {
@@ -83,7 +88,6 @@ export default function Budgets() {
   return (
     <div className="min-h-screen p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* ENHANCEMENT (2025-01-12): Simplified header - removed button (moved to section) */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Budgets</h1>
@@ -99,21 +103,6 @@ export default function Budgets() {
             setSelectedYear(year);
           }}
         />
-
-        {customBudgetActions.showForm && (
-          <CustomBudgetForm
-            budget={customBudgetActions.editingBudget}
-            onSubmit={customBudgetActions.handleSubmit}
-            onCancel={() => {
-              customBudgetActions.setShowForm(false);
-              customBudgetActions.setEditingBudget(null);
-            }}
-            isSubmitting={customBudgetActions.isSubmitting}
-            cashWallet={cashWallet}
-            baseCurrency={settings.baseCurrency}
-            settings={settings}
-          />
-        )}
 
         {/* System Budgets Section */}
         {systemBudgetsWithStats.length > 0 && (
@@ -153,7 +142,7 @@ export default function Budgets() {
           </Card>
         )}
 
-        {/* ENHANCEMENT (2025-01-12): Moved "Create Custom Budget" button to section header */}
+        {/* ENHANCEMENT (2025-01-12): Custom Budgets with Popover form */}
         {sortedCustomBudgets.length === 0 ? (
           <Card className="border-none shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between">
@@ -162,16 +151,33 @@ export default function Budgets() {
                   Custom Budgets
                 </span>
               </div>
-              <Button
-                onClick={() => {
-                  customBudgetActions.setEditingBudget(null);
-                  customBudgetActions.setShowForm(!customBudgetActions.showForm);
-                }}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Custom Budget
-              </Button>
+              <Popover open={customBudgetActions.showForm} onOpenChange={customBudgetActions.setShowForm}>
+                <PopoverTrigger asChild>
+                  <Button
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Custom Budget
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[600px]" align="end">
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-lg">Create Custom Budget</h3>
+                    <CustomBudgetForm
+                      budget={customBudgetActions.editingBudget}
+                      onSubmit={customBudgetActions.handleSubmit}
+                      onCancel={() => {
+                        customBudgetActions.setShowForm(false);
+                        customBudgetActions.setEditingBudget(null);
+                      }}
+                      isSubmitting={customBudgetActions.isSubmitting}
+                      cashWallet={cashWallet}
+                      baseCurrency={settings.baseCurrency}
+                      settings={settings}
+                    />
+                  </div>
+                </PopoverContent>
+              </Popover>
             </CardHeader>
             <CardContent>
               <div className="h-40 flex items-center justify-center text-gray-400">
@@ -193,16 +199,33 @@ export default function Budgets() {
                   Custom budgets containing wants expenses, sorted by status and date
                 </p>
               </div>
-              <Button
-                onClick={() => {
-                  customBudgetActions.setEditingBudget(null);
-                  customBudgetActions.setShowForm(!customBudgetActions.showForm);
-                }}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Custom Budget
-              </Button>
+              <Popover open={customBudgetActions.showForm} onOpenChange={customBudgetActions.setShowForm}>
+                <PopoverTrigger asChild>
+                  <Button
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Custom Budget
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[600px]" align="end">
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-lg">Create Custom Budget</h3>
+                    <CustomBudgetForm
+                      budget={customBudgetActions.editingBudget}
+                      onSubmit={customBudgetActions.handleSubmit}
+                      onCancel={() => {
+                        customBudgetActions.setShowForm(false);
+                        customBudgetActions.setEditingBudget(null);
+                      }}
+                      isSubmitting={customBudgetActions.isSubmitting}
+                      cashWallet={cashWallet}
+                      baseCurrency={settings.baseCurrency}
+                      settings={settings}
+                    />
+                  </div>
+                </PopoverContent>
+              </Popover>
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
@@ -244,5 +267,8 @@ export default function Budgets() {
   );
 }
 
-// ENHANCEMENT (2025-01-12): Moved "Create Custom Budget" button to Custom Budgets section header (top-right)
-// CRITICAL FIX (2025-01-12): System budget stats now calculated without aggregated remaining to prevent double-counting
+// ENHANCEMENT (2025-01-12): Converted form to Popover
+// - Form now appears in popover instead of full-screen Card
+// - Popover width set to 600px for optimal form layout
+// - Aligned to "end" for right-side appearance
+// - No scrolling required due to compact form design

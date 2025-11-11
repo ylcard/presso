@@ -163,10 +163,7 @@ export default function Dashboard() {
               baseCurrency={settings.baseCurrency}
               onDeleteBudget={budgetActions.handleDelete}
               onCompleteBudget={(id) => budgetActions.handleStatusChange(id, 'completed')}
-              onCreateBudget={() => {
-                budgetActions.setEditingBudget(null);
-                setShowQuickAddBudget(true);
-              }}
+              onCreateBudget={() => setShowQuickAddBudget(true)}
             />
           </div>
 
@@ -196,15 +193,15 @@ export default function Dashboard() {
           isSubmitting={transactionActions.isCreating}
         />
 
-        {showQuickAddBudget && (
-          <QuickAddBudget
-            onSubmit={budgetActions.handleSubmit}
-            onCancel={() => setShowQuickAddBudget(false)}
-            isSubmitting={budgetActions.isSubmitting}
-            cashWallet={cashWallet}
-            baseCurrency={settings.baseCurrency}
-          />
-        )}
+        <QuickAddBudget
+          open={showQuickAddBudget}
+          onOpenChange={setShowQuickAddBudget}
+          onSubmit={budgetActions.handleSubmit}
+          onCancel={() => setShowQuickAddBudget(false)}
+          isSubmitting={budgetActions.isSubmitting}
+          cashWallet={cashWallet}
+          baseCurrency={settings.baseCurrency}
+        />
 
         <CashWithdrawDialog
           open={cashWalletActions.depositCashDialogOpen}

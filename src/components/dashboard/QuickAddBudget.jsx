@@ -1,31 +1,53 @@
 import React from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 import CustomBudgetForm from "../custombudgets/CustomBudgetForm";
+import { useSettings } from "../utils/SettingsContext";
+import { useCashWallet } from "../hooks/useBase44Entities";
 
 export default function QuickAddBudget({ 
   open, 
   onOpenChange, 
   onSubmit, 
-  isSubmitting
+  onCancel,
+  isSubmitting,
+  cashWallet,
+  baseCurrency
 }) {
+  const { settings } = useSettings();
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Create Custom Budget</DialogTitle>
-        </DialogHeader>
-        <CustomBudgetForm
-          onSubmit={onSubmit}
-          onCancel={() => onOpenChange(false)}
-          isSubmitting={isSubmitting}
-          isQuickAdd={true}
-        />
-      </DialogContent>
-    </Dialog>
+    <Popover open={open} onOpenChange={onOpenChange}>
+      <PopoverTrigger asChild>
+        <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg">
+          <Plus className="w-4 h-4 mr-2" />
+          Create Budget
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[600px]" align="end">
+        <div className="space-y-2">
+          <h3 className="font-semibold text-lg">Create Custom Budget</h3>
+          <CustomBudgetForm
+            onSubmit={onSubmit}
+            onCancel={() => onOpenChange(false)}
+            isSubmitting={isSubmitting}
+            cashWallet={cashWallet}
+            baseCurrency={baseCurrency}
+            settings={settings}
+          />
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
+
+// REFACTOR (2025-01-12): Converted from Dialog to Popover
+// - Now consistent with QuickAddTransaction and QuickAddIncome design pattern
+// - Form appears in popover instead of modal
+// - Added PopoverTrigger with styled button
+// - Removed Dialog wrapper

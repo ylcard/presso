@@ -2,6 +2,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import MonthYearPickerPopover from "./MonthYearPickerPopover";
 
 export default function MonthNavigator({ currentMonth, currentYear, onMonthChange }) {
   const now = new Date();
@@ -39,22 +40,30 @@ export default function MonthNavigator({ currentMonth, currentYear, onMonthChang
           variant="ghost"
           size="icon"
           onClick={goToPreviousMonth}
-          className="h-8 w-8 hover:bg-blue-50"
+          className="h-8 w-8 hover:bg-blue-50 text-gray-700 hover:text-blue-600"
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft className="w-5 h-5" />
         </Button>
         
-        <div className="px-4 py-1 min-w-[160px] text-center">
-          <p className="font-bold text-gray-900">{monthNames[currentMonth]} {currentYear}</p>
-        </div>
+        <MonthYearPickerPopover
+          currentMonth={currentMonth}
+          currentYear={currentYear}
+          onMonthChange={onMonthChange}
+        >
+          <button 
+            className="px-4 py-1 min-w-[160px] text-center font-bold text-gray-900 hover:text-blue-600 transition-colors cursor-pointer rounded hover:bg-blue-50"
+          >
+            {monthNames[currentMonth]} {currentYear}
+          </button>
+        </MonthYearPickerPopover>
         
         <Button
           variant="ghost"
           size="icon"
           onClick={goToNextMonth}
-          className="h-8 w-8 hover:bg-blue-50"
+          className="h-8 w-8 hover:bg-blue-50 text-gray-700 hover:text-blue-600"
         >
-          <ChevronRight className="w-4 h-4" />
+          <ChevronRight className="w-5 h-5" />
         </Button>
       </div>
 
@@ -80,3 +89,8 @@ export default function MonthNavigator({ currentMonth, currentYear, onMonthChang
     </div>
   );
 }
+
+// ENHANCEMENTS (2025-01-12):
+// 1. Improved arrow visibility: Added explicit text colors (text-gray-700 hover:text-blue-600) and increased icon size to w-5 h-5
+// 2. Made month name clickable: Wrapped in MonthYearPickerPopover with hover effects
+// 3. Reusable component: MonthYearPickerPopover can be used elsewhere in the app
