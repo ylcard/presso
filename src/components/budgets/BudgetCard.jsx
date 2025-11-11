@@ -1,9 +1,10 @@
+
 import React, { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { formatCurrency } from "../utils/formatCurrency";
-import { getCurrencySymbol } from "../utils/currencyUtils";
+// UPDATED 12-Jan-2025: Changed import from formatCurrency.jsx to currencyUtils.js
+import { formatCurrency, getCurrencySymbol } from "../utils/currencyUtils";
 import { motion } from "framer-motion";
 import { CheckCircle, Clock } from "lucide-react";
 

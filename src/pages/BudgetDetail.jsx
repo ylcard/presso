@@ -14,12 +14,10 @@ import { ArrowLeft, DollarSign, TrendingDown, CheckCircle, Trash2, AlertCircle }
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useSettings } from "../components/utils/SettingsContext";
-// UPDATED 11-Nov-2025: Changed imports from formatCurrency and formatDate to use new utility files
-import { formatCurrency } from "../components/utils/currencyUtils";
+// UPDATED 12-Jan-2025: Changed imports to use currencyUtils.js and dateUtils.js
+import { formatCurrency, getCurrencySymbol } from "../components/utils/currencyUtils";
 import { formatDate, parseDate } from "../components/utils/dateUtils";
-import { getCurrencySymbol } from "../components/utils/currencyUtils";
-// COMMENTED OUT 11-Nov-2025: Removed budgetCalculations imports, now using expenseCalculations directly
-// import { getCustomBudgetStats, getSystemBudgetStats, getCustomBudgetAllocationStats } from "../components/utils/budgetCalculations";
+// UPDATED 12-Jan-2025: Changed import from expenseCalculations to financialCalculations
 import {
   getPaidNeedsExpenses,
   getUnpaidNeedsExpenses,
@@ -27,8 +25,8 @@ import {
   getDirectUnpaidWantsExpenses,
   getPaidCustomBudgetExpenses,
   getUnpaidCustomBudgetExpenses,
-  getPaidSavingsExpenses,
-} from "../components/utils/expenseCalculations";
+  getPaidSavingsExpenses, // Retained for functionality as it's used in getSystemBudgetStats
+} from "../components/utils/financialCalculations";
 import { useCashWallet } from "../components/hooks/useBase44Entities";
 import { useTransactionActions } from "../components/hooks/useActions";
 import { calculateRemainingCashAllocations, returnCashToWallet } from "../components/utils/cashAllocationUtils";

@@ -1,6 +1,7 @@
+
 import React from "react";
-import { formatCurrency } from "../utils/formatCurrency";
-import { getCurrencySymbol } from "../utils/currencyUtils";
+// UPDATED 12-Jan-2025: Changed import from formatCurrency.jsx to currencyUtils.js
+import { formatCurrency, getCurrencySymbol } from "../utils/currencyUtils";
 
 export default function ExpensesCardContent({ budget, stats, settings }) {
   if (budget.isSystemBudget) {

@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -5,7 +6,8 @@ import { Progress } from "@/components/ui/progress";
 import { Circle } from "lucide-react";
 import { useSettings } from "../utils/SettingsContext";
 import { useMonthlyBreakdown } from "../hooks/useDerivedData";
-import { formatCurrency } from "../utils/formatCurrency";
+// UPDATED 12-Jan-2025: Changed import from formatCurrency.jsx to currencyUtils.js
+import { formatCurrency } from "../utils/currencyUtils";
 import { iconMap } from "../utils/iconMapConfig";
 import { getProgressBarColor } from "../utils/progressBarColor";
 

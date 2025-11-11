@@ -1,10 +1,12 @@
+
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Trash2, Circle, Check, Clock } from "lucide-react";
-import { format } from "date-fns";
+import { format } = "date-fns";
 import { motion } from "framer-motion";
 import { useSettings } from "../utils/SettingsContext";
-import { formatCurrency } from "../utils/formatCurrency";
+// UPDATED 12-Jan-2025: Changed import from formatCurrency.jsx to currencyUtils.js
+import { formatCurrency } from "../utils/currencyUtils";
 import { iconMap, IncomeIcon } from "../utils/iconMapConfig";
 import TransactionForm from "./TransactionForm";
 import { useTransactions, useCategories } from "../hooks/useBase44Entities";
