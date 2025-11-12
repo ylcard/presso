@@ -54,8 +54,9 @@ export const useTransactionDisplay = (transaction, category) => {
 export const useMonthlyTransactions = (transactions, selectedMonth, selectedYear) => {
     return useMemo(() => {
         // REFACTORED 13-Jan-2025: Use dateUtils functions instead of manual date creation
-        const monthStart = new Date(selectedYear, selectedMonth, 1);
-        const monthEnd = new Date(selectedYear, selectedMonth + 1, 0);
+        // const monthStart = new Date(selectedYear, selectedMonth, 1);
+        // const monthEnd = new Date(selectedYear, selectedMonth + 1, 0);
+        const { start: monthStart, end: monthEnd } = getMonthBoundaries(selectedYear, selectedMonth);
 
         return transactions.filter(t => {
             // For income, just check the date
@@ -219,11 +220,14 @@ export const useBudgetsAggregates = (
 ) => {
     // Filter custom budgets based on date overlap
     const customBudgets = useMemo(() => {
+        const { start: selectedMonthStart, end: selectedMonthEnd } = getMonthBoundaries(selectedYear, selectedMonth);
         return allCustomBudgets.filter(cb => {
             const start = new Date(cb.startDate);
             const end = new Date(cb.endDate);
-            const selectedMonthStart = new Date(selectedYear, selectedMonth, 1);
-            const selectedMonthEnd = new Date(selectedYear, selectedMonth + 1, 0);
+            
+            // Moved the variables to the parent block, which uses the dateUtils function
+            // const selectedMonthStart = new Date(selectedYear, selectedMonth, 1);
+            // const selectedMonthEnd = new Date(selectedYear, selectedMonth + 1, 0);
 
             return (start <= selectedMonthEnd && end >= selectedMonthStart);
         });
