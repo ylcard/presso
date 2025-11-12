@@ -757,6 +757,7 @@ export const useCustomBudgetActions = (user, transactions, cashWallet) => {
 // DEPRECATED: This hook is scheduled to be removed. Use useCustomBudgetActions instead.
 // This hook lacks cash allocation logic and should not be used for budget management.
 // Keeping for now to avoid breaking changes, but all usages should be migrated to useCustomBudgetActions.
+/*
 export const useBudgetActions = (user, transactions) => {
   console.warn('DEPRECATED: useBudgetActions is deprecated. Use useCustomBudgetActions instead for proper cash allocation handling.');
   
@@ -892,6 +893,7 @@ export const useBudgetActions = (user, transactions) => {
     isSubmitting: createMutation.isPending || updateMutation.isPending,
   };
 };
+*/
 
 // Hook for settings form state and submission
 export const useSettingsForm = (settings, updateSettings) => {
