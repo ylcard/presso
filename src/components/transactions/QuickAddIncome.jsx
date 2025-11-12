@@ -4,10 +4,12 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Plus } from "lucide-react";
 import AmountInput from "../ui/AmountInput";
 import DatePicker from "../ui/DatePicker";
 // UPDATED 12-Jan-2025: Changed imports to use dateUtils.js and generalUtils.js
@@ -18,7 +20,11 @@ export default function QuickAddIncome({
   open, 
   onOpenChange, 
   onSubmit, 
-  isSubmitting 
+  isSubmitting,
+  renderTrigger = true, // NEW: Control whether to render the trigger button
+  triggerVariant = "default", // NEW: Allow customization of trigger button style
+  triggerSize = "default", // NEW: Allow customization of trigger button size
+  triggerClassName = "" // NEW: Allow custom classes for trigger button
 }) {
   const [formData, setFormData] = useState({
     title: '',
@@ -47,7 +53,19 @@ export default function QuickAddIncome({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      {renderTrigger && (
+        <DialogTrigger asChild>
+          <Button 
+            variant={triggerVariant}
+            size={triggerSize}
+            className={triggerClassName}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Income
+          </Button>
+        </DialogTrigger>
+      )}
+      <DialogContent className="sm:max-w-md fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
         <DialogHeader>
           <DialogTitle>Quick Add Income</DialogTitle>
         </DialogHeader>
@@ -104,4 +122,9 @@ export default function QuickAddIncome({
   );
 }
 
+// ENHANCEMENT (13-Jan-2025): Added trigger button to QuickAddIncome component
+// - Now renders its own "Add Income" button by default
+// - Added renderTrigger prop to control button visibility (for backward compatibility)
+// - Added triggerVariant, triggerSize, and triggerClassName props for button customization
+// - Dialog is now properly centered using fixed positioning (top-1/2 left-1/2 transform)
 // UPDATED 12-Jan-2025: Changed imports to use dateUtils.js and generalUtils.js instead of budgetCalculations.jsx
