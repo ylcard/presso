@@ -39,7 +39,9 @@ export const formatDate = (date, dateFormat = "MMM dd, yyyy") => {
 export const parseDate = (dateString) => {
     if (!dateString) return null;
     const [year, month, day] = dateString.split('-').map(Number);
-    return new Date(year, month - 1, day);
+    // Deprecating the use of local time, using UTC instead below
+    // return new Date(year, month - 1, day);
+    return new Date(Date.UTC(year, month - 1, day));
 };
 
 /**
