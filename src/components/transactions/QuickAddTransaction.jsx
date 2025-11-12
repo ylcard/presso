@@ -4,7 +4,10 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 import { useSettings } from "../utils/SettingsContext";
 import { useCashWallet } from "../hooks/useBase44Entities";
 import TransactionFormContent from "./TransactionFormContent";
@@ -17,14 +20,30 @@ export default function QuickAddTransaction({
   defaultCustomBudgetId = '', 
   onSubmit, 
   isSubmitting,
-  transactions = []
+  transactions = [],
+  renderTrigger = true, // NEW: Control whether to render the trigger button
+  triggerVariant = "default", // NEW: Allow customization of trigger button style
+  triggerSize = "default", // NEW: Allow customization of trigger button size
+  triggerClassName = "" // NEW: Allow custom classes for trigger button
 }) {
   const { user } = useSettings();
   const { cashWallet } = useCashWallet(user);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      {renderTrigger && (
+        <DialogTrigger asChild>
+          <Button 
+            variant={triggerVariant}
+            size={triggerSize}
+            className={triggerClassName}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Expense
+          </Button>
+        </DialogTrigger>
+      )}
+      <DialogContent className="sm:max-w-[500px] fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
         <DialogHeader>
           <DialogTitle>Quick Add Expense</DialogTitle>
         </DialogHeader>
@@ -46,6 +65,10 @@ export default function QuickAddTransaction({
   );
 }
 
-// ISSUE FIX (2025-01-11): Changed from Popover to Dialog to match QuickAddIncome design
-// Removed the PopoverTrigger button that was causing an orphaned "Add Expense" button at the bottom
-// Now properly controlled via open/onOpenChange props like QuickAddIncome
+// ENHANCEMENT (13-Jan-2025): Added trigger button to QuickAddTransaction component
+// - Now renders its own "Add Expense" button by default
+// - Added renderTrigger prop to control button visibility (for backward compatibility)
+// - Added triggerVariant, triggerSize, and triggerClassName props for button customization
+// - Dialog is now properly centered using fixed positioning (top-1/2 left-1/2 transform)
+// - This fixes the missing "Add Expense" button issue in BudgetDetail page
+// PREVIOUS FIX (2025-01-11): Changed from Popover to Dialog to match QuickAddIncome design
