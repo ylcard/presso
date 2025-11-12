@@ -116,7 +116,7 @@ export default function AllocationManager({
                 <div className="space-y-2">
                   {Object.entries(remainingCashByCurrency).map(([currency, amount]) => (
                     <div key={currency}>
-                      <p className="text-lg font-bold text-gray-900">
+                      <p className="text-3xl font-bold text-gray-900">
                         {formatCurrency(amount, { ...settings, currencySymbol: getCurrencySymbol(currency) })}
                       </p>
                     </div>
