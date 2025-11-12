@@ -220,14 +220,14 @@ export const useBudgetsAggregates = (
 ) => {
     // Filter custom budgets based on date overlap
     const customBudgets = useMemo(() => {
-        const { start: selectedMonthStart, end: selectedMonthEnd } = getMonthBoundaries(selectedYear, selectedMonth);
+        //const { start: selectedMonthStart, end: selectedMonthEnd } = getMonthBoundaries(selectedYear, selectedMonth);
         return allCustomBudgets.filter(cb => {
             const start = new Date(cb.startDate);
             const end = new Date(cb.endDate);
             
             // Moved the variables to the parent block, which uses the dateUtils function
-            // const selectedMonthStart = new Date(selectedYear, selectedMonth, 1);
-            // const selectedMonthEnd = new Date(selectedYear, selectedMonth + 1, 0);
+            const selectedMonthStart = new Date(selectedYear, selectedMonth, 1);
+            const selectedMonthEnd = new Date(selectedYear, selectedMonth + 1, 0);
 
             return (start <= selectedMonthEnd && end >= selectedMonthStart);
         });
