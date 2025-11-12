@@ -1,3 +1,4 @@
+
 import { useMemo, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -65,13 +66,13 @@ export const useMonthlyTransactions = (transactions, selectedMonth, selectedYear
             // For income, just check the date
             if (t.type === 'income') {
                 const transactionDate = parseDate(t.date);
-                return transactionDate >= monthStart && transactionDate <= monthEnd;
+                return transactionDate >= parseDate(monthStart) && transactionDate <= parseDate(monthEnd);
             }
 
             // For expenses, check if paid in this month
             if (!t.isPaid || !t.paidDate) return false;
             const paidDate = parseDate(t.paidDate);
-            return paidDate >= monthStart && paidDate <= monthEnd;
+            return paidDate >= parseDate(monthStart) && paidDate <= parseDate(monthEnd);
         });
     }, [transactions, selectedMonth, selectedYear]);
 };
@@ -195,7 +196,12 @@ export const useActiveBudgets = (allCustomBudgets, allSystemBudgets, selectedMon
         });
 
         const activeSystem = allSystemBudgets
-            .filter(sb => sb.startDate === monthStart && sb.endDate === monthEnd)
+            .filter(sb => {
+                // Ensure system budget dates are within the selected month's boundaries
+                const sbStart = parseDate(sb.startDate);
+                const sbEnd = parseDate(sb.endDate);
+                return sbStart >= monthStartDate && sbEnd <= monthEndDate;
+            })
             .map(sb => ({
                 ...sb,
                 id: sb.id,
@@ -225,7 +231,12 @@ export const useCustomBudgetsFiltered = (allCustomBudgets, selectedMonth, select
         const monthEnd = getLastDayOfMonth(selectedMonth, selectedYear);
 
         return allCustomBudgets.filter(cb => {
-            return cb.startDate <= monthEnd && cb.endDate >= monthStart;
+            const cbStart = parseDate(cb.startDate);
+            const cbEnd = parseDate(cb.endDate);
+            const monthStartDate = parseDate(monthStart);
+            const monthEndDate = parseDate(monthEnd);
+            
+            return cbStart <= monthEndDate && cbEnd >= monthStartDate;
         });
     }, [allCustomBudgets, selectedMonth, selectedYear]);
 };
@@ -234,6 +245,7 @@ export const useCustomBudgetsFiltered = (allCustomBudgets, selectedMonth, select
 // REFACTORED 13-Jan-2025: Standardized month boundary calculation using dateUtils
 // FIXED 14-Jan-2025: Corrected Savings budget calculation
 // CRITICAL FIX 14-Jan-2025: Fixed parameter order in getMonthBoundaries call
+// CRITICAL FIX 14-Jan-2025: Fixed date comparison - now comparing Date objects, not Date vs string
 export const useBudgetsAggregates = (
     transactions,
     categories,
@@ -243,18 +255,18 @@ export const useBudgetsAggregates = (
     selectedYear
 ) => {
     // Filter custom budgets based on date overlap
+    // CRITICAL FIX 14-Jan-2025: Convert monthStart and monthEnd strings to Date objects before comparison
     const customBudgets = useMemo(() => {
-        // CRITICAL FIX 14-Jan-2025: Corrected parameter order - getMonthBoundaries expects (month, year) not (year, month)
-        const { monthStart: monthStart, monthEnd: monthEnd } = getMonthBoundaries(selectedMonth, selectedYear);
+        const { monthStart, monthEnd } = getMonthBoundaries(selectedMonth, selectedYear);
+        const monthStartDate = parseDate(monthStart);
+        const monthEndDate = parseDate(monthEnd);
+        
         return allCustomBudgets.filter(cb => {
-            const start = new Date(cb.startDate);
-            const end = new Date(cb.endDate);
+            const start = parseDate(cb.startDate);
+            const end = parseDate(cb.endDate);
             
-            // Moved the variables to the parent block, which uses the dateUtils function
-            // const selectedMonthStart = new Date(selectedYear, selectedMonth, 1);
-            // const selectedMonthEnd = new Date(selectedYear, selectedMonth + 1, 0);
-
-            return (start <= monthEnd && end >= monthStart);
+            // Now comparing Date objects with Date objects (reliable comparison)
+            return start <= monthEndDate && end >= monthStartDate;
         });
     }, [allCustomBudgets, selectedMonth, selectedYear]);
 
