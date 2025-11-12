@@ -10,7 +10,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
-import { ArrowLeft, DollarSign, TrendingDown, CheckCircle, Trash2, AlertCircle, Plus } from "lucide-react";
+import { ArrowLeft, DollarSign, TrendingDown, CheckCircle, Trash2, AlertCircle } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useSettings } from "../components/utils/SettingsContext";
@@ -794,25 +794,16 @@ export default function BudgetDetail() {
                                 </p>
                             )}
                         </div>
-                        {/*<QuickAddTransaction
-              open={showQuickAdd}
-              onOpenChange={setShowQuickAdd}
-              categories={categories}
-              customBudgets={allBudgets}
-              defaultCustomBudgetId={budgetId}
-              onSubmit={(data) => createTransactionMutation.mutate(data)}
-              isSubmitting={createTransactionMutation.isPending}
-              transactions={transactions}
-            />
-            */}
-                        <Button
-                            onClick={() => setShowQuickAdd(true)}
-                            size="sm"
-                            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
-                        >
-                            <Plus className="w-4 h-4 mr-2" />
-                            Add Expense
-                        </Button>
+                        <QuickAddTransaction
+                            open={showQuickAdd}
+                            onOpenChange={setShowQuickAdd}
+                            categories={categories}
+                            customBudgets={allBudgets}
+                            defaultCustomBudgetId={budgetId}
+                            onSubmit={(data) => createTransactionMutation.mutate(data)}
+                            isSubmitting={createTransactionMutation.isPending}
+                            transactions={transactions}
+                        />
                     </CardHeader>
                     <CardContent>
                         {budgetTransactions.length === 0 ? (
