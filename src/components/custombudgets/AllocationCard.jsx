@@ -25,7 +25,7 @@ export default function AllocationCard({ allocation, category, stats, onEdit, on
       animate={{ opacity: 1, scale: 1 }}
       whileHover={{ scale: 1.02 }}
     >
-      <Card className="border-none shadow-md hover:shadow-lg transition-all">
+      <Card className="border-none shadow-md hover:shadow-lg transition-all group">
         <CardContent className="p-4">
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-3 flex-1">
