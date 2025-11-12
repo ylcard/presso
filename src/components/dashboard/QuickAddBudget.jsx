@@ -5,10 +5,10 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -29,10 +29,9 @@ export default function QuickAddBudget({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg">
-                <Plus className="w-4 h-4 mr-2" />
-                Create Budget
-            </Button>
+            <DialogHeader>
+                <DialogTitle>Create Budget</DialogTitle>
+            </DialogHeader>
             <DialogContent
                 className="w-[600px] fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 max-h-[90vh] overflow-y-auto z-50"
                 align="center"
