@@ -38,17 +38,14 @@ export default function QuickAddBudget({
                 <DialogHeader>
                     <DialogTitle>Create Budget</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-2">
-                    <h3 className="font-semibold text-lg">Create Custom Budget</h3>
-                    <CustomBudgetForm
-                        onSubmit={onSubmit}
-                        onCancel={() => onOpenChange(false)}
-                        isSubmitting={isSubmitting}
-                        cashWallet={cashWallet}
-                        baseCurrency={baseCurrency}
-                        settings={settings}
-                    />
-                </div>
+                <CustomBudgetForm
+                    onSubmit={onSubmit}
+                    onCancel={() => onOpenChange(false)}
+                    isSubmitting={isSubmitting}
+                    cashWallet={cashWallet}
+                    baseCurrency={baseCurrency}
+                    settings={settings}
+                />
             </DialogContent>
         </Dialog>
     );
