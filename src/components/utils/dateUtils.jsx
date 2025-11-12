@@ -46,14 +46,14 @@ export const parseDate = (dateString) => {
 
 /**
  * Format date as YYYY-MM-DD (timezone-agnostic)
- * FIXED 13-Jan-2025: Changed to use UTC methods to prevent timezone-related off-by-one date errors
+ * FIXED 12-Nov-2025: Changed to use UTC methods to prevent timezone-related off-by-one date errors
  * @param {Date|string} date - Date to format
  * @returns {string} Formatted date string
  */
 export const formatDateString = (date) => {
     if (!date) return '';
     const d = date instanceof Date ? date : new Date(date);
-    // UPDATED 13-Jan-2025: Use UTC methods instead of local time methods
+    // UPDATED 12-Nov-2025: Use UTC methods instead of local time methods
     // This ensures the output reflects the intended calendar date regardless of user timezone
     const year = d.getUTCFullYear();
     const month = String(d.getUTCMonth() + 1).padStart(2, '0');
