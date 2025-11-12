@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+// COMMENTED OUT 13-Jan-2025: Button and Plus imports moved inline to where they're needed
+// import { Button } from "@/components/ui/button";
+// import { Plus } from "lucide-react";
 import { useSettings } from "../components/utils/SettingsContext";
 import { usePeriod } from "../components/hooks/usePeriod";
 import {
@@ -115,26 +116,31 @@ export default function Dashboard() {
                                 />
                             }
                             addIncomeButton={
-                                <Button
-                                    onClick={() => setShowQuickAddIncome(true)}
-                                    variant="ghost"
-                                    className="text-white border-white/30 hover:bg-white/20 hover:border-white/50"
-                                    size="sm"
-                                >
-                                    <Plus className="w-4 h-4 mr-2" />
-                                    Add Income
-                                </Button>
+                                <QuickAddIncome
+                                    open={showQuickAddIncome}
+                                    onOpenChange={setShowQuickAddIncome}
+                                    onSubmit={transactionActions.createTransaction}
+                                    isSubmitting={transactionActions.isCreating}
+                                    renderTrigger={true}
+                                    triggerVariant="ghost"
+                                    triggerSize="sm"
+                                    triggerClassName="text-white border-white/30 hover:bg-white/20 hover:border-white/50"
+                                />
                             }
                             addExpenseButton={
-                                <Button
-                                    onClick={() => setShowQuickAdd(true)}
-                                    variant="ghost"
-                                    className="text-white border-white/30 hover:bg-white/20 hover:border-white/50"
-                                    size="sm"
-                                >
-                                    <Plus className="w-4 h-4 mr-2" />
-                                    Add Expense
-                                </Button>
+                                <QuickAddTransaction
+                                    open={showQuickAdd}
+                                    onOpenChange={setShowQuickAdd}
+                                    categories={categories}
+                                    customBudgets={allActiveBudgets}
+                                    onSubmit={transactionActions.createTransaction}
+                                    isSubmitting={transactionActions.isCreating}
+                                    transactions={transactions}
+                                    renderTrigger={true}
+                                    triggerVariant="ghost"
+                                    triggerSize="sm"
+                                    triggerClassName="text-white border-white/30 hover:bg-white/20 hover:border-white/50"
+                                />
                             }
                         />
                     </div>
@@ -176,7 +182,8 @@ export default function Dashboard() {
                     </div>
                 </div>
 
-                <QuickAddTransaction
+                {/* REMOVED 13-Jan-2025: Standalone QuickAddTransaction and QuickAddIncome - they now render their own triggers inline */}
+                {/* <QuickAddTransaction
                     open={showQuickAdd}
                     onOpenChange={setShowQuickAdd}
                     categories={categories}
@@ -191,7 +198,7 @@ export default function Dashboard() {
                     onOpenChange={setShowQuickAddIncome}
                     onSubmit={transactionActions.createTransaction}
                     isSubmitting={transactionActions.isCreating}
-                />
+                /> */}
 
                 <QuickAddBudget
                     open={showQuickAddBudget}
@@ -228,3 +235,4 @@ export default function Dashboard() {
 
 // REFACTORED 11-Nov-2025: Updated to use new utility file structure (dateUtils, currencyUtils, generalUtils)
 // All imports now point to specialized utility files instead of deprecated budgetCalculations.js
+// UPDATED 13-Jan-2025: QuickAddTransaction and QuickAddIncome now render their own trigger buttons inline in RemainingBudgetCard
