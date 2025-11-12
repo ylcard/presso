@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { parseDate, getFirstDayOfMonth, getLastDayOfMonth, toLocalDateString, getMonthBoundaries } from "../utils/dateUtils";
 import { createEntityMap } from "../utils/generalUtils";
 // UPDATED 13-Jan-2025: Changed to explicitly use .jsx extension for financialCalculations
+// UPDATED 14-Jan-2025: Added getPaidSavingsExpenses import for correct Savings budget calculations
 import {
     getTotalMonthExpenses,
     getPaidNeedsExpenses,
@@ -16,6 +17,7 @@ import {
     getUnpaidCustomBudgetExpenses,
     getMonthlyIncome,
     getMonthlyPaidExpenses,
+    getPaidSavingsExpenses,
 } from "../utils/financialCalculations";
 import { PRIORITY_ORDER, PRIORITY_CONFIG } from "../utils/constants";
 import { iconMap } from "../utils/iconMapConfig";
@@ -211,6 +213,7 @@ export const useCustomBudgetsFiltered = (allCustomBudgets, selectedMonth, select
 
 // REFACTORED 12-Jan-2025: Updated to use granular expense functions from financialCalculations
 // REFACTORED 13-Jan-2025: Standardized month boundary calculation using dateUtils
+// FIXED 14-Jan-2025: Corrected Savings budget to use getPaidSavingsExpenses instead of getPaidNeedsExpenses
 export const useBudgetsAggregates = (
     transactions,
     categories,
@@ -236,6 +239,7 @@ export const useBudgetsAggregates = (
 
     // REFACTORED 12-Jan-2025: Calculate system budget stats using financialCalculations functions directly
     // REFACTORED 13-Jan-2025: Standardized month boundary calculation using dateUtils
+    // FIXED 14-Jan-2025: Corrected Savings budget calculation
     const systemBudgetsWithStats = useMemo(() => {
         // REFACTORED 13-Jan-2025: Use dateUtils functions for consistent month boundaries
         const monthStart = getFirstDayOfMonth(selectedMonth, selectedYear);
@@ -258,8 +262,8 @@ export const useBudgetsAggregates = (
                 const customUnpaid = getUnpaidCustomBudgetExpenses(transactions, allCustomBudgets, monthStart, monthEnd);
                 unpaidAmount = directUnpaid + customUnpaid;
             } else if (sb.systemBudgetType === 'savings') {
-                // Savings uses needs calculation (manually track savings transfers)
-                paidAmount = getPaidNeedsExpenses(transactions, categories, monthStart, monthEnd, allCustomBudgets);
+                // FIXED 14-Jan-2025: Use correct getPaidSavingsExpenses function for manual savings tracking
+                paidAmount = getPaidSavingsExpenses(transactions, categories, monthStart, monthEnd, allCustomBudgets);
                 unpaidAmount = 0; // Savings typically doesn't have unpaid expenses
             }
 
@@ -372,6 +376,7 @@ export const useTransactionFiltering = (transactions) => {
 
 // REFACTORED 13-Jan-2025: Updated to filter custom budget expenses by selected month's paidDate
 // REFACTORED 13-Jan-2025: Standardized month boundary calculation using dateUtils
+// FIXED 14-Jan-2025: Corrected Savings budget calculation and properly integrated totalActualSavings
 export const useBudgetBarsData = (
     systemBudgets,
     customBudgets,
@@ -419,7 +424,8 @@ export const useBudgetBarsData = (
                 paidAmount = getPaidNeedsExpenses(transactions, categories, startDate, endDate, allCustomBudgets);
                 expectedAmount = getUnpaidNeedsExpenses(transactions, categories, startDate, endDate, allCustomBudgets);
             } else if (sb.systemBudgetType === 'savings') {
-                paidAmount = getPaidNeedsExpenses(transactions, categories, startDate, endDate, allCustomBudgets);
+                // FIXED 14-Jan-2025: Use correct getPaidSavingsExpenses for manual savings tracking
+                paidAmount = getPaidSavingsExpenses(transactions, categories, startDate, endDate, allCustomBudgets);
                 expectedAmount = 0;
             }
 
@@ -567,10 +573,16 @@ export const useBudgetBarsData = (
         const totalActualSavings = automaticSavings + manualSavings;
         const savingsShortfall = Math.max(0, savingsTargetAmount - totalActualSavings);
 
+        // FIXED 14-Jan-2025: Properly integrate totalActualSavings into savingsBudget for BudgetBar rendering
         if (savingsBudget) {
             savingsBudget.actualSavings = totalActualSavings;
             savingsBudget.savingsTarget = savingsTargetAmount;
             savingsBudget.maxHeight = Math.max(savingsTargetAmount, totalActualSavings);
+            
+            // CRITICAL FIX: Update stats.paidAmount to reflect total actual savings (automatic + manual)
+            // This ensures the BudgetBar component renders the correct bar height and "Actual" label
+            savingsBudget.stats.paidAmount = totalActualSavings;
+            savingsBudget.stats.totalSpent = totalActualSavings;
         }
 
         return {
@@ -663,3 +675,7 @@ export const usePriorityChartData = (transactions, categories, goals, monthlyInc
 // - Added getMonthBoundaries convenience function to dateUtils (not yet used here but available)
 // - Removed inline date creation (new Date(year, month, ...)) where dateUtils functions can be used
 // - This prevents timezone offset issues and ensures consistent date handling across the app
+// FIXED 14-Jan-2025: Corrected Savings budget calculations
+// - Savings budget now uses getPaidSavingsExpenses for manual savings tracking
+// - totalActualSavings (automatic + manual) is now properly integrated into savingsBudget.stats.paidAmount
+// - This ensures BudgetBar component correctly displays the combined savings amount
