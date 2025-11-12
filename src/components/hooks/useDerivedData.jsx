@@ -58,7 +58,8 @@ export const useMonthlyTransactions = (transactions, selectedMonth, selectedYear
         // REFACTORED 13-Jan-2025: Use dateUtils functions instead of manual date creation
         // const monthStart = new Date(selectedYear, selectedMonth, 1);
         // const monthEnd = new Date(selectedYear, selectedMonth + 1, 0);
-        const { monthStart: monthStart, monthEnd: monthEnd } = getMonthBoundaries(selectedYear, selectedMonth);
+        // FIXED 14-Jan-2025: Corrected parameter order - getMonthBoundaries expects (month, year)
+        const { monthStart: monthStart, monthEnd: monthEnd } = getMonthBoundaries(selectedMonth, selectedYear);
 
         return transactions.filter(t => {
             // For income, just check the date
@@ -232,6 +233,7 @@ export const useCustomBudgetsFiltered = (allCustomBudgets, selectedMonth, select
 // REFACTORED 12-Jan-2025: Updated to use granular expense functions from financialCalculations
 // REFACTORED 13-Jan-2025: Standardized month boundary calculation using dateUtils
 // FIXED 14-Jan-2025: Corrected Savings budget calculation
+// CRITICAL FIX 14-Jan-2025: Fixed parameter order in getMonthBoundaries call
 export const useBudgetsAggregates = (
     transactions,
     categories,
@@ -242,7 +244,8 @@ export const useBudgetsAggregates = (
 ) => {
     // Filter custom budgets based on date overlap
     const customBudgets = useMemo(() => {
-        const { monthStart: monthStart, monthEnd: monthEnd } = getMonthBoundaries(selectedYear, selectedMonth);
+        // CRITICAL FIX 14-Jan-2025: Corrected parameter order - getMonthBoundaries expects (month, year) not (year, month)
+        const { monthStart: monthStart, monthEnd: monthEnd } = getMonthBoundaries(selectedMonth, selectedYear);
         return allCustomBudgets.filter(cb => {
             const start = new Date(cb.startDate);
             const end = new Date(cb.endDate);
@@ -701,3 +704,7 @@ export const usePriorityChartData = (transactions, categories, goals, monthlyInc
 // - Refactored useMonthlyIncome to accept full transactions + month/year parameters
 // - useDashboardSummary now uses centralized useMonthlyIncome hook instead of internal calculation
 // - This eliminates redundant income calculation logic and ensures consistency across the app
+// CRITICAL FIX 14-Jan-2025: Fixed parameter order bug in useBudgetsAggregates
+// - getMonthBoundaries expects (month, year) but was being called with (year, month)
+// - This caused all custom budgets to be filtered out incorrectly on the Budgets page
+// - Fixed both in useBudgetsAggregates and useMonthlyTransactions
