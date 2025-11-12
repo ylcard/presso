@@ -102,7 +102,7 @@ export default function AllocationManager({
           
           <div className="grid grid-cols-2 gap-6">
             {/* Card Remaining */}
-            <div className="flex flex-col">
+            <div className="flex flex-col items-center">
               <p className="text-sm text-gray-500 mb-2">Card</p>
               <p className="text-3xl font-bold text-gray-900">
                 {formatCurrency(remainingCard, settings)}
@@ -111,7 +111,7 @@ export default function AllocationManager({
 
             {/* Cash Remaining by Currency */}
             {Object.keys(remainingCashByCurrency).length > 0 && (
-              <div className="flex flex-col">
+              <div className="flex flex-col items-center">
                 <p className="text-sm text-gray-500 mb-2">Cash</p>
                 <div className="space-y-2">
                   {Object.entries(remainingCashByCurrency).map(([currency, amount]) => (
