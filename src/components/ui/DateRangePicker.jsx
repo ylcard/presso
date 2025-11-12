@@ -11,11 +11,11 @@ import { useSettings } from "../utils/SettingsContext";
 import { formatDate } from "../utils/dateUtils";
 import DatePicker from "./DatePicker";
 
-export default function DateRangePicker({ getFirstDayOfMonth, getLastDayOfMonth, onRangeChange }) {
+export default function DateRangePicker({ startDate, endDate, onRangeChange }) {
   const { settings } = useSettings();
   const [open, setOpen] = useState(false);
-  const [tempStart, setTempStart] = useState(getFirstDayOfMonth);
-  const [tempEnd, setTempEnd] = useState(getLastDayOfMonth);
+  const [tempStart, setTempStart] = useState(startDate);
+  const [tempEnd, setTempEnd] = useState(endDate);
 
   const handleApply = () => {
     onRangeChange(tempStart, tempEnd);
@@ -37,9 +37,9 @@ export default function DateRangePicker({ getFirstDayOfMonth, getLastDayOfMonth,
           className="w-full md:w-auto justify-start text-left font-normal"
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
-          {getFirstDayOfMonth && getLastDayOfMonth ? (
+          {startDate && endDate ? (
             <span>
-              {formatDate(getFirstDayOfMonth, settings.dateFormat)} - {formatDate(getLastDayOfMonth, settings.dateFormat)}
+              {formatDate(startDate, settings.dateFormat)} - {formatDate(endDate, settings.dateFormat)}
             </span>
           ) : (
             <span className="text-muted-foreground">Pick date range</span>
