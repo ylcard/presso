@@ -1,10 +1,11 @@
+
 import { useMemo, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 // UPDATED 13-Jan-2025: Added toLocalDateString and getMonthBoundaries imports for date standardization
 import { parseDate, getFirstDayOfMonth, getLastDayOfMonth, toLocalDateString, getMonthBoundaries } from "../utils/dateUtils";
 import { createEntityMap } from "../utils/generalUtils";
-// UPDATED 12-Jan-2025: Changed import from expenseCalculations to financialCalculations
+// UPDATED 13-Jan-2025: Changed to explicitly use .jsx extension for financialCalculations
 import {
     getTotalMonthExpenses,
     getPaidNeedsExpenses,
@@ -15,7 +16,7 @@ import {
     getUnpaidCustomBudgetExpenses,
     getMonthlyIncome,
     getMonthlyPaidExpenses,
-} from "../utils/financialCalculations";
+} from "../utils/financialCalculations.jsx";
 import { PRIORITY_ORDER, PRIORITY_CONFIG } from "../utils/constants";
 import { iconMap } from "../utils/iconMapConfig";
 import { Circle } from "lucide-react";

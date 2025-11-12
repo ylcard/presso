@@ -17,7 +17,7 @@ import { useSettings } from "../components/utils/SettingsContext";
 // UPDATED 12-Jan-2025: Changed imports to use currencyUtils.js and dateUtils.js
 import { formatCurrency, getCurrencySymbol } from "../components/utils/currencyUtils";
 import { formatDate, parseDate } from "../components/utils/dateUtils";
-// UPDATED 12-Jan-2025: Changed import from expenseCalculations to financialCalculations
+// UPDATED 13-Jan-2025: Changed to explicitly use .jsx extension for financialCalculations
 import {
     getPaidNeedsExpenses,
     getUnpaidNeedsExpenses,
@@ -26,7 +26,7 @@ import {
     getPaidCustomBudgetExpenses,
     getUnpaidCustomBudgetExpenses,
     getPaidSavingsExpenses, // Retained for functionality as it's used in getSystemBudgetStats
-} from "../components/utils/financialCalculations";
+} from "../components/utils/financialCalculations.jsx";
 import { useCashWallet } from "../components/hooks/useBase44Entities";
 import { useTransactionActions } from "../components/hooks/useActions";
 import { calculateRemainingCashAllocations, returnCashToWallet } from "../components/utils/cashAllocationUtils";
