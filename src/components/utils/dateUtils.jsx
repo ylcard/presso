@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+
 /**
  * Date utility functions
  * Centralized date parsing, formatting, and period calculation helpers
@@ -14,10 +15,7 @@ import { format } from "date-fns";
 export const formatDate = (date, dateFormat = "MMM dd, yyyy") => {
   if (!date) return "";
   
-  // Trying to fix the 1 day offset
-  // const dateObj = typeof date === 'string' ? new Date(date) : date;
-  const dateString = typeof date === 'string' ? date : formatDateString(date);
-  const dateObj = parseDate(dateString);
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
   
   // Map our format strings to date-fns format strings
   const formatMap = {
@@ -41,25 +39,20 @@ export const formatDate = (date, dateFormat = "MMM dd, yyyy") => {
 export const parseDate = (dateString) => {
     if (!dateString) return null;
     const [year, month, day] = dateString.split('-').map(Number);
-    // Deprecating the use of local time, using UTC instead below
-    // return new Date(year, month - 1, day);
-    return new Date(Date.UTC(year, month - 1, day));
+    return new Date(year, month - 1, day);
 };
 
 /**
  * Format date as YYYY-MM-DD (timezone-agnostic)
- * FIXED 12-Nov-2025: Changed to use UTC methods to prevent timezone-related off-by-one date errors
  * @param {Date|string} date - Date to format
  * @returns {string} Formatted date string
  */
 export const formatDateString = (date) => {
     if (!date) return '';
     const d = date instanceof Date ? date : new Date(date);
-    // UPDATED 12-Nov-2025: Use UTC methods instead of local time methods
-    // This ensures the output reflects the intended calendar date regardless of user timezone
-    const year = d.getUTCFullYear();
-    const month = String(d.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(d.getUTCDate()).padStart(2, '0');
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
 };
 
