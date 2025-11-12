@@ -45,7 +45,7 @@ export default function TransactionCard({ transaction, category, onEdit, onDelet
               onClick={() => onDelete(transaction.id)}
               className="hover:bg-red-50 hover:text-red-600 h-7 w-7 rounded flex items-center justify-center"
             >
-              <Trash2 className="w-3 h-3" />
+              <Trash2 className="w-4 h-4" />
             </button>
           </div>
 
