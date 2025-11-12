@@ -16,7 +16,7 @@ import {
     getUnpaidCustomBudgetExpenses,
     getMonthlyIncome,
     getMonthlyPaidExpenses,
-} from "../utils/financialCalculations.jsx";
+} from "../utils/financialCalculations";
 import { PRIORITY_ORDER, PRIORITY_CONFIG } from "../utils/constants";
 import { iconMap } from "../utils/iconMapConfig";
 import { Circle } from "lucide-react";
