@@ -92,7 +92,7 @@ export default function AllocationManager({
           
           {/* Digital Remaining */}
           <div className="mb-3">
-            <p className="text-xs text-gray-500 mb-1">Digital (Card/Bank)</p>
+            <p className="text-xs text-gray-500 mb-1">Card</p>
             <p className="text-3xl font-bold text-gray-900">
               {formatCurrency(remainingDigital, settings)}
             </p>
