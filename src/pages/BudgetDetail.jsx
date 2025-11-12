@@ -26,7 +26,7 @@ import {
     getPaidCustomBudgetExpenses,
     getUnpaidCustomBudgetExpenses,
     getPaidSavingsExpenses, // Retained for functionality as it's used in getSystemBudgetStats
-} from "../components/utils/financialCalculations.jsx";
+} from "../components/utils/financialCalculations";
 import { useCashWallet } from "../components/hooks/useBase44Entities";
 import { useTransactionActions } from "../components/hooks/useActions";
 import { calculateRemainingCashAllocations, returnCashToWallet } from "../components/utils/cashAllocationUtils";
