@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-
+import { formatInTimeZone } from 'date-fns-tz';
 /**
  * Date utility functions
  * Centralized date parsing, formatting, and period calculation helpers
@@ -17,7 +17,8 @@ export const formatDate = (date, dateFormat = "MMM dd, yyyy") => {
   
   // Trying to fix the 1 day offset
   // const dateObj = typeof date === 'string' ? new Date(date) : date;
-  const dateObj = typeof date === 'string' ? parseDate(date) : date;
+  const dateString = typeof date === 'string' ? date : formatDateString(date);
+  const dateObj = parseDate(dateString);
   
   // Map our format strings to date-fns format strings
   const formatMap = {
