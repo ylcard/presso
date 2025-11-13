@@ -23,23 +23,53 @@ import { PRIORITY_ORDER, PRIORITY_CONFIG } from "../utils/constants";
 import { iconMap } from "../utils/iconMapConfig";
 import { Circle } from "lucide-react";
 
-// Hook for filtering paid transactions
+/**
+ * Hook for filtering and limiting paid transactions.
+ * Paid transactions include all 'income' type transactions and any other transaction explicitly marked as paid (`isPaid: true`).
+ * The results are sorted by date in descending order (latest first).
+ *
+ * @param {Array<Object>} transactions - The source array of all transactions.
+ * @param {number} [limit=10] - The maximum number of transactions to return.
+ * @returns {Array<Object>} A limited and sorted array of paid transactions.
+ */
 export const usePaidTransactions = (transactions, limit = 10) => {
     return useMemo(() => {
+        if (!Array.isArray(transactions)) {
+            return [];
+        }
         return transactions.filter(t => {
-            if (t.type === 'income') return true;
-            return t.isPaid === true;
+            return t.type === 'income' || t.isPaid === true;
         }).sort((a, b) => new Date(b.date) - new Date(a.date))
             .slice(0, limit);
     }, [transactions, limit]);
 };
 
-// Hook for transaction display logic (icon, colors, status)
+/**
+ * Hook for calculating and returning display properties (icon, colors, status) for a single transaction.
+ *
+ * @param {Object} transaction - The transaction object.
+ * @param {Object} category - The associated category object.
+ * @returns {{
+ * isIncome: boolean,
+ * isPaid: boolean,
+ * IconComponent: React.ComponentType,
+ * iconColor: string,
+ * iconBgColor: string
+ * }} Display configuration object.
+ */
 export const useTransactionDisplay = (transaction, category) => {
     return useMemo(() => {
         const isIncome = transaction.type === 'income';
         const isPaid = transaction.isPaid;
-        const IconComponent = category?.icon && iconMap[category.icon] ? iconMap[category.icon] : Circle;
+        
+        // DEPRECATED: const IconComponent = category?.icon && iconMap[category.icon] ? iconMap[category.icon] : Circle;
+        let IconComponent = Circle;
+        if (category?.icon && iconMap[category.icon]) {
+          IconComponent = iconMap[category.icon];
+        } else if (isIncome) {
+          IconComponent = IncomeIcon;
+        }
+        
         const iconColor = isIncome ? '#10B981' : (category?.color || '#94A3B8');
         const iconBgColor = `${iconColor}20`;
 
@@ -50,104 +80,132 @@ export const useTransactionDisplay = (transaction, category) => {
             iconColor,
             iconBgColor,
         };
-    }, [transaction, category]);
+    }, [transaction, category, iconMap, Circle, IncomeIcon]);
 };
 
-// Hook for filtering transactions by current month
+/**
+ * Hook for filtering transactions to include only those relevant to the selected month and year.
+ * Income transactions are filtered by their primary date (`t.date`).
+ * Expense transactions are filtered by their payment date (`t.paidDate`).
+ * @param {Array<Object>} transactions - The source array of all transactions.
+ * @param {number} selectedMonth - The zero-indexed month (0 for January, 11 for December).
+ * @param {number} selectedYear - The four-digit year (e.g., 2025).
+ * @returns {Array<Object>} An array of transactions relevant to the selected period.
+ */
 export const useMonthlyTransactions = (transactions, selectedMonth, selectedYear) => {
     return useMemo(() => {
-        // REFACTORED 13-Jan-2025: Use dateUtils functions instead of manual date creation
-        // const monthStart = new Date(selectedYear, selectedMonth, 1);
-        // const monthEnd = new Date(selectedYear, selectedMonth + 1, 0);
-        // FIXED 14-Jan-2025: Corrected parameter order - getMonthBoundaries expects (month, year)
-        const { monthStart: monthStart, monthEnd: monthEnd } = getMonthBoundaries(selectedMonth, selectedYear);
+        if (!Array.isArray(transactions) || selectedMonth === undefined || selectedYear === undefined) {
+            return [];
+        }
+        
+        const { monthStart: monthStartStr, monthEnd: monthEndStr } = getMonthBoundaries(selectedMonth, selectedYear);
+        const start = parseDate(monthStartStr);
+        const end = parseDate(monthEndStr);
 
-        return transactions.filter(t => {
+        // Ensure start and end dates are valid before filtering
+        if (!start || !end) return [];
+        
+        return transactions.filter((t) => {
             // For income, just check the date
             if (t.type === 'income') {
                 const transactionDate = parseDate(t.date);
-                return transactionDate >= parseDate(monthStart) && transactionDate <= parseDate(monthEnd);
+                
+                return transactionDate >= start && transactionDate <= end;
             }
 
             // For expenses, check if paid in this month
             if (!t.isPaid || !t.paidDate) return false;
             const paidDate = parseDate(t.paidDate);
-            return paidDate >= parseDate(monthStart) && paidDate <= parseDate(monthEnd);
+            
+            return paidDate >= start && paidDate <= end;
         });
-    }, [transactions, selectedMonth, selectedYear]);
+    }, [transactions, selectedMonth, selectedYear, getMonthBoundaries, parseDate]);
 };
 
-// REFACTORED 14-Jan-2025: Centralized hook for calculating monthly income
-// Now accepts full transaction array and date parameters for reusability
-// All components should use this hook instead of calculating income internally
+/**
+ * Hook for calculating the total monthly income for a specific period.
+ * This serves as a memoized wrapper around the financial utility function.
+ * @param {Array<Object>} transactions - The source array of all transactions.
+ * @param {number} selectedMonth - The zero-indexed month (0-11).
+ * @param {number} selectedYear - The four-digit year (e.g., 2025).
+ * @returns {number} The total sum of income transactions for the period.
+ */
 export const useMonthlyIncome = (transactions, selectedMonth, selectedYear) => {
     return useMemo(() => {
-        const monthStart = getFirstDayOfMonth(selectedMonth, selectedYear);
-        const monthEnd = getLastDayOfMonth(selectedMonth, selectedYear);
+        if (!Array.isArray(transactions) || selectedMonth === undefined || selectedYear === undefined) {
+            return 0;
+        }
+        const { monthStart, monthEnd } = getMonthBoundaries(selectedMonth, selectedYear);
         return getMonthlyIncome(transactions, monthStart, monthEnd);
-    }, [transactions, selectedMonth, selectedYear]);
+    }, [transactions, selectedMonth, selectedYear, getMonthBoundaries, getMonthlyIncome]);
 };
 
-// COMMENTED OUT 14-Jan-2025: Old implementation that required pre-filtered monthlyTransactions
-// Replaced with new implementation above that accepts full transactions + month/year parameters
-// This aligns with our centralized calculation approach from financialCalculations.js
-// export const useMonthlyIncome = (monthlyTransactions) => {
-//     return useMemo(() => {
-//         return monthlyTransactions
-//             .filter(t => t.type === 'income')
-//             .reduce((sum, t) => sum + t.amount, 0);
-//     }, [monthlyTransactions]);
-// };
-
-// REFACTORED 12-Jan-2025: Uses financialCalculations for income and expense aggregates
-// REFACTORED 13-Jan-2025: Standardized month boundary calculation using dateUtils
-// REFACTORED 14-Jan-2025: Now uses centralized useMonthlyIncome hook instead of internal calculation
+/**
+ * Hook for calculating the key financial summary metrics for the dashboard view.
+ * @param {Array<Object>} transactions - The source array of all transactions.
+ * @param {number} selectedMonth - The zero-indexed month (0-11).
+ * @param {number} selectedYear - The four-digit year (e.g., 2025).
+ * @param {Array<Object>} allCustomBudgets - List of all custom budget objects.
+ * @param {Array<Object>} systemBudgets - List of all system budget objects (unused in current logic, but passed).
+ * @param {Array<Object>} categories - List of all category objects.
+ * @returns {{
+ * remainingBudget: number,
+ * currentMonthIncome: number,
+ * currentMonthExpenses: number
+ * }} Dashboard summary metrics.
+ */
 export const useDashboardSummary = (transactions, selectedMonth, selectedYear, allCustomBudgets, systemBudgets, categories) => {
+    // Centralized hook call for Income (must remain at top level)
+    const currentMonthIncome = useMonthlyIncome(transactions, selectedMonth, selectedYear);
+ 
+    // Memoize the month boundaries (used by all calculations)
+    const { monthStartStr, monthEndStr, monthStartDate, monthEndDate } = useMemo(() => {
+        if (selectedMonth === undefined || selectedYear === undefined) {
+            return { monthStartStr: null, monthEndStr: null, monthStartDate: null, monthEndDate: null };
+        }
+        const { monthStart, monthEnd } = getMonthBoundaries(selectedMonth, selectedYear);
+        
+        return {
+            monthStartStr: monthStart,
+            monthEndStr: monthEnd,
+            monthStartDate: parseDate(monthStart),
+            monthEndDate: parseDate(monthEnd)
+        };
+    }, [selectedMonth, selectedYear, getMonthBoundaries, parseDate]);
+    
     const remainingBudget = useMemo(() => {
-        // REFACTORED 13-Jan-2025: Use dateUtils functions for consistent month boundaries
-        const monthStart = getFirstDayOfMonth(selectedMonth, selectedYear);
-        const monthEnd = getLastDayOfMonth(selectedMonth, selectedYear);
+        if (!Array.isArray(transactions) || selectedMonth === undefined || selectedYear === undefined) {
+            return 0;
+        }
 
-        const income = getMonthlyIncome(transactions, monthStart, monthEnd);
-        const paidExpenses = getMonthlyPaidExpenses(transactions, monthStart, monthEnd);
+        if (!monthStartStr || !monthEndStr || !monthStartDate || !monthEndDate) return 0;
+        
+        const income = currentMonthIncome;
+        const paidExpenses = getMonthlyPaidExpenses(transactions, monthStartStr, monthEndStr);
 
-        // Add unpaid expenses for the month (exclude cash expenses from wallet)
         const unpaidExpenses = transactions
             .filter(t => {
                 if (t.type !== 'expense') return false;
                 if (t.isPaid) return false;
-                if (t.isCashTransaction && t.cashTransactionType === 'expense_from_wallet') return false;
+                if (isCashExpense(t)) return false;
 
                 const transactionDate = parseDate(t.date);
-                const monthStartDate = parseDate(monthStart);
-                const monthEndDate = parseDate(monthEnd);
                 return transactionDate >= monthStartDate && transactionDate <= monthEndDate;
             })
             .reduce((sum, t) => sum + t.amount, 0);
 
         return income - paidExpenses - unpaidExpenses;
-    }, [transactions, selectedMonth, selectedYear]);
-
-    // REFACTORED 14-Jan-2025: Use centralized useMonthlyIncome hook instead of internal calculation
-    const currentMonthIncome = useMonthlyIncome(transactions, selectedMonth, selectedYear);
-
-    // COMMENTED OUT 14-Jan-2025: Internal calculation replaced by centralized useMonthlyIncome hook
-    // This eliminates redundant income calculation logic and ensures consistency across the app
-    // const currentMonthIncome = useMemo(() => {
-    //     // REFACTORED 13-Jan-2025: Use dateUtils functions for consistent month boundaries
-    //     const monthStart = getFirstDayOfMonth(selectedMonth, selectedYear);
-    //     const monthEnd = getLastDayOfMonth(selectedMonth, selectedYear);
-    //     return getMonthlyIncome(transactions, monthStart, monthEnd);
-    // }, [transactions, selectedMonth, selectedYear]);
+    }, [transactions, currentMonthIncome, monthStartStr, monthEndStr, monthStartDate, monthEndDate, getMonthlyPaidExpenses, parseDate, isCashExpense]);
 
     const currentMonthExpenses = useMemo(() => {
-        // REFACTORED 13-Jan-2025: Use dateUtils functions for consistent month boundaries
-        const monthStart = getFirstDayOfMonth(selectedMonth, selectedYear);
-        const monthEnd = getLastDayOfMonth(selectedMonth, selectedYear);
+        if (!Array.isArray(transactions) || selectedMonth === undefined || selectedYear === undefined) {
+            return 0;
+        }
 
-        // Use centralized function that only counts actual expenses
-        return getTotalMonthExpenses(transactions, categories, allCustomBudgets, monthStart, monthEnd);
-    }, [transactions, selectedMonth, selectedYear, allCustomBudgets, categories]);
+        if (!monthStartStr || !monthEndStr) return 0;
+
+        return getTotalMonthExpenses(transactions, categories, allCustomBudgets, monthStartStr, monthEndStr);
+    }, [transactions, allCustomBudgets, categories, monthStartStr, monthEndStr, getTotalMonthExpenses]);
 
     return {
         remainingBudget,
@@ -156,15 +214,35 @@ export const useDashboardSummary = (transactions, selectedMonth, selectedYear, a
     };
 };
 
-// CRITICAL ENHANCEMENT (2025-01-12): Include planned budgets that overlap with the month
-// REFACTORED 13-Jan-2025: Standardized month boundary calculation using dateUtils
+/**
+ * Hook for filtering custom and system budgets that are active, completed, or planned
+ * and overlap with the selected month/year.
+ * @param {Array<Object>} allCustomBudgets - List of all custom budget objects.
+ * @param {Array<Object>} allSystemBudgets - List of all system budget objects.
+ * @param {number} selectedMonth - The zero-indexed month (0-11).
+ * @param {number} selectedYear - The four-digit year (e.g., 2025).
+ * @returns {{
+ * activeCustomBudgets: Array<Object>,
+ * allActiveBudgets: Array<Object>
+ * }} Object containing filtered custom budgets and a combined list of all active budgets.
+ */
 export const useActiveBudgets = (allCustomBudgets, allSystemBudgets, selectedMonth, selectedYear) => {
+    // 1. Memoize Month Boundaries (string and Date objects)
+    const { monthStartStr, monthEndStr, monthStartDate, monthEndDate } = useMemo(() => {
+        if (selectedMonth === undefined || selectedYear === undefined) {
+            return { monthStartStr: null, monthEndStr: null, monthStartDate: null, monthEndDate: null };
+        }
+        const { monthStart, monthEnd } = getMonthBoundaries(selectedMonth, selectedYear);
+        return {
+            monthStartStr: monthStart,
+            monthEndStr: monthEnd,
+            monthStartDate: parseDate(monthStart),
+            monthEndDate: parseDate(monthEnd)
+        };
+    }, [selectedMonth, selectedYear, getMonthBoundaries, parseDate]);
+    
     const activeCustomBudgets = useMemo(() => {
-        // REFACTORED 13-Jan-2025: Use dateUtils functions for consistent month boundaries
-        const monthStart = getFirstDayOfMonth(selectedMonth, selectedYear);
-        const monthEnd = getLastDayOfMonth(selectedMonth, selectedYear);
-        const monthStartDate = parseDate(monthStart);
-        const monthEndDate = parseDate(monthEnd);
+        if (!Array.isArray(allCustomBudgets) || !monthStartDate || !monthEndDate) return [];
 
         return allCustomBudgets.filter(cb => {
             // Include active, completed, AND planned budgets that overlap with the month
@@ -176,48 +254,32 @@ export const useActiveBudgets = (allCustomBudgets, allSystemBudgets, selectedMon
             // Check if budget period overlaps with the selected month
             return cbStart <= monthEndDate && cbEnd >= monthStartDate;
         });
-    }, [allCustomBudgets, selectedMonth, selectedYear]);
+    }, [allCustomBudgets, monthStartDate, monthEndDate, parseDate]);
 
     const allActiveBudgets = useMemo(() => {
-        // REFACTORED 13-Jan-2025: Use dateUtils functions for consistent month boundaries
-        const monthStart = getFirstDayOfMonth(selectedMonth, selectedYear);
-        const monthEnd = getLastDayOfMonth(selectedMonth, selectedYear);
-        const monthStartDate = parseDate(monthStart);
-        const monthEndDate = parseDate(monthEnd);
+        if (!Array.isArray(allSystemBudgets) || !monthStartDate || !monthEndDate) {
+             return activeCustomBudgets; // Return only customs if system array is invalid
+        }
 
-        const activeCustom = allCustomBudgets.filter(cb => {
-            // Include active, completed, AND planned budgets
-            if (cb.status !== 'active' && cb.status !== 'completed' && cb.status !== 'planned') return false;
-
-            const cbStart = parseDate(cb.startDate);
-            const cbEnd = parseDate(cb.endDate);
-
-            return cbStart <= monthEndDate && cbEnd >= monthStartDate;
-        });
-
+        const activeCustom = activeCustomBudgets;
+        
         const activeSystem = allSystemBudgets
             .filter(sb => {
                 // Ensure system budget dates are within the selected month's boundaries
                 const sbStart = parseDate(sb.startDate);
                 const sbEnd = parseDate(sb.endDate);
+                // System budgets must be fully contained within the selected month
                 return sbStart >= monthStartDate && sbEnd <= monthEndDate;
             })
             .map(sb => ({
                 ...sb,
-                id: sb.id,
-                name: sb.name,
                 allocatedAmount: sb.budgetAmount,
-                color: sb.color,
                 isSystemBudget: true,
-                startDate: sb.startDate,
-                endDate: sb.endDate,
-                user_email: sb.user_email,
-                systemBudgetType: sb.systemBudgetType,
                 status: 'active'
             }));
 
         return [...activeSystem, ...activeCustom];
-    }, [allCustomBudgets, allSystemBudgets, selectedMonth, selectedYear]);
+    }, [activeCustomBudgets, allSystemBudgets, monthStartDate, monthEndDate, parseDate]);
 
     return { activeCustomBudgets, allActiveBudgets };
 };
