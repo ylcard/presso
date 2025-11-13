@@ -74,6 +74,7 @@ export default function AmountInput({
         const numericRegex = /^-?\d*\.?\d*$/;
 
         if (numericString === '') {
+            setDisplayValue(null);
             onChange(null);
         } else if (numericRegex.test(numericString)) {
             // Parse and enforce precision before sending to parent
