@@ -300,7 +300,7 @@ export default function TransactionFormContent({
           <AmountInput
             id="amount"
             value={formData.amount}
-            onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+            onChange={(value) => setFormData({ ...formData, amount: value })}
             placeholder="0.00"
             currencySymbol={selectedCurrencySymbol}
             required
