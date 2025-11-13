@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 // UPDATED 13-Jan-2025: Added toLocalDateString and getMonthBoundaries imports for date standardization
-import { parseDate, getFirstDayOfMonth, getLastDayOfMonth, toLocalDateString, getMonthBoundaries } from "../utils/dateUtils";
+import { parseDate, getFirstDayOfMonth, getLastDayOfMonth, formatDateString, getMonthBoundaries } from "../utils/dateUtils";
 import { createEntityMap } from "../utils/generalUtils";
 // UPDATED 13-Jan-2025: Changed to explicitly use .jsx extension for financialCalculations
 // UPDATED 14-Jan-2025: Added getPaidSavingsExpenses import for correct Savings budget calculations
@@ -422,10 +422,10 @@ export const useTransactionFiltering = (transactions) => {
 
     // Calculate the first and last day of the current month (local time)
     const currentMonthStartDate = new Date(now.getFullYear(), now.getMonth(), 1);
-    const currentMonthStart = toLocalDateString(currentMonthStartDate);
+    const currentMonthStart = formatDateString(currentMonthStartDate);
 
     const currentMonthEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    const currentMonthEnd = toLocalDateString(currentMonthEndDate);
+    const currentMonthEnd = formatDateString(currentMonthEndDate);
 
     const [filters, setFilters] = useState({
         type: 'all',
