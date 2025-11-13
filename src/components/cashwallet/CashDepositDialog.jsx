@@ -29,7 +29,7 @@ export default function CashReturnDialog({
 }) {
   const [formData, setFormData] = useState({
     title: '',
-    amount: '',
+    amount: null,
     currency: baseCurrency || 'USD',
     date: formatDateString(new Date()),
     notes: ''
@@ -53,7 +53,7 @@ export default function CashReturnDialog({
     
     setFormData({
       title: '',
-      amount: '',
+      amount: null,
       currency: baseCurrency || 'USD',
       date: formatDateString(new Date()),
       notes: ''
