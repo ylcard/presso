@@ -48,7 +48,8 @@ export default function QuickAddTransaction({
           <DialogTitle>Quick Add Expense</DialogTitle>
         </DialogHeader>
         <TransactionFormContent
-          initialTransaction={defaultCustomBudgetId ? {
+          initialTransaction={defaultCustomBudgetId ? { 
+            amount: null, // <-- FIX: Explicitly set amount to null
             customBudgetId: defaultCustomBudgetId,
             date: customBudgets.find(b => b.id === defaultCustomBudgetId)?.startDate
           } : null}
