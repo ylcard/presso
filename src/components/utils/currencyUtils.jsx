@@ -56,8 +56,11 @@ export const getCurrencySymbol = (currencyCode) => {
  * @returns {string} The unformatted numeric string (e.g., '1234.56').
  */
 export function unformatCurrency(formattedValue, settings) {
+    // FIX: Ensure formattedValue is a string before calling .replace()
+    let inputString = formattedValue || '';
+
     // 1. Remove currency symbol and leading/trailing whitespace
-    let cleanedValue = formattedValue.replace(settings.currencySymbol, '').trim();
+    let cleanedValue = inputString.replace(settings.currencySymbol, '').trim();
     
     // 2. Find the last separator (period or comma) to determine the decimal point.
     const lastPeriod = cleanedValue.lastIndexOf('.');
