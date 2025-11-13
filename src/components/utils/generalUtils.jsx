@@ -6,8 +6,6 @@
  * @updated 2025-11-13
  */
 
-import { parseDate } from './dateUtils';
-
 /**
  * Utility function to create a map from an array of entities.
  * Can optionally extract a specific field value instead of the whole entity.
