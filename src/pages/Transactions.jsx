@@ -5,6 +5,7 @@ import { useTransactions, useCategories, useCashWallet } from "../components/hoo
 import { useTransactionFiltering } from "../components/hooks/useDerivedData";
 import { useTransactionActions } from "../components/hooks/useActions";
 import { useSettings } from "../components/utils/SettingsContext";
+import ConfirmDialog from "../components/ui/ConfirmDialog";
 
 import TransactionForm from "../components/transactions/TransactionForm";
 import TransactionList from "../components/transactions/TransactionList";
@@ -14,6 +15,10 @@ export default function Transactions() {
   const { user } = useSettings();
   const [showForm, setShowForm] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
+  
+  // ADDED 15-Jan-2025: ConfirmDialog state for delete confirmation
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [pendingDeleteAction, setPendingDeleteAction] = useState(null);
 
   // Data fetching
   const { transactions, isLoading } = useTransactions();
@@ -24,10 +29,14 @@ export default function Transactions() {
   const { filters, setFilters, filteredTransactions } = useTransactionFiltering(transactions);
 
   // Actions (mutations and handlers)
+  // FIXED 15-Jan-2025: Added showDeleteConfirm, setShowDeleteConfirm, and onDeleteConfirm callback
   const { handleSubmit, handleEdit, handleDelete, isSubmitting } = useTransactionActions(
     setShowForm,
     setEditingTransaction,
-    cashWallet
+    cashWallet,
+    showDeleteConfirm,
+    setShowDeleteConfirm,
+    (deleteAction) => setPendingDeleteAction(() => deleteAction)
   );
 
   return (
@@ -63,15 +72,41 @@ export default function Transactions() {
         <TransactionList
           transactions={filteredTransactions}
           categories={categories}
-          onEdit={(transaction, data) => handleSubmit(data, transaction)}
+          onEdit={handleEdit}
           onDelete={handleDelete}
           isLoading={isLoading}
+          onSubmit={handleSubmit}
+          isSubmitting={isSubmitting}
+        />
+        
+        {/* ADDED 15-Jan-2025: ConfirmDialog for delete confirmation */}
+        <ConfirmDialog
+          open={showDeleteConfirm}
+          onOpenChange={setShowDeleteConfirm}
+          onConfirm={() => {
+            if (pendingDeleteAction) {
+              pendingDeleteAction();
+              setPendingDeleteAction(null);
+            }
+          }}
+          title="Delete Transaction"
+          description="Are you sure you want to delete this transaction? This action cannot be undone."
+          destructive
         />
       </div>
     </div>
   );
 }
 
-// DEPRECATED: The old showForm state and TransactionForm wrapper has been removed
+// DEPRECATED 15-Jan-2025: The old showForm state and TransactionForm wrapper has been removed
 // Now using TransactionForm component with popover trigger directly
 // The form now handles its own state and visibility through the Popover component
+
+// FIXED 15-Jan-2025: Critical bug fix for edit functionality
+// - Changed onEdit prop from inline arrow function to handleEdit from useTransactionActions
+// - The old implementation: onEdit={(transaction, data) => handleSubmit(data, transaction)}
+//   was incorrect because onEdit should open the edit form, not submit it
+// - handleEdit properly sets editingTransaction state and opens the form
+// - handleSubmit is called internally by TransactionForm after user submits
+// - Added onSubmit and isSubmitting props to TransactionList for proper form handling
+// - Added ConfirmDialog integration for delete confirmation (matching Budget Detail implementation)

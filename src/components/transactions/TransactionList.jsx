@@ -3,7 +3,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import TransactionItem from "./TransactionItem";
 
-export default function TransactionList({ transactions, categories, onEdit, onDelete, isLoading }) {
+// UPDATED 15-Jan-2025: Added onSubmit and isSubmitting props for proper edit form handling
+export default function TransactionList({ 
+  transactions, 
+  categories, 
+  onEdit, 
+  onDelete, 
+  isLoading,
+  onSubmit,
+  isSubmitting
+}) {
   const categoryMap = categories.reduce((acc, cat) => {
     acc[cat.id] = cat;
     return acc;
@@ -55,6 +64,8 @@ export default function TransactionList({ transactions, categories, onEdit, onDe
               category={categoryMap[transaction.category_id]}
               onEdit={onEdit}
               onDelete={onDelete}
+              onSubmit={onSubmit}
+              isSubmitting={isSubmitting}
             />
           ))}
         </div>
@@ -62,3 +73,8 @@ export default function TransactionList({ transactions, categories, onEdit, onDe
     </Card>
   );
 }
+
+// UPDATED 15-Jan-2025: Added onSubmit and isSubmitting props
+// These are passed down to TransactionItem to enable proper edit form handling
+// onEdit triggers the edit form to open (via handleEdit from useTransactionActions)
+// onSubmit handles the actual form submission (via handleSubmit from useTransactionActions)
