@@ -81,3 +81,14 @@ export const getMonthBoundaries = (month, year) => {
         monthEnd: getLastDayOfMonth(month, year)
     };
 };
+
+export const toLocalDateString = (date) => {
+    if (!date) return '';
+    // Ensures date object is local time at midnight (the standard for financial dates)
+    const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const year = d.getFullYear();
+    // Months are 0-indexed, so add 1
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
