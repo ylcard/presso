@@ -89,7 +89,7 @@ export default function AmountInput({
 
     return (
         <div className="relative">
-            {settings.currencyPosition === 'before' && (
+            {settings.currencyPosition === 'before' && displayValue !== null && (
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <span className="text-gray-500 sm:text-sm font-medium">
                         {displaySymbol}
