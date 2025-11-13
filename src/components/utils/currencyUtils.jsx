@@ -47,34 +47,39 @@ export const getCurrencySymbol = (currencyCode) => {
 };
 
 /**
- * Unformat a currency string back to a standard numeric string (using '.')
- * @param {string} formattedString - The string input by the user (e.g., "1.000,50")
- * @param {Object} settings - User currency settings
- * @returns {string} The cleaned, unformatted numeric string (e.g., "1000.50")
+ * Converts a localized currency string back into a standard US numeric string ('1234.56')
+ * for safe parsing with parseFloat().
+ * * FIX: This implementation is flexible, treating the last period (.) or comma (,) 
+ * as the decimal separator to accommodate various user input styles.
+ * * @param {string} formattedValue - The string from the input field (e.g., '€ 1.234,56' or '$1,234.56').
+ * @param {object} settings - User settings (used mainly to safely strip the currency symbol).
+ * @returns {string} The unformatted numeric string (e.g., '1234.56').
  */
-export const unformatCurrency = (formattedString, settings) => {
-    if (!formattedString) return '';
+export function unformatCurrency(formattedValue, settings) {
+    // 1. Remove currency symbol and leading/trailing whitespace
+    let cleanedValue = formattedValue.replace(settings.currencySymbol, '').trim();
+    
+    // 2. Find the last separator (period or comma) to determine the decimal point.
+    const lastPeriod = cleanedValue.lastIndexOf('.');
+    const lastComma = cleanedValue.lastIndexOf(',');
+    const decimalIndex = Math.max(lastPeriod, lastComma);
 
-    // 1. Remove the currency symbol, regardless of position
-    // Use a simple regex to remove known symbols or codes
-    let cleanedString = formattedString.replace(new RegExp(`[${settings.currencySymbol}R$£€¥₩$A$S\$NZ\$HK\$zł฿RMIDR₱Kč₪CLP\$د.إ﷼NT\$₺kr]|CA\\$|MX\\$|TWD`, 'gi'), '');
+    if (decimalIndex === -1) {
+        // No decimal separator found, treat the whole string as an integer and strip all non-numeric (except minus sign)
+        return cleanedValue.replace(/[^\d-]/g, '');
+    }
 
-    // 2. Remove the sign (handle sign separately if needed, but for now, just remove it)
-    cleanedString = cleanedString.replace(/[\-]/g, '');
+    // 3. Separate the integer and fractional parts
+    const integerPartWithThousands = cleanedValue.substring(0, decimalIndex);
+    const fractionalPart = cleanedValue.substring(decimalIndex + 1);
 
-    // 3. Remove thousand separators
-    const thousandRegex = new RegExp(`\\${settings.thousandSeparator}`, 'g');
-    cleanedString = cleanedString.replace(thousandRegex, '');
-
-    // 4. Normalize the user's decimal separator to a standard period '.'
-    const decimalRegex = new RegExp(`\\${settings.decimalSeparator}`, 'g');
-    cleanedString = cleanedString.replace(decimalRegex, '.');
-
-    // 5. Cleanup extra whitespace (though typically handled by input filters)
-    cleanedString = cleanedString.trim();
-
-    return cleanedString;
-};
+    // 4. Strip ALL potential thousands separators (periods and commas) from the integer part.
+    const integerPart = integerPartWithThousands.replace(/[\.,]/g, '');
+    
+    // 5. Recombine into the standard '1234.56' format for safe use with parseFloat()
+    // This correctly handles "26.79" -> "26.79" and "26,79" -> "26.79"
+    return `${integerPart}.${fractionalPart}`;
+}
 
 /**
  * Format a number as currency according to user settings
