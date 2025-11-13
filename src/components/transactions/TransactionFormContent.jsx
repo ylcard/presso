@@ -58,7 +58,7 @@ export default function TransactionFormContent({
     if (initialTransaction) {
       setFormData({
         title: initialTransaction.title || '',
-        amount: initialTransaction.originalAmount?.toString() || initialTransaction.amount?.toString() || '',
+        amount: initialTransaction.originalAmount || initialTransaction.amount || null,
         originalCurrency: initialTransaction.originalCurrency || settings?.baseCurrency || 'USD',
         type: initialTransaction.type || 'expense',
         category_id: initialTransaction.category_id || '',
