@@ -1,4 +1,3 @@
-
 import { useMemo, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -7,6 +6,7 @@ import { parseDate, getFirstDayOfMonth, getLastDayOfMonth, formatDateString, get
 import { createEntityMap } from "../utils/generalUtils";
 // UPDATED 13-Jan-2025: Changed to explicitly use .jsx extension for financialCalculations
 // UPDATED 14-Jan-2025: Added getPaidSavingsExpenses import for correct Savings budget calculations
+// UPDATED 15-Jan-2025: Added isCashExpense import to fix ReferenceError
 import {
     getTotalMonthExpenses,
     getPaidNeedsExpenses,
@@ -18,6 +18,7 @@ import {
     getMonthlyIncome,
     getMonthlyPaidExpenses,
     getPaidSavingsExpenses,
+    isCashExpense,
 } from "../utils/financialCalculations";
 import { PRIORITY_ORDER, PRIORITY_CONFIG } from "../utils/constants";
 import { iconMap } from "../utils/iconMapConfig";
@@ -782,3 +783,6 @@ export const usePriorityChartData = (transactions, categories, goals, monthlyInc
 // - getMonthBoundaries expects (month, year) but was being called with (year, month)
 // - This caused all custom budgets to be filtered out incorrectly on the Budgets page
 // - Fixed both in useBudgetsAggregates and useMonthlyTransactions
+// CRITICAL FIX 15-Jan-2025: Fixed ReferenceError for isCashExpense
+// - Exported isCashExpense from financialCalculations.jsx and added to imports
+// - Function was being used in useDashboardSummary but was not accessible
