@@ -47,6 +47,36 @@ export const getCurrencySymbol = (currencyCode) => {
 };
 
 /**
+ * Unformat a currency string back to a standard numeric string (using '.')
+ * @param {string} formattedString - The string input by the user (e.g., "1.000,50")
+ * @param {Object} settings - User currency settings
+ * @returns {string} The cleaned, unformatted numeric string (e.g., "1000.50")
+ */
+export const unformatCurrency = (formattedString, settings) => {
+    if (!formattedString) return '';
+
+    // 1. Remove the currency symbol, regardless of position
+    // Use a simple regex to remove known symbols or codes
+    let cleanedString = formattedString.replace(new RegExp(`[${settings.currencySymbol}R$£€¥₩$A$S\$NZ\$HK\$zł฿RMIDR₱Kč₪CLP\$د.إ﷼NT\$₺kr]|CA\\$|MX\\$|TWD`, 'gi'), '');
+
+    // 2. Remove the sign (handle sign separately if needed, but for now, just remove it)
+    cleanedString = cleanedString.replace(/[\-]/g, '');
+
+    // 3. Remove thousand separators
+    const thousandRegex = new RegExp(`\\${settings.thousandSeparator}`, 'g');
+    cleanedString = cleanedString.replace(thousandRegex, '');
+
+    // 4. Normalize the user's decimal separator to a standard period '.'
+    const decimalRegex = new RegExp(`\\${settings.decimalSeparator}`, 'g');
+    cleanedString = cleanedString.replace(decimalRegex, '.');
+
+    // 5. Cleanup extra whitespace (though typically handled by input filters)
+    cleanedString = cleanedString.trim();
+
+    return cleanedString;
+};
+
+/**
  * Format a number as currency according to user settings
  * @param {number} amount - The amount to format
  * @param {Object} settings - User currency settings
