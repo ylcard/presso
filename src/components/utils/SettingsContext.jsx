@@ -50,8 +50,12 @@ export const SettingsProvider = ({ children }) => {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
       
-      const allSettings = await base44.entities.UserSettings.list();
-      const userSettings = allSettings.find(s => s.user_email === currentUser.email);
+      // const allSettings = await base44.entities.UserSettings.list();
+      // const userSettings = allSettings.find(s => s.user_email === currentUser.email);
+
+      // IMPROVEMENT: Filter by email directly to avoid fetching ALL user settings
+      const userSettingsArray = await base44.entities.UserSettings.filter({ user_email: currentUser.email });
+      const userSettings = userSettingsArray[0];
       
       if (userSettings) {
         const newSettings = {
@@ -88,14 +92,18 @@ export const SettingsProvider = ({ children }) => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedSettings));
       
       // Then sync to database
-      const allSettings = await base44.entities.UserSettings.list();
-      const userSettings = allSettings.find(s => s.user_email === user.email);
+      // const allSettings = await base44.entities.UserSettings.list();
+      // const userSettings = allSettings.find(s => s.user_email === user.email);
+
+      // Then sync to database. Filter by email again to get the record ID
+      const userSettingsArray = await base44.entities.UserSettings.filter({ user_email: user.email });
+      const userSettings = userSettingsArray[0];
       
       if (userSettings) {
         await base44.entities.UserSettings.update(userSettings.id, newSettings);
       } else {
         await base44.entities.UserSettings.create({
-          ...newSettings,
+          ...updatedSettings, // CRITICAL: Use full, merged settings for creation
           user_email: user.email
         });
       }
