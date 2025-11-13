@@ -85,7 +85,7 @@ export default function CashReturnDialog({
               <AmountInput
                 id="amount"
                 value={formData.amount}
-                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                onChange={(value) => setFormData({ ...formData, amount: value })}
                 placeholder="0.00"
                 required
               />
