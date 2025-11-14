@@ -1,5 +1,6 @@
 import React from "react";
-import { Button } from "@/components/ui/button";
+// UPDATED 15-Jan-2025: Changed Button import to CustomButton
+import { CustomButton } from "@/components/ui/CustomButton";
 import { Pencil, Trash2, Circle } from "lucide-react";
 import { motion } from "framer-motion";
 import { iconMap } from "../utils/iconMapConfig";
@@ -28,24 +29,31 @@ export default function CategoryCard({ category, onEdit, onDelete }) {
         </div>
 
         <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button
+          {/* UPDATED 15-Jan-2025: Changed to CustomButton with modify variant */}
+          <CustomButton
             variant="ghost"
-            size="icon"
+            size="icon-sm"
             onClick={() => onEdit(category)}
-            className="hover:bg-blue-50 hover:text-blue-600 h-8 w-8"
+            className="hover:bg-blue-50 hover:text-blue-600"
           >
             <Pencil className="w-4 h-4" />
-          </Button>
-          <Button
+          </CustomButton>
+          {/* UPDATED 15-Jan-2025: Changed to CustomButton with ghost variant (destructive handled by hover) */}
+          <CustomButton
             variant="ghost"
-            size="icon"
+            size="icon-sm"
             onClick={() => onDelete(category.id)}
-            className="hover:bg-red-50 hover:text-red-600 h-8 w-8"
+            className="hover:bg-red-50 hover:text-red-600"
           >
             <Trash2 className="w-4 h-4" />
-          </Button>
+          </CustomButton>
         </div>
       </div>
     </motion.div>
   );
 }
+
+// UPDATED 15-Jan-2025: Replaced Button with CustomButton
+// - Edit button uses ghost variant with blue hover
+// - Delete button uses ghost variant with red hover
+// - Both use icon-sm size for compact display

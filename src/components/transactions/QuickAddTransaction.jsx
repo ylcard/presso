@@ -6,7 +6,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+// UPDATED 15-Jan-2025: Changed Button import to CustomButton
+import { CustomButton } from "@/components/ui/CustomButton";
 import { Plus } from "lucide-react";
 import { useSettings } from "../utils/SettingsContext";
 import { useCashWallet } from "../hooks/useBase44Entities";
@@ -33,14 +34,15 @@ export default function QuickAddTransaction({
     <Dialog open={open} onOpenChange={onOpenChange}>
       {renderTrigger && (
         <DialogTrigger asChild>
-          <Button 
+          {/* UPDATED 15-Jan-2025: Changed to CustomButton */}
+          <CustomButton 
             variant={triggerVariant}
             size={triggerSize}
             className={triggerClassName}
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Expense
-          </Button>
+          </CustomButton>
         </DialogTrigger>
       )}
       <DialogContent className="sm:max-w-[500px] fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
@@ -73,3 +75,4 @@ export default function QuickAddTransaction({
 // - Dialog is now properly centered using fixed positioning (top-1/2 left-1/2 transform)
 // - This fixes the missing "Add Expense" button issue in BudgetDetail page
 // PREVIOUS FIX (2025-01-11): Changed from Popover to Dialog to match QuickAddIncome design
+// UPDATED 15-Jan-2025: Replaced Button with CustomButton for trigger button

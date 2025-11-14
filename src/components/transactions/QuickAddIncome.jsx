@@ -7,7 +7,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+// UPDATED 15-Jan-2025: Changed Button import to CustomButton
+import { CustomButton } from "@/components/ui/CustomButton";
 import { Label } from "@/components/ui/label";
 import { Plus } from "lucide-react";
 import AmountInput from "../ui/AmountInput";
@@ -55,14 +56,15 @@ export default function QuickAddIncome({
     <Dialog open={open} onOpenChange={onOpenChange}>
       {renderTrigger && (
         <DialogTrigger asChild>
-          <Button 
+          {/* UPDATED 15-Jan-2025: Changed to CustomButton */}
+          <CustomButton 
             variant={triggerVariant}
             size={triggerSize}
             className={triggerClassName}
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Income
-          </Button>
+          </CustomButton>
         </DialogTrigger>
       )}
       <DialogContent className="sm:max-w-md fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
@@ -105,16 +107,18 @@ export default function QuickAddIncome({
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            {/* UPDATED 15-Jan-2025: Changed to CustomButton with outline variant */}
+            <CustomButton type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
-            </Button>
-            <Button
+            </CustomButton>
+            {/* UPDATED 15-Jan-2025: Changed to CustomButton with success variant */}
+            <CustomButton
               type="submit"
               disabled={isSubmitting}
-              className="bg-gradient-to-r from-green-600 to-emerald-600"
+              variant="success"
             >
               {isSubmitting ? 'Adding...' : 'Add Income'}
-            </Button>
+            </CustomButton>
           </div>
         </form>
       </DialogContent>
@@ -128,3 +132,7 @@ export default function QuickAddIncome({
 // - Added triggerVariant, triggerSize, and triggerClassName props for button customization
 // - Dialog is now properly centered using fixed positioning (top-1/2 left-1/2 transform)
 // UPDATED 12-Jan-2025: Changed imports to use dateUtils.js and generalUtils.js instead of budgetCalculations.jsx
+// UPDATED 15-Jan-2025: Replaced Button with CustomButton
+// - Trigger button uses customizable variant (default or ghost depending on context)
+// - Cancel button uses outline variant
+// - Submit button uses success variant (green) to match income theme

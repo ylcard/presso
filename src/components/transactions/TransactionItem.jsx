@@ -1,5 +1,6 @@
 import React from "react";
-import { Button } from "@/components/ui/button";
+// UPDATED 15-Jan-2025: Changed Button import to CustomButton
+import { CustomButton } from "@/components/ui/CustomButton";
 import { Badge } from "@/components/ui/badge";
 import { Pencil, Trash2, Circle, Check, Clock } from "lucide-react";
 import { format } from "date-fns";
@@ -110,23 +111,25 @@ export default function TransactionItem({
             isSubmitting={isSubmitting}
             transactions={[]} // Transactions fetched internally
             trigger={
-              <Button
+              /* UPDATED 15-Jan-2025: Changed to CustomButton with ghost variant */
+              <CustomButton
                 variant="ghost"
                 size="icon"
                 className="hover:bg-blue-50 hover:text-blue-600"
               >
                 <Pencil className="w-4 h-4" />
-              </Button>
+              </CustomButton>
             }
           />
-          <Button
+          {/* UPDATED 15-Jan-2025: Changed to CustomButton with ghost variant */}
+          <CustomButton
             variant="ghost"
             size="icon"
             onClick={() => onDelete(transaction)}
             className="hover:bg-red-50 hover:text-red-600"
           >
             <Trash2 className="w-4 h-4" />
-          </Button>
+          </CustomButton>
         </div>
       </div>
     </motion.div>
@@ -142,3 +145,8 @@ export default function TransactionItem({
 // Solution: Wrapped the edit button in TransactionForm component (same pattern as Budget Detail page)
 // Now the edit button properly opens the TransactionForm popover with the transaction data pre-filled
 // The form submission is handled via onSubmit callback which calls handleSubmit from useTransactionActions
+
+// UPDATED 15-Jan-2025: Replaced Button with CustomButton
+// - Edit button uses ghost variant with blue hover
+// - Delete button uses ghost variant with red hover
+// - Both use icon size for proper spacing
