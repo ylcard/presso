@@ -22,13 +22,6 @@ export default function DateRangePicker({ startDate, endDate, onRangeChange }) {
         setOpen(false);
     };
 
-    //   const handleClear = () => {
-    //     setTempStart('');
-    //     setTempEnd('');
-    //     onRangeChange('', '');
-    //     setOpen(false);
-    //   };
-
     const handleCancel = () => {
         setOpen(false);
     }
@@ -74,11 +67,9 @@ export default function DateRangePicker({ startDate, endDate, onRangeChange }) {
                         <Button
                             variant="outline"
                             size="sm"
-                            //   onClick={handleClear}
                             onClick={handleCancel}
                             className="flex-1"
                         >
-            //   Clear
                             Cancel
                         </Button>
                         <Button
