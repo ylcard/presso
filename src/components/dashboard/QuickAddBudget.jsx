@@ -1,20 +1,16 @@
 import React from "react";
-//import {
-//    Popover,
-//    PopoverContent,
-//    PopoverTrigger,
-//} from "@/components/ui/popover";
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-//import { Button } from "@/components/ui/button";
-//import { Plus } from "lucide-react";
 import CustomBudgetForm from "../custombudgets/CustomBudgetForm";
 import { useSettings } from "../utils/SettingsContext";
-//import { useCashWallet } from "../hooks/useBase44Entities";
+
+// CREATED 13-Jan-2025: Dialog for quickly adding custom budgets from Dashboard
+// Replaces the old popover-based QuickAddBudget component
+// Uses Dialog for better UX and to match other quick-add dialogs (transactions, income)
 
 export default function QuickAddBudget({
     open,
@@ -23,29 +19,35 @@ export default function QuickAddBudget({
     onCancel,
     isSubmitting,
     cashWallet,
-    baseCurrency
+    baseCurrency,
+    transactions,
+    allBudgets
 }) {
     const { settings } = useSettings();
 
-    // const handleSubmitWrapper = async (data) => {
-    //   // CRITICAL: Await the external onSubmit promise before closing
-    //   return onSubmit(data)
-    //     .then(() => onOpenChange(false));
-    // };
+    // ADDED 16-Jan-2025: Wrapper to handle dialog closing after successful submission
+    // The onSubmit prop receives data and handles the actual budget creation
+    // We close the dialog only after successful submission
+    const handleSubmitWrapper = (data) => {
+      // Call the parent's onSubmit (budgetActions.handleSubmit)
+      // Then close the dialog
+      onSubmit(data);
+      // Close dialog after submission initiated (mutations handle success/error internally)
+      onOpenChange(false);
+    };
     
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
-                className="w-[600px] fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 max-h-[90vh] overflow-y-auto z-50"
-                align="center"
-                side="top"
-                sideOffset={0}
+                className="sm:max-w-2xl max-h-[90vh] overflow-y-auto"
+                aria-describedby="create-budget-description"
             >
+                <span id="create-budget-description" className="sr-only">Create a new custom budget</span>
                 <DialogHeader>
                     <DialogTitle>Create Budget</DialogTitle>
                 </DialogHeader>
                 <CustomBudgetForm
-                    onSubmit={budgetActions.handleSubmit}
+                    onSubmit={handleSubmitWrapper}
                     onCancel={() => onOpenChange(false)}
                     isSubmitting={isSubmitting}
                     cashWallet={cashWallet}
@@ -57,12 +59,11 @@ export default function QuickAddBudget({
     );
 }
 
-// REFACTOR (2025-01-12): Converted from Dialog to Popover
-// - Now consistent with QuickAddTransaction and QuickAddIncome design pattern
-// - Form appears in popover instead of modal
-// - Added PopoverTrigger with styled button
-// - Removed Dialog wrapper
-// FIX (2025-01-12): Fixed popover jumping issue
-// - PopoverContent now uses fixed positioning with centering transforms
-// - Added max-height with overflow-y-auto for long forms
-// - Form stays in place when content expands (e.g., adding cash allocations)
+// CREATED 13-Jan-2025: Dialog-based QuickAddBudget component for Dashboard
+// - Uses Dialog instead of Popover for better UX
+// - Integrates with CustomBudgetForm for budget creation
+// - Manages dialog visibility through open/onOpenChange props
+// UPDATED 16-Jan-2025: Added handleSubmitWrapper to properly close dialog after submission
+// - The wrapper calls the parent's onSubmit and then closes the dialog
+// - This ensures the dialog closes immediately after the user clicks "Create Budget"
+// - Mutations handle success/error states internally via react-query
