@@ -1,9 +1,8 @@
+
 import React, { useMemo, useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-// UPDATED 16-Jan-2025: Replaced Button import with CustomButton for action consistency
-// import { Button } from "@/components/ui/button";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -479,10 +478,19 @@ export default function BudgetDetail() {
         budgetActions.handleSubmit(data, budget);
     };
 
-    // UPDATED 16-Jan-2025: Simplified using useCustomBudgetActions.handleDelete
-    const handleDeleteBudget = async () => {
-        await budgetActions.handleDelete(budgetId);
-        window.location.href = createPageUrl("Budgets");
+    // CRITICAL FIX 16-Jan-2025: Removed premature redirect that caused confirmation dialog to close immediately
+    // Navigation now happens automatically via useDeleteEntity's onAfterSuccess callback in useCustomBudgetActions
+    const handleDeleteBudget = () => {
+        confirmAction(
+            "Delete Budget",
+            "This will delete the budget and all associated transactions. This action cannot be undone.",
+            async () => {
+                await budgetActions.handleDelete(budgetId);
+                // CRITICAL: Navigation moved to useDeleteEntity's onAfterSuccess to prevent premature redirect
+                // The `budgetActions.handleDelete` (which wraps `useDeleteEntity`) is now responsible for navigation.
+            },
+            { destructive: true }
+        );
     };
 
     useEffect(() => {
@@ -581,7 +589,6 @@ export default function BudgetDetail() {
             <div className="max-w-7xl mx-auto space-y-6">
                 <div className="flex items-center gap-4">
                     <Link to={createPageUrl("Budgets")}>
-                        {/* UPDATED 16-Jan-2025: Replaced Button with CustomButton variant="ghost" */}
                         <CustomButton variant="ghost" size="icon">
                             <ArrowLeft className="w-5 h-5" />
                         </CustomButton>
@@ -604,7 +611,6 @@ export default function BudgetDetail() {
                         {canEdit && !isCompleted && (
                             <Popover open={budgetActions.showForm} onOpenChange={budgetActions.setShowForm}>
                                 <PopoverTrigger asChild>
-                                    {/* UPDATED 16-Jan-2025: Replaced Button with CustomButton variant="modify" */}
                                     <CustomButton variant="modify">
                                         Edit Budget
                                     </CustomButton>
@@ -631,7 +637,6 @@ export default function BudgetDetail() {
                             </Popover>
                         )}
                         {!budget.isSystemBudget && budget.status === 'active' && (
-                            // UPDATED 16-Jan-2025: Replaced Button with CustomButton variant="success"
                             <CustomButton
                                 variant="success"
                                 onClick={() => completeBudgetMutation.mutate(budgetId)}
@@ -642,7 +647,6 @@ export default function BudgetDetail() {
                             </CustomButton>
                         )}
                         {!budget.isSystemBudget && budget.status === 'completed' && (
-                            // UPDATED 16-Jan-2025: Replaced Button with CustomButton variant="success"
                             <CustomButton
                                 variant="success"
                                 onClick={() => reactivateBudgetMutation.mutate(budgetId)}
@@ -652,7 +656,6 @@ export default function BudgetDetail() {
                             </CustomButton>
                         )}
                         {canDelete && (
-                            // UPDATED 16-Jan-2025: Replaced Button with CustomButton variant="delete"
                             <CustomButton
                                 variant="delete"
                                 onClick={handleDeleteBudget}
@@ -862,13 +865,3 @@ export default function BudgetDetail() {
         </div>
     );
 }
-
-// UPDATED 16-Jan-2025: Replaced all Button components with CustomButton using purpose-based variants
-// - Back button: variant="ghost" (minimal style for navigation)
-// - Edit Budget: variant="modify" (blue for modification actions)
-// - Complete Budget: variant="success" (green for completion actions)
-// - Reactivate Budget: variant="success" (green for positive status change)
-// - Delete Budget: variant="delete" (red for deletion actions)
-// 
-// Simplified handleDeleteBudget to use budgetActions.handleDelete directly
-// (confirmation dialog is now handled internally by useDeleteEntity hook)
