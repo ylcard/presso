@@ -62,6 +62,7 @@ const CustomButton = React.forwardRef(
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
+        type="button"
         ref={ref}
         {...props}
       />
