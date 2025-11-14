@@ -4,7 +4,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
+// COMMENTED OUT 16-Jan-2025: Replaced with CustomButton for consistency
+// import { Button } from "@/components/ui/button";
+import { CustomButton } from "@/components/ui/CustomButton";
 import { Pencil } from "lucide-react";
 import { useSettings } from "../utils/SettingsContext";
 import { useCashWallet, useAllBudgets } from "../hooks/useBase44Entities";
@@ -38,9 +40,9 @@ export default function TransactionForm({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         {trigger || (
-          <Button variant="ghost" size="icon" className="hover:bg-blue-50 hover:text-blue-600 h-7 w-7">
+          <CustomButton variant="ghost" size="icon" className="hover:bg-blue-50 hover:text-blue-600 h-7 w-7">
             <Pencil className="w-4 h-4" />
-          </Button>
+          </CustomButton>
         )}
       </PopoverTrigger>
       <PopoverContent className="w-[400px]" align="end">
@@ -67,3 +69,4 @@ export default function TransactionForm({
 // ISSUE FIX (2025-01-11): Removed max-h-[600px] and overflow-y-auto from PopoverContent
 // to ensure action buttons are always visible without needing to scroll
 // Previous implementation: max-h-[600px] overflow-y-auto - caused buttons to be cut off
+// UPDATED 16-Jan-2025: Replaced Button with CustomButton for edit trigger icon

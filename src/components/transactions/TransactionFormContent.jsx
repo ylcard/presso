@@ -2,7 +2,9 @@
 import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
+// COMMENTED OUT 16-Jan-2025: Replaced with CustomButton for consistency
+// import { Button } from "@/components/ui/button";
+import { CustomButton } from "@/components/ui/CustomButton";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -311,7 +313,7 @@ export default function TransactionFormContent({
           <div className="flex items-center justify-between">
             <Label htmlFor="currency">Currency</Label>
             {isForeignCurrency && !formData.isCashExpense && (
-              <Button
+              <CustomButton
                 type="button"
                 variant="ghost"
                 size="sm"
@@ -320,7 +322,7 @@ export default function TransactionFormContent({
                 className="h-6 px-2 text-blue-600 hover:text-blue-700"
               >
                 <RefreshCw className={`w-3 h-3 ${isRefreshing ? 'animate-spin' : ''}`} />
-              </Button>
+              </CustomButton>
             )}
           </div>
           <CurrencySelect
@@ -448,16 +450,16 @@ export default function TransactionFormContent({
 
       {/* Action Buttons */}
       <div className="flex justify-end gap-3 pt-2">
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <CustomButton type="button" variant="outline" onClick={onCancel}>
           Cancel
-        </Button>
-        <Button
+        </CustomButton>
+        <CustomButton
           type="submit"
           disabled={isSubmitting}
-          className="bg-gradient-to-r from-blue-600 to-purple-600"
+          variant="primary"
         >
           {isSubmitting ? 'Saving...' : initialTransaction ? 'Update' : 'Add'}
-        </Button>
+        </CustomButton>
       </div>
     </form>
   );
@@ -468,3 +470,7 @@ export default function TransactionFormContent({
 // This allows users to link transactions to future events (planned budgets) or current events (active budgets)
 // Pre-selected budget for editing is always included regardless of status
 // UPDATED 12-Jan-2025: Changed imports to use dateUtils.js and generalUtils.js instead of budgetCalculations.js
+// UPDATED 16-Jan-2025: Replaced Button with CustomButton for form actions
+// - Cancel button uses variant="outline"
+// - Submit button uses variant="primary" (gradient blue-purple)
+// - Refresh rates button uses variant="ghost" size="sm"
