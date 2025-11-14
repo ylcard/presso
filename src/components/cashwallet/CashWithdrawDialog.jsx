@@ -6,7 +6,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+// COMMENTED OUT 16-Jan-2025: Replaced with CustomButton for consistency
+// import { Button } from "@/components/ui/button";
+import { CustomButton } from "@/components/ui/CustomButton";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import AmountInput from "../ui/AmountInput";
@@ -123,16 +125,16 @@ export default function CashDepositDialog({
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <CustomButton type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
-            </Button>
-            <Button
+            </CustomButton>
+            <CustomButton
               type="submit"
               disabled={isSubmitting}
-              className="bg-gradient-to-r from-blue-600 to-purple-600"
+              variant="primary"
             >
               {isSubmitting ? 'Processing...' : 'Deposit Cash'}
-            </Button>
+            </CustomButton>
           </div>
         </form>
       </DialogContent>
@@ -141,3 +143,7 @@ export default function CashDepositDialog({
 }
 
 // UPDATED 12-Jan-2025: Changed imports to use dateUtils.js and generalUtils.js instead of budgetCalculations.jsx
+// UPDATED 16-Jan-2025: Replaced Button with CustomButton for dialog actions
+// - Cancel button uses variant="outline"
+// - Submit button uses variant="primary" (gradient blue-purple)
+// - Removed manual gradient styling as variant provides it

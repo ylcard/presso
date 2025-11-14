@@ -6,7 +6,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+// COMMENTED OUT 16-Jan-2025: Replaced with CustomButton for consistency
+// import { Button } from "@/components/ui/button";
+import { CustomButton } from "@/components/ui/CustomButton";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import AmountInput from "../ui/AmountInput";
@@ -128,16 +130,17 @@ export default function CashReturnDialog({
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <CustomButton type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
-            </Button>
-            <Button
+            </CustomButton>
+            <CustomButton
               type="submit"
               disabled={isSubmitting}
-              className="bg-gradient-to-r from-green-600 to-emerald-600"
+              variant="success"
+              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
             >
               {isSubmitting ? 'Processing...' : 'Return Cash'}
-            </Button>
+            </CustomButton>
           </div>
         </form>
       </DialogContent>
@@ -146,3 +149,7 @@ export default function CashReturnDialog({
 }
 
 // UPDATED 12-Jan-2025: Changed imports to use dateUtils.js and generalUtils.js instead of budgetCalculations.jsx
+// UPDATED 16-Jan-2025: Replaced Button with CustomButton for dialog actions
+// - Cancel button uses variant="outline"
+// - Submit button uses variant="success" with custom green gradient
+// - Added manual gradient override for the green color theme specific to cash returns
