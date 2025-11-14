@@ -27,11 +27,11 @@ export default function QuickAddBudget({
 }) {
     const { settings } = useSettings();
 
-    const handleSubmitWrapper = async (data) => {
-      // CRITICAL: Await the external onSubmit promise before closing
-      return onSubmit(data)
-        .then(() => onOpenChange(false));
-    };
+    // const handleSubmitWrapper = async (data) => {
+    //   // CRITICAL: Await the external onSubmit promise before closing
+    //   return onSubmit(data)
+    //     .then(() => onOpenChange(false));
+    // };
     
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
