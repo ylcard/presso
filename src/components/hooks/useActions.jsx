@@ -757,10 +757,59 @@ export const useCustomBudgetActions = (user, transactions, cashWallet) => {
   };
 };
 
+// Hook for settings form state and submission
+export const useSettingsForm = (settings, updateSettings) => {
+  const [formData, setFormData] = useState(settings);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  useEffect(() => {
+    setFormData(settings);
+  }, [settings]);
+
+  const handleFormChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSaving(true);
+    setSaveSuccess(false);
+
+    try {
+      await updateSettings(formData);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+      showToast({
+        title: "Success",
+        description: "Settings saved successfully",
+      });
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      showToast({
+        title: "Error",
+        description: error?.message || "Failed to save settings. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return {
+    formData,
+    handleFormChange,
+    handleSubmit,
+    isSaving,
+    saveSuccess,
+  };
+};
+
 // UPDATED 15-Jan-2025: Major refactoring to use centralized useConfirm hook
 // - Removed all showDeleteConfirm, setShowDeleteConfirm, and onDeleteConfirm parameters
 // - All handleDelete functions now use confirmAction from useConfirm hook
 // - Removed window.confirm() fallback logic (no longer needed with global provider)
 // - All confirmation dialogs now use consistent UI and behavior across the app
 // - useTransactionActions, useCategoryActions, and useCustomBudgetActions updated
+// - Re-added useSettingsForm export (15-Jan-2025) - was accidentally removed during refactoring
 // UPDATED 11-Nov-2025: Changed parseDate import from budgetCalculations.js to dateUtils.js
