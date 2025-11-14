@@ -655,6 +655,7 @@ export default function BudgetDetail() {
                             // UPDATED 16-Jan-2025: Replaced Button with CustomButton variant="delete"
                             <CustomButton
                                 variant="delete"
+                                type="button"
                                 onClick={handleDeleteBudget}
                             >
                                 <Trash2 className="w-4 h-4 mr-2" />
