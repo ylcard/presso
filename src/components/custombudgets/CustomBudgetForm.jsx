@@ -85,7 +85,7 @@ export default function CustomBudgetForm({
             ...prev,
             cashAllocations: [
                 ...prev.cashAllocations,
-                { currencyCode: defaultCurrency, amount: '' }
+                { currencyCode: defaultCurrency, amount: null }
             ]
         }));
     };
@@ -127,18 +127,49 @@ export default function CustomBudgetForm({
             }))
             .filter(alloc => alloc.amount > 0);
 
-        const validation = validateCashAllocations(
-            cashWallet,
-            processedCashAllocations,
-            baseCurrency
-        );
+        // UPDATED 17-Jan-2025: Smart validation - only validate NEW allocations when editing
+        let allocationsToValidate = processedCashAllocations;
+        
+        if (budget && budget.cashAllocations) {
+            // When editing, calculate the NET CHANGE in allocations
+            const oldAllocationsMap = {};
+            budget.cashAllocations.forEach(alloc => {
+                oldAllocationsMap[alloc.currencyCode] = alloc.amount;
+            });
+            
+            // Only validate amounts that are INCREASES from the original allocation
+            allocationsToValidate = processedCashAllocations
+                .map(newAlloc => {
+                    const oldAmount = oldAllocationsMap[newAlloc.currencyCode] || 0;
+                    const increase = newAlloc.amount - oldAmount;
+                    
+                    // Only validate if there's an increase (requesting MORE cash)
+                    if (increase > 0) {
+                        return {
+                            currencyCode: newAlloc.currencyCode,
+                            amount: increase
+                        };
+                    }
+                    return null;
+                })
+                .filter(alloc => alloc !== null);
+        }
 
-        if (!validation.valid) {
-            const errorMessages = validation.errors.map(err =>
-                `${err.currency}: Requested ${err.requested.toFixed(2)}, Available ${err.available.toFixed(2)}`
-            ).join('; ');
-            setValidationError(`Insufficient balance: ${errorMessages}`);
-            return;
+        // Validate only the net new allocations (or all allocations if creating new budget)
+        if (allocationsToValidate.length > 0) {
+            const validation = validateCashAllocations(
+                cashWallet,
+                allocationsToValidate,
+                baseCurrency
+            );
+
+            if (!validation.valid) {
+                const errorMessages = validation.errors.map(err =>
+                    `${err.currency}: Requested ${err.requested.toFixed(2)}, Available ${err.available.toFixed(2)}`
+                ).join('; ');
+                setValidationError(`Insufficient balance: ${errorMessages}`);
+                return;
+            }
         }
 
         return onSubmit({
@@ -168,6 +199,7 @@ export default function CustomBudgetForm({
                         placeholder="e.g., Manchester Trip"
                         required
                         autoFocus
+                        autoComplete="off"
                     />
                 </div>
 
@@ -232,8 +264,8 @@ export default function CustomBudgetForm({
                                         </Label>
                                         <AmountInput
                                             value={alloc.amount}
-                                            onChange={(e) =>
-                                                handleCashAllocationChange(index, 'amount', e.target.value)
+                                            onChange={(value) =>
+                                                handleCashAllocationChange(index, 'amount', value)
                                             }
                                             placeholder="0.00"
                                             currencySymbol={getCurrencySymbol(alloc.currencyCode)}
@@ -316,3 +348,10 @@ export default function CustomBudgetForm({
 // - Cancel button uses variant="outline"
 // - Submit button uses variant="primary" (gradient blue-purple)
 // - Color selection buttons intentionally kept as native <button>s for inline styling
+// UPDATED 17-Jan-2025: Fixed cash allocation validation logic for budget editing
+// - When editing an existing budget, only validate NET INCREASES in cash allocations
+// - Existing allocations are already deducted from wallet, so they shouldn't be re-validated
+// - Calculate delta (increase) per currency and only validate those increases against available wallet balance
+// - This fixes the "Insufficient balance" error when editing budgets with existing cash allocations
+// ADDED 17-Jan-2025: Disabled browser autocomplete for budget name input
+// - Added autoComplete="off" to prevent browser from showing history of previous budget names

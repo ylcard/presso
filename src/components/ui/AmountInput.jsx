@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview AmountInput component for currency input with localization and financial precision.
  * Handles display, synchronization, and parsing of localized currency strings based on user settings.
@@ -38,7 +37,10 @@ export default function AmountInput({
      * @type {[string, function(string)]} Internal state for the formatted string visible in the input field.
      */
     const [displayValue, setDisplayValue] = useState(
-        value !== null && value !== undefined && !isNaN(value) ? formatCurrency(value, settings) : null
+        // UPDATED 17-Jan-2025: Use empty string instead of formatted "0" for zero/null values
+        value !== null && value !== undefined && !isNaN(value) && value !== 0 
+            ? formatCurrency(value, settings) 
+            : ''
     );
 
     /**
@@ -50,12 +52,13 @@ export default function AmountInput({
         // Check if external 'value' (number) differs from the number represented by our display string
         const currentNumericValue = parseFloat(unformatCurrency(displayValue || '', settings));
 
-        if (value === null || value === undefined || isNaN(value)) {
-            if (displayValue !== null) setDisplayValue(null);
+        if (value === null || value === undefined || isNaN(value) || value === 0) {
+            // UPDATED 17-Jan-2025: Set to empty string to show placeholder instead of "0"
+            if (displayValue !== '') setDisplayValue('');
         } else if (value !== currentNumericValue) {
             setDisplayValue(formatCurrency(value, settings));
         }
-    }, [value, settings]);
+    }, [value, settings, displayValue]);
 
     /**
      * Handles raw user input, updates internal display, validates, parses, rounds, and notifies the parent.
@@ -74,7 +77,8 @@ export default function AmountInput({
         const numericRegex = /^-?\d*\.?\d*$/;
 
         if (numericString === '') {
-            setDisplayValue(null);
+            // UPDATED 17-Jan-2025: Set displayValue to empty string to show placeholder
+            setDisplayValue('');
             onChange(null);
         } else if (numericRegex.test(numericString)) {
             // Parse and enforce precision before sending to parent
@@ -99,10 +103,14 @@ export default function AmountInput({
             <Input
                 type="text"
                 inputMode="decimal"
-                value={displayValue === null ? '' : displayValue}
+                // UPDATED 17-Jan-2025: Empty string when displayValue is empty to show placeholder "0"
+                value={displayValue}
                 onChange={handleChange}
-                placeholder={displayValue === null ? placeholder : ''}
+                // UPDATED 17-Jan-2025: Always show placeholder when input is empty
+                placeholder={placeholder}
                 className={`${settings.currencyPosition === 'before' ? 'pl-8' : 'pr-8'} ${className}`}
+                // ADDED 17-Jan-2025: Disable browser autocomplete for amount fields
+                autoComplete="off"
                 {...props}
             />
             {settings.currencyPosition === 'after' && (
@@ -115,3 +123,14 @@ export default function AmountInput({
         </div>
     );
 }
+
+// UPDATED 17-Jan-2025: Fixed zero/null value handling to show placeholder instead of "0" text
+// - When value is 0, null, or undefined, displayValue is now set to empty string ''
+// - This allows the placeholder="0" to be visible without interfering with user input
+// - Users no longer need to delete "0" before entering their own amount
+// - The external onChange handler still receives null when the field is empty
+
+// ADDED 17-Jan-2025: Disabled browser autocomplete
+// - Added autoComplete="off" to prevent browser from showing history of previous amounts
+// - This addresses the unwanted "history" popup showing previously entered values like "69.24"
+// - Users will no longer see suggestions from previous entries when typing amounts

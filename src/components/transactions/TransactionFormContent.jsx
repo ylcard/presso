@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -41,7 +40,7 @@ export default function TransactionFormContent({
 
   const [formData, setFormData] = useState({
     title: '',
-    amount: '',
+    amount: null,
     originalCurrency: settings?.baseCurrency || 'USD',
     type: 'expense',
     category_id: '',
@@ -292,6 +291,7 @@ export default function TransactionFormContent({
           placeholder="e.g., Salary, Groceries, Coffee"
           required
           autoFocus
+          autoComplete="off"
         />
       </div>
 
@@ -474,3 +474,6 @@ export default function TransactionFormContent({
 // - Cancel button uses variant="outline"
 // - Submit button uses variant="primary" (gradient blue-purple)
 // - Refresh rates button uses variant="ghost" size="sm"
+// ADDED 17-Jan-2025: Disabled browser autocomplete for transaction title input
+// - Added autoComplete="off" to prevent browser from showing history of previous transaction titles
+// - Addresses unwanted autocomplete suggestions when entering transaction details
