@@ -33,6 +33,9 @@ export const useExchangeRates = () => {
         setIsRefreshing(true);
 
         try {
+            // Log for debugging
+            console.log(`Checking freshness for ${sourceCurrency}->${targetCurrency} on ${date} with ${exchangeRates.length} rates.`);
+            
             // Check if rates are already fresh (within 14 days)
             const isFresh = areRatesFresh(exchangeRates, sourceCurrency, targetCurrency, date, 14);
 
