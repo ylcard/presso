@@ -22,5 +22,15 @@ export const POPULAR_ICONS = [
   'Podcast', 'Hotel'
 ];
 
-// Income icon
-export const IncomeIcon = Banknote;
+/**
+ * Safely retrieves an icon component from the map.
+ * Returns 'Circle' as a default fallback if the key is missing or invalid.
+ * @param {string} iconName - The string key stored in the DB
+ * @returns {React.Component} - The Lucide Icon Component
+ */
+export const getCategoryIcon = (iconName) => {
+  if (iconName && iconMap[iconName]) {
+    return iconMap[iconName];
+  }
+  return Circle;
+};
