@@ -1,32 +1,28 @@
 import React from "react";
-// UPDATED 15-Jan-2025: Changed Button import to CustomButton
 import { CustomButton } from "@/components/ui/CustomButton";
-import { Badge } from "@/components/ui/badge";
-import { Pencil, Trash2, Circle, Check, Clock } from "lucide-react";
+import { Pencil, Trash2, Circle, Check, Clock, Banknote } from "lucide-react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import { useSettings } from "../utils/SettingsContext";
-// UPDATED 12-Jan-2025: Changed import from formatCurrency.jsx to currencyUtils.js
 import { formatCurrency } from "../utils/currencyUtils";
-import { iconMap, IncomeIcon } from "../utils/iconMapConfig";
+import { getCategoryIcon } from "../utils/iconMapConfig";
 import TransactionForm from "./TransactionForm";
 
-// UPDATED 15-Jan-2025: Added onSubmit and isSubmitting props for edit form handling
-export default function TransactionItem({ 
-  transaction, 
-  category, 
-  onEdit, 
+export default function TransactionItem({
+  transaction,
+  category,
+  onEdit,
   onDelete,
   onSubmit,
   isSubmitting
 }) {
   const { settings } = useSettings();
-  
+
   const isIncome = transaction.type === 'income';
   const isPaid = transaction.isPaid;
-  
-  const IconComponent = category?.icon && iconMap[category.icon] ? iconMap[category.icon] : Circle;
-  
+
+  const IconComponent = getCategoryIcon(category?.icon);
+
   const currentYear = new Date().getFullYear();
   const paidYear = transaction.paidDate ? new Date(transaction.paidDate).getFullYear() : null;
   const showYear = paidYear && paidYear !== currentYear;
@@ -35,9 +31,8 @@ export default function TransactionItem({
     <motion.div
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
-      className={`flex items-center justify-between p-4 rounded-lg hover:bg-gray-50 transition-all border border-gray-100 group ${
-        !isIncome && !isPaid ? 'opacity-60' : ''
-      }`}
+      className={`flex items-center justify-between p-4 rounded-lg hover:bg-gray-50 transition-all border border-gray-100 group ${!isIncome && !isPaid ? 'opacity-60' : ''
+        }`}
     >
       <div className="flex items-center gap-4 flex-1">
         {isIncome ? (
@@ -45,19 +40,18 @@ export default function TransactionItem({
             className="w-12 h-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform"
             style={{ backgroundColor: '#10B98120' }}
           >
-            <IncomeIcon className="w-6 h-6" style={{ color: '#10B981' }} />
+            <Banknote className="w-6 h-6" style={{ color: '#10B981' }} />
           </div>
         ) : category ? (
           <div
-            className={`w-12 h-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform ${
-              !isPaid ? 'grayscale' : ''
-            }`}
+            className={`w-12 h-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform ${!isPaid ? 'grayscale' : ''
+              }`}
             style={{ backgroundColor: `${category.color}20` }}
           >
             <IconComponent className="w-6 h-6" style={{ color: category.color }} />
           </div>
         ) : null}
-        
+
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <p className="font-semibold text-gray-900">{transaction.title}</p>
@@ -67,7 +61,7 @@ export default function TransactionItem({
               <Clock className="w-4 h-4 text-orange-500" />
             ))}
           </div>
-          
+
           <div className="flex items-center gap-3 mt-1">
             <p className="text-sm text-gray-500">
               {format(new Date(transaction.date), "MMM d, yyyy")}
@@ -87,7 +81,7 @@ export default function TransactionItem({
               </>
             )}
           </div>
-          
+
           {transaction.notes && (
             <p className="text-sm text-gray-400 mt-1 line-clamp-1">{transaction.notes}</p>
           )}
@@ -102,16 +96,14 @@ export default function TransactionItem({
         </div>
 
         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          {/* UPDATED 15-Jan-2025: Wrapped edit button in TransactionForm for proper form handling */}
           <TransactionForm
             transaction={transaction}
-            categories={[]} // Categories fetched internally by TransactionForm
+            categories={[]}
             onSubmit={(data) => onSubmit(data, transaction)}
-            onCancel={() => {}}
+            onCancel={() => { }}
             isSubmitting={isSubmitting}
-            transactions={[]} // Transactions fetched internally
+            transactions={[]}
             trigger={
-              /* UPDATED 15-Jan-2025: Changed to CustomButton with ghost variant */
               <CustomButton
                 variant="ghost"
                 size="icon"
@@ -121,7 +113,6 @@ export default function TransactionItem({
               </CustomButton>
             }
           />
-          {/* UPDATED 15-Jan-2025: Changed to CustomButton with ghost variant */}
           <CustomButton
             variant="ghost"
             size="icon"
@@ -135,18 +126,3 @@ export default function TransactionItem({
     </motion.div>
   );
 }
-
-// UPDATED 12-Jan-2025: Changed import from formatCurrency.jsx to currencyUtils.js
-
-// CRITICAL FIX 15-Jan-2025: Resolved edit button not working on Transactions page
-// Root Cause: The edit button was calling onEdit(transaction), which was mapped to handleEdit from useTransactionActions
-// However, handleEdit only sets state (editingTransaction, showForm) but doesn't actually open a form in this context
-// because the TransactionItem component didn't have an edit form integrated into it
-// Solution: Wrapped the edit button in TransactionForm component (same pattern as Budget Detail page)
-// Now the edit button properly opens the TransactionForm popover with the transaction data pre-filled
-// The form submission is handled via onSubmit callback which calls handleSubmit from useTransactionActions
-
-// UPDATED 15-Jan-2025: Replaced Button with CustomButton
-// - Edit button uses ghost variant with blue hover
-// - Delete button uses ghost variant with red hover
-// - Both use icon size for proper spacing
