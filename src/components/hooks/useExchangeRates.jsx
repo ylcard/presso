@@ -37,10 +37,15 @@ export const useExchangeRates = () => {
         setIsRefreshing(true);
 
         try {
-            // FIX RACE CONDITION: Peek directly into cache. 
-            // The 'exchangeRates' variable from useQuery might be empty on first render/mount.
-            const cachedData = queryClient.getQueryData([QUERY_KEYS.EXCHANGE_RATES]) || [];
-            const ratesToCheck = cachedData.length > 0 ? cachedData : exchangeRates;
+            // FIX 2 (CRITICAL): Use ensureQueryData instead of getQueryData.
+            // If the Dashboard is currently loading rates (isLoading), this PAUSES execution 
+            // until the DB load finishes. This prevents checking against an empty array 
+            // during the first 300ms of the app loading.
+            const ratesToCheck = await queryClient.ensureQueryData({
+                queryKey: [QUERY_KEYS.EXCHANGE_RATES],
+                queryFn: () => base44.entities.ExchangeRate.list('-date'),
+                staleTime: 1000 * 60 * 10,
+            });
 
             // Check freshness using the best available data
             const isFresh = areRatesFresh(ratesToCheck, sourceCurrency, targetCurrency, date, 14);
@@ -50,7 +55,7 @@ export const useExchangeRates = () => {
                 return {
                     success: true,
                     message: 'Exchange rates are already up to date!',
-                    alreadyFresh: true
+                    silent: true
                 };
             }
 
@@ -107,7 +112,7 @@ Only include the rates for the currencies I listed above.`;
 
             // OPTIMIZATION: Do not fetch list() again. Use the latest cache state.
             // This handles the edge case where a rate might have been added while the LLM was thinking.
-            const currentRates = queryClient.getQueryData([QUERY_KEYS.EXCHANGE_RATES]) || exchangeRates;
+            const currentRates = queryClient.getQueryData([QUERY_KEYS.EXCHANGE_RATES]) || ratesToCheck;
 
             // Store or update the fetched rates in the database with deduplication
             const ratesToCreate = [];
