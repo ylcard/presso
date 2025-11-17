@@ -33,3 +33,25 @@ export const PRESET_COLORS = [
   '#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6',
   '#EC4899', '#14B8A6', '#F97316', '#06B6D4', '#6366F1'
 ];
+
+// UI Options for the Settings Select Menu
+export const CURRENCY_OPTIONS = [
+ { symbol: '$', name: 'US Dollar', code: 'USD' },
+ { symbol: '€', name: 'Euro', code: 'EUR' },
+ { symbol: '£', name: 'British Pound', code: 'GBP' },
+ { symbol: '¥', name: 'Japanese Yen', code: 'JPY' },
+ { symbol: 'CHF', name: 'Swiss Franc', code: 'CHF' },
+ { symbol: 'kr', name: 'Swedish Krona', code: 'SEK' },
+];
+
+// Comprehensive map for symbol lookup
+export const CURRENCY_SYMBOLS_MAP = {
+ 'USD': '$', 'EUR': '€', 'GBP': '£', 'JPY': '¥',
+ 'CAD': 'CA$', 'AUD': 'A$', 'CHF': 'CHF', 'CNY': '¥',
+ 'INR': '₹', 'MXN': 'MX$', 'BRL': 'R$', 'ZAR': 'R',
+ 'KRW': '₩', 'SGD': 'S$', 'NZD': 'NZ$', 'HKD': 'HK$',
+ 'SEK': 'kr', 'NOK': 'kr', 'DKK': 'kr', 'PLN': 'zł',
+ 'THB': '฿', 'MYR': 'RM', 'IDR': 'Rp', 'PHP': '₱',
+ 'CZK': 'Kč', 'ILS': '₪', 'CLP': 'CLP$', 'AED': 'د.إ',
+ 'SAR': '﷼', 'TWD': 'NT$', 'TRY': '₺'
+};
