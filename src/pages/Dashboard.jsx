@@ -1,7 +1,4 @@
 import React, { useState } from "react";
-// COMMENTED OUT 13-Jan-2025: Button and Plus imports moved inline to where they're needed
-// import { Button } from "@/components/ui/button";
-// import { Plus } from "lucide-react";
 import { useSettings } from "../components/utils/SettingsContext";
 import { usePeriod } from "../components/hooks/usePeriod";
 import {
@@ -47,7 +44,7 @@ export default function Dashboard() {
     const [showQuickAddBudget, setShowQuickAddBudget] = useState(false);
 
     // Period management
-    const { selectedMonth, setSelectedMonth, selectedYear, setSelectedYear, displayDate, monthStart, monthEnd } = usePeriod();
+    const { selectedMonth, setSelectedMonth, selectedYear, setSelectedYear, monthStart, monthEnd } = usePeriod();
 
     // Data fetching
     const { transactions } = useTransactions();
@@ -55,7 +52,7 @@ export default function Dashboard() {
     const { goals } = useGoals(user);
     const { allCustomBudgets } = useCustomBudgetsAll(user);
     const { allSystemBudgets } = useSystemBudgetsAll(user);
-    const { systemBudgets, isLoading: loadingSystemBudgets } = useSystemBudgetsForPeriod(user, monthStart, monthEnd);
+    const { systemBudgets } = useSystemBudgetsForPeriod(user, monthStart, monthEnd);
     const { cashWallet } = useCashWallet(user);
     const { exchangeRates } = useExchangeRates();
 
@@ -65,14 +62,9 @@ export default function Dashboard() {
     // Derived data
     const paidTransactions = usePaidTransactions(transactions, 10);
     const monthlyTransactions = useMonthlyTransactions(transactions, selectedMonth, selectedYear);
-    
-    // REFACTORED 14-Jan-2025: Use centralized useMonthlyIncome hook with full transactions + month/year
-    // Previous implementation filtered transactions first (monthlyTransactions), now passes full set
+
     const monthlyIncome = useMonthlyIncome(transactions, selectedMonth, selectedYear);
-    
-    // COMMENTED OUT 14-Jan-2025: Old implementation that required pre-filtered monthlyTransactions
-    // const monthlyIncome = useMonthlyIncome(monthlyTransactions);
-    
+
     // Dashboard summary with categories parameter for granular expense calculations
     const { remainingBudget, currentMonthIncome, currentMonthExpenses } = useDashboardSummary(
         transactions,
@@ -82,16 +74,14 @@ export default function Dashboard() {
         systemBudgets,
         categories
     );
-    
-    const { activeCustomBudgets, allActiveBudgets } = useActiveBudgets(
+
+    const { activeCustomBudgets } = useActiveBudgets(
         allCustomBudgets,
         allSystemBudgets,
         selectedMonth,
         selectedYear
     );
 
-    // UPDATED 16-Jan-2025: Replaced deprecated useTransactionMutationsDashboard with unified useTransactionActions
-    // Now uses options.onSuccess callback to close dialogs after successful transaction creation
     const transactionActions = useTransactionActions(null, null, cashWallet, {
         onSuccess: () => {
             setShowQuickAdd(false);
@@ -99,7 +89,6 @@ export default function Dashboard() {
         }
     });
 
-    // ENHANCED 16-Jan-2025: Added options.onSuccess callback to close dialog after budget creation
     const budgetActions = useCustomBudgetActions(user, transactions, cashWallet, {
         onSuccess: () => {
             setShowQuickAddBudget(false);
@@ -152,7 +141,7 @@ export default function Dashboard() {
                                     open={showQuickAdd}
                                     onOpenChange={setShowQuickAdd}
                                     categories={categories}
-                                    customBudgets={allActiveBudgets}
+                                    customBudgets={activeCustomBudgets}
                                     onSubmit={transactionActions.handleSubmit}
                                     isSubmitting={transactionActions.isSubmitting}
                                     transactions={transactions}
@@ -202,24 +191,6 @@ export default function Dashboard() {
                     </div>
                 </div>
 
-                {/* REMOVED 13-Jan-2025: Standalone QuickAddTransaction and QuickAddIncome - they now render their own triggers inline */}
-                {/* <QuickAddTransaction
-                    open={showQuickAdd}
-                    onOpenChange={setShowQuickAdd}
-                    categories={categories}
-                    customBudgets={allActiveBudgets}
-                    onSubmit={transactionActions.createTransaction}
-                    isSubmitting={transactionActions.isCreating}
-                    transactions={transactions}
-                />
-
-                <QuickAddIncome
-                    open={showQuickAddIncome}
-                    onOpenChange={setShowQuickAddIncome}
-                    onSubmit={transactionActions.createTransaction}
-                    isSubmitting={transactionActions.isCreating}
-                /> */}
-
                 <QuickAddBudget
                     open={showQuickAddBudget}
                     onOpenChange={setShowQuickAddBudget}
@@ -252,14 +223,3 @@ export default function Dashboard() {
         </div>
     );
 }
-
-// REFACTORED 11-Nov-2025: Updated to use new utility file structure (dateUtils, currencyUtils, generalUtils)
-// All imports now point to specialized utility files instead of deprecated budgetCalculations.js
-// UPDATED 13-Jan-2025: QuickAddTransaction and QuickAddIncome now render their own trigger buttons inline in RemainingBudgetCard
-// REFACTORED 14-Jan-2025: Updated to use centralized useMonthlyIncome hook with full transactions + month/year parameters
-// CRITICAL REFACTOR 16-Jan-2025: Fixed data integrity issues by removing deprecated dashboard hooks
-// - Removed useTransactionMutationsDashboard (had missing SYSTEM_BUDGETS invalidation)
-// - Now uses unified useTransactionActions with options.onSuccess callback for dialog closing
-// - Enhanced budgetActions with options.onSuccess callback for consistent UI behavior
-// - All CRUD operations now go through robust, fully-featured hooks with proper cash wallet handling
-// - This prevents data corruption (missing cash returns, incorrect status assignment) previously present in dashboard-specific hooks
