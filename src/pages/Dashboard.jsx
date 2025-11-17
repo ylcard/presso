@@ -18,7 +18,6 @@ import {
     useDashboardSummary,
     useActiveBudgets,
 } from "../components/hooks/useDerivedData";
-// UPDATED 16-Jan-2025: Removed useTransactionMutationsDashboard (deprecated), now using useTransactionActions
 import {
     useTransactionActions,
     useCustomBudgetActions,
