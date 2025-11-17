@@ -3,7 +3,7 @@
  * Implements the triangulation method with multiplication-only approach.
  */
 
-import { differenceInDays, parseISO } from "date-fns";
+import { differenceInDays, parseISO, startOfDay } from "date-fns";
 
 /**
  * Calculate converted amount from source currency to target currency.
@@ -91,7 +91,7 @@ export function getRateForDate(exchangeRates, currencyCode, date) {
     // });
 
     // ROBUST DATE LOGIC: Find all rates within the freshness window (0 to 14 days)
-    const targetDateObj = parseISO(date);
+    const targetDateObj = startOfDay(parseISO(date));
     const windowDays = 14;
 
     const freshRates = exchangeRates.filter(r => {
@@ -99,7 +99,7 @@ export function getRateForDate(exchangeRates, currencyCode, date) {
         if (r.fromCurrency !== currencyCode || r.toCurrency !== 'USD') return false;
 
         // 2. Check Date Window (using date-fns for safety)
-        const rateDateObj = parseISO(r.date);
+        const rateDateObj = startOfDay(parseISO(r.date));
         const diff = Math.abs(differenceInDays(targetDateObj, rateDateObj));
 
         return diff <= windowDays;
@@ -124,7 +124,7 @@ export function getRateForDate(exchangeRates, currencyCode, date) {
  * @param {number} freshnessWindowDays - Number of days to consider rates "fresh" (default: 14)
  * @returns {boolean} True if rates are fresh, false if stale or missing
  */
-export function areRatesFresh(exchangeRates, sourceCurrency, targetCurrency, date, freshnessWindowDays = 14) {
+export function areRatesFresh(exchangeRates, sourceCurrency, targetCurrency, date) {
     // If either currency is USD, we don't need to check freshness
     // if (sourceCurrency === 'USD' || targetCurrency === 'USD') {
     //   // Only need to check the non-USD currency
