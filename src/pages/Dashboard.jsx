@@ -13,7 +13,6 @@ import {
 } from "../components/hooks/useBase44Entities";
 import {
     usePaidTransactions,
-    useMonthlyTransactions,
     useMonthlyIncome,
     useDashboardSummary,
     useActiveBudgets,
@@ -60,7 +59,6 @@ export default function Dashboard() {
 
     // Derived data
     const paidTransactions = usePaidTransactions(transactions, 10);
-    const monthlyTransactions = useMonthlyTransactions(transactions, selectedMonth, selectedYear);
 
     const monthlyIncome = useMonthlyIncome(transactions, selectedMonth, selectedYear);
 
