@@ -4,46 +4,15 @@
  * Updated: 11-Nov-2025 - Added formatCurrency from formatCurrency.js
  */
 
+import { CURRENCY_SYMBOLS_MAP } from "./constants";
+
 /**
  * Get the currency symbol for a given currency code
  * @param {string} currencyCode - The ISO currency code (e.g., 'USD', 'EUR', 'GBP')
  * @returns {string} The currency symbol or the currency code if not found
  */
 export const getCurrencySymbol = (currencyCode) => {
-    const currencySymbols = {
-        'USD': '$',
-        'EUR': '€',
-        'GBP': '£',
-        'JPY': '¥',
-        'CAD': 'CA$',
-        'AUD': 'A$',
-        'CHF': 'CHF',
-        'CNY': '¥',
-        'INR': '₹',
-        'MXN': 'MX$',
-        'BRL': 'R$',
-        'ZAR': 'R',
-        'KRW': '₩',
-        'SGD': 'S$',
-        'NZD': 'NZ$',
-        'HKD': 'HK$',
-        'SEK': 'kr',
-        'NOK': 'kr',
-        'DKK': 'kr',
-        'PLN': 'zł',
-        'THB': '฿',
-        'MYR': 'RM',
-        'IDR': 'Rp',
-        'PHP': '₱',
-        'CZK': 'Kč',
-        'ILS': '₪',
-        'CLP': 'CLP$',
-        'AED': 'د.إ',
-        'SAR': '﷼',
-        'TWD': 'NT$',
-        'TRY': '₺'
-    };
-    return currencySymbols[currencyCode] || currencyCode;
+    return CURRENCY_SYMBOLS_MAP[currencyCode] || currencyCode;
 };
 
 /**
@@ -56,12 +25,11 @@ export const getCurrencySymbol = (currencyCode) => {
  * @returns {string} The unformatted numeric string (e.g., '1234.56').
  */
 export function unformatCurrency(formattedValue, settings) {
-    // FIX: Ensure formattedValue is a string before calling .replace()
     let inputString = formattedValue || '';
 
     // 1. Remove currency symbol and leading/trailing whitespace
     let cleanedValue = inputString.replace(settings.currencySymbol, '').trim();
-    
+
     // 2. Find the last separator (period or comma) to determine the decimal point.
     const lastPeriod = cleanedValue.lastIndexOf('.');
     const lastComma = cleanedValue.lastIndexOf(',');
@@ -78,7 +46,7 @@ export function unformatCurrency(formattedValue, settings) {
 
     // 4. Strip ALL potential thousands separators (periods and commas) from the integer part.
     const integerPart = integerPartWithThousands.replace(/[\.,]/g, '');
-    
+
     // 5. Recombine into the standard '1234.56' format for safe use with parseFloat()
     // This correctly handles "26.79" -> "26.79" and "26,79" -> "26.79"
     return `${integerPart}.${fractionalPart}`;
