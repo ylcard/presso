@@ -1,17 +1,15 @@
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { format } from "date-fns";
-import { Badge } from "@/components/ui/badge";
-import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import { format } from "date-fns";
+import { ArrowRight, Banknote } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { createPageUrl } from "@/utils";
-// UPDATED 12-Jan-2025: Changed imports to use currencyUtils.js and generalUtils.js
+import { createEntityMap } from "../utils/generalUtils";
 import { formatCurrency } from "../utils/currencyUtils";
-import { iconMap, IncomeIcon } from "../utils/iconMapConfig";
+import { getCategoryIcon } from "../utils/iconMapConfig";
 import { useSettings } from "../utils/SettingsContext";
 import { usePeriod } from "../hooks/usePeriod";
-import { createEntityMap } from "../utils/generalUtils";
 
 export default function RecentTransactions({ transactions, categories, customBudgets }) {
   const { settings } = useSettings();
@@ -53,7 +51,7 @@ export default function RecentTransactions({ transactions, categories, customBud
             const category = categoryMap[transaction.category_id];
             const customBudget = transaction.customBudgetId ? customBudgetMap[transaction.customBudgetId] : null;
             const isIncome = transaction.type === 'income';
-            const IconComponent = category?.icon && iconMap[category.icon] ? iconMap[category.icon] : null;
+            const IconComponent = getCategoryIcon(category?.icon);
             
             const paidYear = transaction.paidDate ? new Date(transaction.paidDate).getFullYear() : null;
             const showYear = paidYear && paidYear !== currentYear;
@@ -69,9 +67,9 @@ export default function RecentTransactions({ transactions, categories, customBud
                       className="w-10 h-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform"
                       style={{ backgroundColor: '#10B98120' }}
                     >
-                      <IncomeIcon className="w-5 h-5" style={{ color: '#10B981' }} />
+                      <Banknote className="w-5 h-5" style={{ color: '#10B981' }} />
                     </div>
-                  ) : category && IconComponent && (
+                  ) : category && (
                     <div 
                       className="w-10 h-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform"
                       style={{ backgroundColor: `${category.color}20` }}
