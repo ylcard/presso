@@ -56,7 +56,8 @@ export default function GoalSettings({ goals, onGoalUpdate, isLoading, isSaving 
 
         const rect = containerRef.current.getBoundingClientRect();
         const rawPercent = ((e.clientX - rect.left) / rect.width) * 100;
-        const constrained = Math.max(0, Math.min(100, rawPercent));
+        // Snap to nearest integer to avoid floating point summation errors (e.g., 99% totals)
+        const constrained = Math.round(Math.max(0, Math.min(100, rawPercent)));
 
         setSplits(prev => {
             // Thumb 1 (Needs/Wants)
@@ -102,7 +103,7 @@ export default function GoalSettings({ goals, onGoalUpdate, isLoading, isSaving 
                 <div className="pt-6 pb-2 px-2">
                     <div
                         ref={containerRef}
-                        className="relative h-12 w-full bg-gray-100 rounded-full select-none touch-none"
+                        className="relative h-6 w-full bg-gray-100 rounded-full select-none touch-none"
                     >
                         {/* Zone 1: Needs (Red) */}
                         <div
@@ -135,10 +136,10 @@ export default function GoalSettings({ goals, onGoalUpdate, isLoading, isSaving 
                             onPointerDown={(e) => handlePointerDown(e, 1)}
                             onPointerMove={handlePointerMove}
                             onPointerUp={handlePointerUp}
-                            className="absolute top-0 bottom-0 w-6 -ml-3 bg-white shadow-lg rounded-full border cursor-ew-resize flex items-center justify-center z-10 hover:scale-110 transition-transform"
+                            className={`absolute top-0 bottom-0 w-4 -ml-2 bg-white shadow-sm rounded-full border flex items-center justify-center z-10 hover:scale-110 transition-transform ${activeThumb === 1 ? 'cursor-grabbing' : 'cursor-grab'}`}
                             style={{ left: `${splits.split1}%` }}
                         >
-                            <GripVertical className="w-3 h-3 text-gray-400" />
+                            <GripVertical className="w-2.5 h-2.5 text-gray-400" />
                         </div>
 
                         {/* Thumb 2 */}
@@ -146,7 +147,7 @@ export default function GoalSettings({ goals, onGoalUpdate, isLoading, isSaving 
                             onPointerDown={(e) => handlePointerDown(e, 2)}
                             onPointerMove={handlePointerMove}
                             onPointerUp={handlePointerUp}
-                            className="absolute top-0 bottom-0 w-6 -ml-3 bg-white shadow-lg rounded-full border cursor-ew-resize flex items-center justify-center z-10 hover:scale-110 transition-transform"
+                            className={`absolute top-0 bottom-0 w-4 -ml-2 bg-white shadow-sm rounded-full border flex items-center justify-center z-10 hover:scale-110 transition-transform ${activeThumb === 2 ? 'cursor-grabbing' : 'cursor-grab'}`}
                             style={{ left: `${splits.split2}%` }}
                         >
                             <GripVertical className="w-3 h-3 text-gray-400" />
