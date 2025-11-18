@@ -30,8 +30,9 @@ export default function Settings() {
     const handleGoalSaveComplete = (status) => {
         if (status === 'success') {
             toast({
-                title: "Goal Settings Saved",
-                description: "All goal targets were updated successfully.",
+                title: "Success",
+                description: "All goal targets were saved successfully.",
+                variant: "success",
             });
         } else {
             toast({ variant: "destructive", title: "Goal Save Failed", description: "One or more goal updates failed to complete." });
