@@ -341,18 +341,18 @@ export const useGoalActions = (user, goals) => {
     mutationFn: ({ id, data }) => base44.entities.BudgetGoal.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GOALS] });
-      showToast({
-        title: "Success",
-        description: "Goal updated successfully",
-      });
+    //   showToast({
+    //     title: "Success",
+    //     description: "Goal updated successfully",
+    //   });
     },
     onError: (error) => {
       console.error('Error updating goal:', error);
-      showToast({
-        title: "Error",
-        description: error?.message || "Failed to update goal. Please try again.",
-        variant: "destructive",
-      });
+    //   showToast({
+    //     title: "Error",
+    //     description: error?.message || "Failed to update goal. Please try again.",
+    //     variant: "destructive",
+    //   });
     },
   });
 
@@ -360,18 +360,18 @@ export const useGoalActions = (user, goals) => {
     mutationFn: (data) => base44.entities.BudgetGoal.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GOALS] });
-      showToast({
-        title: "Success",
-        description: "Goal created successfully",
-      });
+    //   showToast({
+    //     title: "Success",
+    //     description: "Goal created successfully",
+    //   });
     },
     onError: (error) => {
       console.error('Error creating goal:', error);
-      showToast({
-        title: "Error",
-        description: error?.message || "Failed to create goal. Please try again.",
-        variant: "destructive",
-      });
+    //   showToast({
+    //     title: "Error",
+    //     description: error?.message || "Failed to create goal. Please try again.",
+    //     variant: "destructive",
+    //   });
     },
   });
 
