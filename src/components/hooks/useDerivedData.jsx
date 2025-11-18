@@ -16,7 +16,7 @@ import {
 } from "../utils/financialCalculations";
 import { PRIORITY_ORDER, PRIORITY_CONFIG } from "../utils/constants";
 import { getCategoryIcon } from "../utils/iconMapConfig";
-import { Circle, Banknote } from "lucide-react";
+import { Banknote } from "lucide-react";
 
 /**
  * Hook for filtering and limiting paid transactions.
@@ -427,6 +427,17 @@ export const useTransactionFiltering = (transactions) => {
   });
 
   const filteredTransactions = useMemo(() => {
+    // Performance: Create Date objects once outside the loop
+    let startFilterDate = null;
+    let endFilterDate = null;
+
+    if (filters.startDate && filters.endDate) {
+      startFilterDate = new Date(filters.startDate);
+      startFilterDate.setHours(0, 0, 0, 0);
+
+      endFilterDate = new Date(filters.endDate);
+      endFilterDate.setHours(0, 0, 0, 0);
+    }
     return transactions.filter(t => {
       const typeMatch = filters.type === 'all' || t.type === filters.type;
 
@@ -437,16 +448,12 @@ export const useTransactionFiltering = (transactions) => {
         (filters.paymentStatus === 'unpaid' && !t.isPaid);
 
       let dateMatch = true;
-      if (filters.startDate && filters.endDate) {
+      if (startFilterDate && endFilterDate) {
         const transactionDate = new Date(t.date);
-        const start = new Date(filters.startDate);
-        const end = new Date(filters.endDate);
 
         transactionDate.setHours(0, 0, 0, 0);
-        start.setHours(0, 0, 0, 0);
-        end.setHours(0, 0, 0, 0);
 
-        dateMatch = transactionDate >= start && transactionDate <= end;
+        dateMatch = transactionDate >= startFilterDate && transactionDate <= endFilterDate;
       }
 
       return typeMatch && categoryMatch && paymentStatusMatch && dateMatch;
@@ -690,7 +697,8 @@ export const useMonthlyBreakdown = (transactions, categories, monthlyIncome) => 
       .filter(t => t.type === 'expense')
       .reduce((acc, t) => {
         const categoryId = t.category_id || 'uncategorized';
-        acc[categoryId] = (acc[categoryId] || 0) + t.amount;
+        const amount = Number(t.amount) || 0;
+        acc[categoryId] = (acc[categoryId] || 0) + amount;
         return acc;
       }, {});
 
@@ -701,6 +709,7 @@ export const useMonthlyBreakdown = (transactions, categories, monthlyIncome) => 
       .map(([categoryId, amount]) => {
         const category = categoryMap[categoryId];
         return {
+          id: categoryId,
           name: category?.name || 'Uncategorized',
           icon: category?.icon,
           color: category?.color || '#94A3B8',
@@ -730,7 +739,8 @@ export const usePriorityChartData = (transactions, categories, goals, monthlyInc
         const category = categoryMap[t.category_id];
         if (category) {
           const priority = category.priority;
-          acc[priority] = (acc[priority] || 0) + t.amount;
+          const amount = Number(t.amount) || 0;
+          acc[priority] = (acc[priority] || 0) + amount;
         }
         return acc;
       }, {});
