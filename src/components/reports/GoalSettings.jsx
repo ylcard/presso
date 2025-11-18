@@ -1,130 +1,192 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-// COMMENTED OUT 16-Jan-2025: Replaced with CustomButton for consistency
-// import { Button } from "@/components/ui/button";
 import { CustomButton } from "@/components/ui/CustomButton";
-import { Label } from "@/components/ui/label";
-import { Target, Save } from "lucide-react";
+import { Target, Save, GripVertical } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const priorityConfig = {
-  needs: { label: "Needs", color: "#EF4444", description: "Essential expenses" },
-  wants: { label: "Wants", color: "#F59E0B", description: "Discretionary spending" },
-  savings: { label: "Savings", color: "#10B981", description: "Savings and investments" }
+    needs: { label: "Needs", color: "#EF4444", description: "Essential expenses" },
+    wants: { label: "Wants", color: "#F59E0B", description: "Discretionary spending" },
+    savings: { label: "Savings", color: "#10B981", description: "Savings and investments" }
 };
 
 export default function GoalSettings({ goals, onGoalUpdate, isLoading, isSaving }) {
-  const [percentages, setPercentages] = useState({
-    needs: 0,
-    wants: 0,
-    savings: 0
-  });
+    // We track two split points (0-100).
+    // Split 1: Boundary between Needs/Wants
+    // Split 2: Boundary between Wants/Savings
+    const [splits, setSplits] = useState({ split1: 50, split2: 80 });
+    const containerRef = useRef(null);
+    const [activeThumb, setActiveThumb] = useState(null);
 
-  useEffect(() => {
-    const newPercentages = { needs: 0, wants: 0, savings: 0 };
-    goals.forEach(goal => {
-      newPercentages[goal.priority] = goal.target_percentage;
-    });
-    setPercentages(newPercentages);
-  }, [goals]);
+    useEffect(() => {
+        const map = { needs: 0, wants: 0, savings: 0 };
+        goals.forEach(goal => {
+            map[goal.priority] = goal.target_percentage;
+        });
 
-  const handleSave = async () => {
-    for (const [priority, percentage] of Object.entries(percentages)) {
-      await onGoalUpdate(priority, percentage);
+        // Convert individual values to cumulative splits
+        setSplits({
+            split1: map.needs,
+            split2: map.needs + map.wants
+        });
+    }, [goals]);
+
+    // Calculate derived percentages for display/save
+    const currentValues = {
+        needs: splits.split1,
+        wants: splits.split2 - splits.split1,
+        savings: 100 - splits.split2
+    };
+
+    const handleSave = async () => {
+        for (const [priority, percentage] of Object.entries(currentValues)) {
+            await onGoalUpdate(priority, percentage);
+        }
+    };
+
+    // Pointer event handlers for dragging
+    const handlePointerDown = (e, thumbIndex) => {
+        e.preventDefault();
+        e.target.setPointerCapture(e.pointerId);
+        setActiveThumb(thumbIndex);
+    };
+
+    const handlePointerMove = (e) => {
+        if (!activeThumb || !containerRef.current) return;
+
+        const rect = containerRef.current.getBoundingClientRect();
+        const rawPercent = ((e.clientX - rect.left) / rect.width) * 100;
+        const constrained = Math.max(0, Math.min(100, rawPercent));
+
+        setSplits(prev => {
+            // Thumb 1 (Needs/Wants)
+            if (activeThumb === 1) {
+                return { ...prev, split1: Math.min(constrained, prev.split2 - 5) };
+            }
+            // Thumb 2 (Wants/Savings)
+            else {
+                return { ...prev, split2: Math.max(constrained, prev.split1 + 5) };
+            }
+        });
+    };
+
+    const handlePointerUp = (e) => {
+        setActiveThumb(null);
+        e.target.releasePointerCapture(e.pointerId);
+    };
+
+    if (isLoading) {
+        return (
+            <Card className="border-none shadow-lg sticky top-6">
+                <CardHeader>
+                    <CardTitle>Goal Settings</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <Skeleton className="h-96 w-full" />
+                </CardContent>
+            </Card>
+        );
     }
-  };
 
-  const total = Object.values(percentages).reduce((sum, val) => sum + val, 0);
-  const isValid = total <= 100;
-
-  if (isLoading) {
     return (
-      <Card className="border-none shadow-lg sticky top-6">
-        <CardHeader>
-          <CardTitle>Goal Settings</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-96 w-full" />
-        </CardContent>
-      </Card>
-    );
-  }
+        <Card className="border-none shadow-lg sticky top-6">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <Target className="w-5 h-5" />
+                    Goal Settings
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
 
-  return (
-    <Card className="border-none shadow-lg sticky top-6">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Target className="w-5 h-5" />
-          Goal Settings
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="space-y-4">
-          {Object.entries(priorityConfig).map(([key, config]) => (
-            <div key={key} className="space-y-2">
-              <Label htmlFor={key} className="flex items-center gap-2">
-                <div
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: config.color }}
-                />
-                <div>
-                  <p className="font-medium">{config.label}</p>
-                  <p className="text-xs text-gray-500 font-normal">{config.description}</p>
+                {/* Interactive Slider Area */}
+                <div className="pt-6 pb-2 px-2">
+                    <div
+                        ref={containerRef}
+                        className="relative h-12 w-full bg-gray-100 rounded-full select-none touch-none"
+                    >
+                        {/* Zone 1: Needs (Red) */}
+                        <div
+                            className="absolute top-0 left-0 h-full rounded-l-full transition-colors"
+                            style={{ width: `${splits.split1}%`, backgroundColor: priorityConfig.needs.color }}
+                        />
+
+                        {/* Zone 2: Wants (Amber) */}
+                        <div
+                            className="absolute top-0 h-full transition-colors"
+                            style={{
+                                left: `${splits.split1}%`,
+                                width: `${splits.split2 - splits.split1}%`,
+                                backgroundColor: priorityConfig.wants.color
+                            }}
+                        />
+
+                        {/* Zone 3: Savings (Green) */}
+                        <div
+                            className="absolute top-0 h-full rounded-r-full transition-colors"
+                            style={{
+                                left: `${splits.split2}%`,
+                                width: `${100 - splits.split2}%`,
+                                backgroundColor: priorityConfig.savings.color
+                            }}
+                        />
+
+                        {/* Thumb 1 */}
+                        <div
+                            onPointerDown={(e) => handlePointerDown(e, 1)}
+                            onPointerMove={handlePointerMove}
+                            onPointerUp={handlePointerUp}
+                            className="absolute top-0 bottom-0 w-6 -ml-3 bg-white shadow-lg rounded-full border cursor-ew-resize flex items-center justify-center z-10 hover:scale-110 transition-transform"
+                            style={{ left: `${splits.split1}%` }}
+                        >
+                            <GripVertical className="w-3 h-3 text-gray-400" />
+                        </div>
+
+                        {/* Thumb 2 */}
+                        <div
+                            onPointerDown={(e) => handlePointerDown(e, 2)}
+                            onPointerMove={handlePointerMove}
+                            onPointerUp={handlePointerUp}
+                            className="absolute top-0 bottom-0 w-6 -ml-3 bg-white shadow-lg rounded-full border cursor-ew-resize flex items-center justify-center z-10 hover:scale-110 transition-transform"
+                            style={{ left: `${splits.split2}%` }}
+                        >
+                            <GripVertical className="w-3 h-3 text-gray-400" />
+                        </div>
+                    </div>
                 </div>
-              </Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  id={key}
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="1"
-                  value={percentages[key]}
-                  onChange={(e) => setPercentages({
-                    ...percentages,
-                    [key]: parseFloat(e.target.value) || 0
-                  })}
-                  className="flex-1"
-                />
-                <span className="text-gray-500 font-medium w-6">%</span>
-              </div>
-            </div>
-          ))}
-        </div>
 
-        <div className="p-4 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100">
-          <div className="flex items-center justify-between mb-2">
-            <span className="font-medium text-gray-700">Total</span>
-            <span className={`text-xl font-bold ${isValid ? 'text-gray-900' : 'text-red-600'}`}>
-              {total.toFixed(0)}%
-            </span>
-          </div>
-          {!isValid && (
-            <p className="text-sm text-red-600">Total must not exceed 100%</p>
-          )}
-          {isValid && total < 100 && (
-            <p className="text-sm text-gray-600">
-              {(100 - total).toFixed(0)}% unallocated
-            </p>
-          )}
-        </div>
+                {/* Legend & Values */}
+                <div className="grid grid-cols-3 gap-4">
+                    {Object.entries(priorityConfig).map(([key, config]) => (
+                        <div key={key} className="text-center space-y-1">
+                            <div className="flex items-center justify-center gap-2 mb-1">
+                                <div
+                                    className="w-2 h-2 rounded-full"
+                                    style={{ backgroundColor: config.color }}
+                                />
+                                <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                    {config.label}
+                                </span>
+                            </div>
+                            <div className="text-2xl font-bold text-gray-900">
+                                {Math.round(currentValues[key])}%
+                            </div>
+                            <p className="text-[10px] text-gray-400 line-clamp-1 px-1">
+                                {config.description}
+                            </p>
+                        </div>
+                    ))}
+                </div>
 
-        <CustomButton
-          onClick={handleSave}
-          disabled={!isValid || isSaving}
-          variant="primary"
-          className="w-full"
-        >
-          <Save className="w-4 h-4 mr-2" />
-          {isSaving ? 'Saving...' : 'Save Goals'}
-        </CustomButton>
-      </CardContent>
-    </Card>
-  );
+                <CustomButton
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    variant="primary"
+                    className="w-full"
+                >
+                    <Save className="w-4 h-4 mr-2" />
+                    {isSaving ? 'Saving...' : 'Save Goals'}
+                </CustomButton>
+            </CardContent>
+        </Card>
+    );
 }
-
-// UPDATED 16-Jan-2025: Replaced Button with CustomButton for "Save Goals" button
-// - Uses variant="primary" (gradient blue-purple) for primary action
-// - Removed manual gradient styling as variant provides it
-// - All functionality preserved with consistent styling
