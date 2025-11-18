@@ -11,12 +11,11 @@ import GoalSettings from "../components/reports/GoalSettings";
 import { formatCurrency } from "../components/utils/currencyUtils";
 import { Settings as SettingsIcon, Check } from "lucide-react";
 import { CURRENCY_OPTIONS } from "../components/utils/constants";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast, showToast } from "@/components/ui/use-toast";
 
 export default function Settings() {
     const { settings, updateSettings, user } = useSettings();
 
-    const { toast } = useToast();
     // Form state and submission logic from hook
     const { formData, handleFormChange, handleSubmit, isSaving, saveSuccess } = useSettingsForm(
         settings,
