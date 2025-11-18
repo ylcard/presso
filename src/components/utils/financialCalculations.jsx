@@ -320,3 +320,6 @@ export const getMonthlyPaidExpenses = (transactions, startDate, endDate) => {
     })
     .reduce((sum, t) => sum + t.amount, 0);
 };
+
+// New function needed in financialCalculations.js:
+// export const getTrendSummary = (transactions, month, year) => { /* returns { income, expense } for that month */ };
