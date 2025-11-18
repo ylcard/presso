@@ -15,6 +15,7 @@ import { useToast, showToast } from "@/components/ui/use-toast";
 
 export default function Settings() {
     const { settings, updateSettings, user } = useSettings();
+    const { toast } = useToast();
 
     // Form state and submission logic from hook
     const { formData, handleFormChange, handleSubmit, isSaving, saveSuccess } = useSettingsForm(
@@ -28,13 +29,13 @@ export default function Settings() {
 
     const handleGoalSaveComplete = (status) => {
         if (status === 'success') {
-            showToast({
+            toast({
                 title: "Success",
                 description: "All goal targets were saved successfully.",
                 variant: "success",
             });
         } else {
-            showToast({ variant: "destructive", title: "Goal Save Failed", description: "One or more goal updates failed to complete." });
+            toast({ variant: "destructive", title: "Goal Save Failed", description: "One or more goal updates failed to complete." });
         }
     };
 
