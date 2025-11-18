@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+
+import React, { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Target, Save, GripVertical } from "lucide-react";
@@ -10,7 +11,7 @@ const priorityConfig = {
     savings: { label: "Savings", color: "#10B981", description: "Savings and investments" }
 };
 
-export default function GoalSettings({ goals, onGoalUpdate, onSaveComplete = () => {}, isLoading, isSaving }) {
+export default function GoalSettings({ goals, onGoalUpdate, isLoading, isSaving }) {
     // We track two split points (0-100).
     // Split 1: Boundary between Needs/Wants
     // Split 2: Boundary between Wants/Savings
@@ -38,31 +39,11 @@ export default function GoalSettings({ goals, onGoalUpdate, onSaveComplete = () 
         savings: 100 - splits.split2
     };
 
-    // const handleSave = async () => {
-    //     for (const [priority, percentage] of Object.entries(currentValues)) {
-    //         await onGoalUpdate(priority, percentage);
-    //     }
-    // };
-
-    const handleSave = useCallback(async () => {
-        const updatePromises = Object.entries(currentValues).map(([priority, percentage]) =>
-            onGoalUpdate(priority, percentage)
-        );
-
-        const results = await Promise.allSettled(updatePromises);
-
-        const failedUpdates = results.filter(result => result.status === 'rejected');
-
-        if (failedUpdates.length === 0) {
-            // All updates successful
-            onSaveComplete('success');
-        } else {
-            // One or more updates failed
-            onSaveComplete('error');
+    const handleSave = async () => {
+        for (const [priority, percentage] of Object.entries(currentValues)) {
+            await onGoalUpdate(priority, percentage);
         }
-    }, [currentValues, onGoalUpdate, onSaveComplete]);
-
-    // Pointer event handlers for dragging
+    };
 
     // Pointer event handlers for dragging
     const handlePointerDown = (e, thumbIndex) => {
