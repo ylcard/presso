@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "../utils/currencyUtils";
 
-export default function TrendChart({ allTransactions = [], currentMonth, currentYear }) {
+export default function TrendChart({ allTransactions = [], currentMonth, currentYear, settings }) {
   const data = useMemo(() => {
     const result = [];
     for (let i = 5; i >= 0; i--) {
@@ -63,11 +63,11 @@ export default function TrendChart({ allTransactions = [], currentMonth, current
               <div className="absolute bottom-12 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-800 text-white text-xs p-2 rounded shadow-lg z-10 whitespace-nowrap pointer-events-none">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
-                  <span className="text-emerald-100">In: {formatCurrency(item.income)}</span>
+                  <span className="text-emerald-100">In: {formatCurrency(item.income, settings)}</span>
                 </div>
                 <div className="flex items-center gap-2 mt-1">
                   <div className="w-2 h-2 bg-rose-400 rounded-full"></div>
-                  <span className="text-rose-100">Out: {formatCurrency(item.expense)}</span>
+                  <span className="text-rose-100">Out: {formatCurrency(item.expense, settings)}</span>
                 </div>
               </div>
             </div>
