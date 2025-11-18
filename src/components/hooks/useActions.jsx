@@ -378,18 +378,37 @@ export const useGoalActions = (user, goals) => {
     const handleGoalUpdate = async (priority, percentage) => {
         const existingGoal = goals.find(g => g.priority === priority);
 
+        // try {
+        //     if (existingGoal) {
+        //         await updateGoalMutation.mutateAsync({
+        //             id: existingGoal.id,
+        //             data: { target_percentage: percentage }
+        //         });
+        //     } else if (user) {
+        //         await createGoalMutation.mutateAsync({
+        //             priority,
+        //             target_percentage: percentage,
+        //             user_email: user.email
+        //         });
+        //     }
+        // } catch (error) {
+        //     console.error('Error in handleGoalUpdate:', error);
+        // }
+
         if (existingGoal) {
-            await updateGoalMutation.mutateAsync({
+            return updateGoalMutation.mutateAsync({
                 id: existingGoal.id,
                 data: { target_percentage: percentage }
             });
         } else if (user) {
-            await createGoalMutation.mutateAsync({
+            return createGoalMutation.mutateAsync({
                 priority,
                 target_percentage: percentage,
                 user_email: user.email
             });
         }
+        // If no goal exists and no user, return a rejected promise to ensure concurrency finishes cleanly
+        return Promise.reject(new Error("Cannot update goal: Goal not found or user not defined."));
     };
 
     return {
