@@ -16,7 +16,7 @@ import {
 } from "../utils/financialCalculations";
 import { PRIORITY_ORDER, PRIORITY_CONFIG } from "../utils/constants";
 import { getCategoryIcon } from "../utils/iconMapConfig";
-import { Banknote } from "lucide-react";
+import { Circle, Banknote } from "lucide-react";
 
 /**
  * Hook for filtering and limiting paid transactions.
