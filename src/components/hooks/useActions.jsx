@@ -650,13 +650,13 @@ export const useSettingsForm = (settings, updateSettings) => {
             await updateSettings(formData);
             setSaveSuccess(true);
             setTimeout(() => setSaveSuccess(false), 3000);
-            showToast({
+            toast({
                 title: "Success",
                 description: "Settings saved successfully",
             });
         } catch (error) {
             console.error('Error saving settings:', error);
-            showToast({
+            toast({
                 title: "Error",
                 description: error?.message || "Failed to save settings. Please try again.",
                 variant: "destructive",
