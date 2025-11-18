@@ -51,15 +51,6 @@ export default function Reports() {
               Performance analysis for {displayDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
             </p>
           </div>
-
-          <MonthNavigator
-            currentMonth={selectedMonth}
-            currentYear={selectedYear}
-            onMonthChange={(month, year) => {
-              setSelectedMonth(month);
-              setSelectedYear(year);
-            }}
-          />
         </div>
 
         {/* 1. High-Level KPIs (New) */}
@@ -68,6 +59,8 @@ export default function Reports() {
           monthlyIncome={monthlyIncome}
           isLoading={isLoading}
           settings={settings}
+          startDate={monthStart}
+          endDate={monthEnd}
         />
 
         {/* 2. Historical Context (New) */}
@@ -76,6 +69,8 @@ export default function Reports() {
           currentMonth={selectedMonth}
           currentYear={selectedYear}
           settings={settings}
+          setSelectedMonth={setSelectedMonth}
+          setSelectedYear={setSelectedYear}
         />
 
         {/* 3. Detailed Breakdown & Goals */}
