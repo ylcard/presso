@@ -629,6 +629,7 @@ export const useCustomBudgetActions = (user, transactions, cashWallet, options =
 
 // Hook for settings form state and submission
 export const useSettingsForm = (settings, updateSettings) => {
+    const { toast } = useToast();
     const [formData, setFormData] = useState(settings);
     const [isSaving, setIsSaving] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
