@@ -190,6 +190,67 @@ export default function Settings() {
                             </div>
                         </CardContent>
                     </Card>
+
+                    {/* NEW CARD: Financial Goals Configuration */}
+                    <Card className="border-none shadow-lg">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                🎯 Financial Goals (50/30/20 Rule)
+                            </CardTitle>
+                            <CardDescription>
+                                Define your target percentage allocation for Needs, Wants, and Savings.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid md:grid-cols-3 gap-6">
+                                {/* Needs Goal */}
+                                <div className="space-y-2">
+                                    <Label htmlFor="needsGoal">Needs Goal (%)</Label>
+                                    <Input
+                                        id="needsGoal"
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        value={formData.needsGoal}
+                                        onChange={(e) => handleFormChange('needsGoal', parseInt(e.target.value) || 0)}
+                                    />
+                                </div>
+
+                                {/* Wants Goal */}
+                                <div className="space-y-2">
+                                    <Label htmlFor="wantsGoal">Wants Goal (%)</Label>
+                                    <Input
+                                        id="wantsGoal"
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        value={formData.wantsGoal}
+                                        onChange={(e) => handleFormChange('wantsGoal', parseInt(e.target.value) || 0)}
+                                    />
+                                </div>
+
+                                {/* Savings Goal */}
+                                <div className="space-y-2">
+                                    <Label htmlFor="savingsGoal">Savings Goal (%)</Label>
+                                    <Input
+                                        id="savingsGoal"
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        value={formData.savingsGoal}
+                                        onChange={(e) => handleFormChange('savingsGoal', parseInt(e.target.value) || 0)}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Goal Sum Validation (User Feedback) */}
+                            <p className={`mt-4 text-sm font-semibold ${(formData.needsGoal || 0) + (formData.wantsGoal || 0) + (formData.savingsGoal || 0) === 100
+                                    ? 'text-emerald-600' : 'text-rose-600'
+                                }`}>
+                                Total Allocation: {(formData.needsGoal || 0) + (formData.wantsGoal || 0) + (formData.savingsGoal || 0)}% (Target: 100%)
+                            </p>
+                        </CardContent>
+                    </Card>
                 </form>
             </div>
         </div>
