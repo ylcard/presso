@@ -27,17 +27,93 @@ export default function ImportWizard() {
     const [mappings, setMappings] = useState({});
     const [processedData, setProcessedData] = useState([]);
     const [isProcessing, setIsProcessing] = useState(false);
-    const { user } = useSettings();
+    const { user, settings } = useSettings();
     const { categories } = useCategories();
     const navigate = useNavigate();
+    const [isLoadingPdf, setIsLoadingPdf] = useState(false);
 
     const handleFileSelect = async (selectedFile) => {
         setFile(selectedFile);
-        const text = await selectedFile.text();
-        const parsed = parseCSV(text);
-        setCsvData(parsed);
-        setStep(2);
-        showToast({ title: "File parsed", description: `Found ${parsed.data.length} rows.` });
+
+        if (selectedFile.name.toLowerCase().endsWith('.pdf') || selectedFile.type === 'application/pdf') {
+            await handlePdfProcessing(selectedFile);
+        } else {
+            const text = await selectedFile.text();
+            const parsed = parseCSV(text);
+            setCsvData(parsed);
+            setStep(2);
+            showToast({ title: "File parsed", description: `Found ${parsed.data.length} rows.` });
+        }
+    };
+
+    const handlePdfProcessing = async (file) => {
+        setIsLoadingPdf(true);
+        try {
+            showToast({ title: "Uploading...", description: "Uploading file for analysis." });
+            const { file_url } = await base44.integrations.Core.UploadFile({ file: file });
+            
+            showToast({ title: "Analyzing...", description: "Extracting data from PDF. This may take a moment." });
+            const result = await base44.integrations.Core.ExtractDataFromUploadedFile({
+                file_url: file_url,
+                json_schema: {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "date": { "type": "string", "description": "Transaction date (YYYY-MM-DD)" },
+                            "valueDate": { "type": "string", "description": "Payment/Value date (YYYY-MM-DD)" },
+                            "reason": { "type": "string", "description": "Merchant or description" },
+                            "amount": { "type": "number", "description": "Transaction amount. Negative for expenses, positive for income." }
+                        },
+                        "required": ["date", "reason", "amount"]
+                    }
+                }
+            });
+
+            if (result.status === 'error') throw new Error(result.details);
+            
+            const extractedData = result.output || [];
+            
+            const processed = extractedData.map(item => {
+                const amountClean = parseFloat(item.amount);
+                const type = amountClean >= 0 ? 'income' : 'expense';
+                
+                // Basic category matching by name
+                let categoryName = 'Uncategorized';
+                let categoryId = null;
+                const matchedCat = categories.find(c => 
+                    (item.reason || '').toLowerCase().includes(c.name.toLowerCase())
+                );
+                if (matchedCat) {
+                    categoryName = matchedCat.name;
+                    categoryId = matchedCat.id;
+                }
+
+                return {
+                    date: item.date,
+                    title: item.reason || 'Untitled Transaction',
+                    amount: Math.abs(amountClean),
+                    originalAmount: amountClean,
+                    originalCurrency: settings?.baseCurrency || 'USD',
+                    type,
+                    category: categoryName,
+                    categoryId,
+                    isPaid: !!item.valueDate,
+                    paidDate: item.valueDate || null,
+                    originalData: item
+                };
+            }).filter(item => item.amount !== 0 && item.date);
+
+            setProcessedData(processed);
+            setStep(3);
+            showToast({ title: "Success", description: `Extracted ${processed.length} transactions from PDF.` });
+        } catch (error) {
+            console.error('PDF Processing Error:', error);
+            showToast({ title: "Error", description: "Failed to process PDF. Please try again.", variant: "destructive" });
+            setFile(null);
+        } finally {
+            setIsLoadingPdf(false);
+        }
     };
 
     const handleMappingChange = (field, column) => {
@@ -70,12 +146,16 @@ export default function ImportWizard() {
             }
 
             return {
-                date: row[mappings.date], // Assume date is compatible or handled by backend? No, should parse.
+                date: row[mappings.date],
                 title: row[mappings.title] || 'Untitled Transaction',
                 amount: Math.abs(amountClean),
+                originalAmount: amountClean,
+                originalCurrency: settings?.baseCurrency || 'USD',
                 type,
                 category: categoryName,
                 categoryId,
+                isPaid: false, // CSV usually doesn't imply paid status unless specified, default false
+                paidDate: null,
                 originalData: row
             };
         }).filter(item => item.amount !== 0 && item.date);
@@ -87,20 +167,16 @@ export default function ImportWizard() {
     const handleImport = async () => {
         setIsProcessing(true);
         try {
-            // Batch create transactions
-            // Note: base44.entities.Transaction.create handles one by one, or check if bulkCreate exists.
-            // Assuming create loop for safety as per docs instructions (only list, create, update, delete shown).
-            // But wait, sdk docs mentioned bulkCreate in examples: "base44.entities.Todo.bulkCreate(...)".
-            // So I will use bulkCreate.
-            
             const transactionsToCreate = processedData.map(item => ({
                 title: item.title,
                 amount: item.amount,
                 type: item.type,
-                date: new Date(item.date).toISOString().split('T')[0], // Basic date formatting
-                category_id: item.categoryId || categories.find(c => c.name === 'Uncategorized')?.id, // Fallback?
-                // If no category found, maybe don't send category_id? Or user needs to handle.
-                // For now, if no category match, it will be null.
+                date: new Date(item.date).toISOString().split('T')[0],
+                category_id: item.categoryId || categories.find(c => c.name === 'Uncategorized')?.id,
+                originalAmount: item.originalAmount,
+                originalCurrency: item.originalCurrency,
+                isPaid: item.isPaid || false,
+                paidDate: item.paidDate ? new Date(item.paidDate).toISOString().split('T')[0] : null
             }));
 
             await base44.entities.Transaction.bulkCreate(transactionsToCreate);
@@ -126,7 +202,19 @@ export default function ImportWizard() {
 
             {/* Content */}
             <div className="min-h-[400px]">
-                {step === 1 && <FileUploader onFileSelect={handleFileSelect} />}
+                {step === 1 && (
+                    isLoadingPdf ? (
+                        <div className="flex flex-col items-center justify-center h-64 space-y-4">
+                            <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
+                            <div className="text-center">
+                                <h3 className="text-lg font-semibold text-gray-900">Processing PDF</h3>
+                                <p className="text-sm text-gray-500">Extracting transaction data...</p>
+                            </div>
+                        </div>
+                    ) : (
+                        <FileUploader onFileSelect={handleFileSelect} />
+                    )
+                )}
                 {step === 2 && (
                     <div className="space-y-6">
                         <ColumnMapper 
