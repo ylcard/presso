@@ -50,6 +50,7 @@ export default function ImportWizard() {
 
     const handlePdfProcessing = async (file) => {
         setIsLoadingPdf(true);
+        setError(null);
         try {
             showToast({ title: "Uploading...", description: "Uploading file for analysis." });
             const { file_url } = await base44.integrations.Core.UploadFile({ file: file });
@@ -111,11 +112,8 @@ export default function ImportWizard() {
             showToast({ title: "Success", description: `Extracted ${processed.length} transactions from PDF.` });
         } catch (error) {
             console.error('PDF Processing Error:', error);
-            showToast({ 
-                title: "PDF Processing Failed", 
-                description: `Error: ${error.message || "Unknown error"}. Check console for full details.`, 
-                variant: "destructive" 
-            });
+            // CREATED 19-Nov-2025: Set permanent error state instead of relying solely on toast
+            setError(`PDF Processing Failed: ${error.message || "Unknown error"}`);
             setFile(null);
         } finally {
             setIsLoadingPdf(false);
