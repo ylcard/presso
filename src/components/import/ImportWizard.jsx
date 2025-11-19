@@ -206,6 +206,25 @@ export default function ImportWizard() {
 
             {/* Content */}
             <div className="min-h-[400px]">
+                {/* CREATED 19-Nov-2025: Permanent error display */}
+                {error && (
+                    <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start justify-between gap-3">
+                        <div className="flex gap-3">
+                            <div className="mt-0.5 text-red-600 font-bold">!</div>
+                            <div className="text-sm text-red-800 font-medium whitespace-pre-wrap break-words w-full">
+                                {error}
+                            </div>
+                        </div>
+                        <button 
+                            onClick={() => setError(null)}
+                            className="text-red-500 hover:text-red-700 p-1"
+                            aria-label="Dismiss error"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                )}
+
                 {step === 1 && (
                     isLoadingPdf ? (
                         <div className="flex flex-col items-center justify-center h-64 space-y-4">
