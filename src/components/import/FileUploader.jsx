@@ -11,10 +11,13 @@ export default function FileUploader({ onFileSelect }) {
 
     const handleFile = (file) => {
         setError(null);
-        if (file && file.type === "text/csv" || file.name.endsWith('.csv')) {
+        const isCsv = file && (file.type === "text/csv" || file.name.endsWith('.csv'));
+        const isPdf = file && (file.type === "application/pdf" || file.name.endsWith('.pdf'));
+
+        if (isCsv || isPdf) {
             onFileSelect(file);
         } else {
-            setError("Please upload a valid CSV file.");
+            setError("Please upload a valid CSV or PDF file.");
         }
     };
 
@@ -57,7 +60,7 @@ export default function FileUploader({ onFileSelect }) {
                 <input
                     ref={inputRef}
                     type="file"
-                    accept=".csv"
+                    accept=".csv,.pdf"
                     className="hidden"
                     onChange={handleChange}
                 />
@@ -88,13 +91,23 @@ export default function FileUploader({ onFileSelect }) {
             
             <Card className="bg-gray-50 border-none">
                 <CardContent className="pt-6">
-                    <h4 className="text-sm font-medium text-gray-900 mb-2">CSV Format Requirements:</h4>
-                    <ul className="text-sm text-gray-600 list-disc pl-5 space-y-1">
-                        <li>First row must contain headers</li>
-                        <li>Comma-separated values</li>
-                        <li>Required columns: Date, Amount, Description/Title</li>
-                        <li>Dates should be in a recognizable format (e.g., YYYY-MM-DD, MM/DD/YYYY)</li>
-                    </ul>
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">Format Requirements:</h4>
+                    <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <h5 className="text-xs font-semibold text-gray-900 mb-1 uppercase tracking-wider">CSV</h5>
+                            <ul className="text-sm text-gray-600 list-disc pl-5 space-y-1">
+                                <li>First row must contain headers</li>
+                                <li>Required: Date, Amount, Description</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h5 className="text-xs font-semibold text-gray-900 mb-1 uppercase tracking-wider">PDF</h5>
+                            <ul className="text-sm text-gray-600 list-disc pl-5 space-y-1">
+                                <li>Bank statements or transaction lists</li>
+                                <li>Must contain legible transaction data</li>
+                            </ul>
+                        </div>
+                    </div>
                 </CardContent>
             </Card>
         </div>
