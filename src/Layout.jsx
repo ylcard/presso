@@ -74,20 +74,29 @@ const LayoutContent = React.memo(({ children }) => {
         </Sidebar>
 
         <main className="flex-1 flex flex-col">
-          {/* <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 px-6 py-4 md:hidden sticky top-0 z-10"> */}
-          <header className="bg-white border-b border-gray-200 px-6 py-4 md:hidden sticky top-0 z-10">
-            <div className="flex items-center gap-4">
-              <SidebarTrigger className="hover:bg-gray-100 p-2 rounded-lg transition-colors duration-200" />
-              <div className="flex items-center gap-2">
-                <Wallet className="w-5 h-5 text-blue-600" />
-                <h1 className="text-lg font-bold">BudgetWise</h1>
-              </div>
-            </div>
-          </header>
-
-          <div className="flex-1 overflow-auto">
+          <div className="flex-1 overflow-auto pb-20 md:pb-0">
             {children}
           </div>
+          
+          {/* Mobile Bottom Navigation */}
+          <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
+            <div className="flex justify-around items-center px-2 py-2">
+              {navigationItems.map((item) => (
+                <Link
+                  key={item.title}
+                  to={item.url}
+                  className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors duration-200 ${
+                    location.pathname === item.url
+                      ? 'text-blue-600 bg-blue-50'
+                      : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <item.icon className="w-5 h-5" />
+                  <span className="text-xs font-medium">{item.title}</span>
+                </Link>
+              ))}
+            </div>
+          </nav>
         </main>
       </div>
     </SidebarProvider>
@@ -110,3 +119,9 @@ export default function Layout({ children, currentPageName }) {
 // This provides global access to the custom confirmation dialog across the entire app
 // All components can now use the useConfirm() hook to trigger confirmations
 // The provider wraps LayoutContent to ensure all pages have access to the confirmation functionality
+
+// UPDATED 19-Nov-2025: Implemented responsive navigation
+// - Sidebar now hidden on mobile (hidden md:flex)
+// - Removed mobile header with SidebarTrigger
+// - Added sticky bottom navigation bar for mobile with icons and text
+// - Content area has bottom padding on mobile to prevent overlap with bottom nav
