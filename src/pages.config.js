@@ -5,6 +5,7 @@ import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import Budgets from './pages/Budgets';
 import BudgetDetail from './pages/BudgetDetail';
+import ImportData from './pages/ImportData';
 import __Layout from './Layout.jsx';
 
 
@@ -16,6 +17,7 @@ export const PAGES = {
     "Settings": Settings,
     "Budgets": Budgets,
     "BudgetDetail": BudgetDetail,
+    "ImportData": ImportData,
 }
 
 export const pagesConfig = {

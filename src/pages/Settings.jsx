@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,7 +9,8 @@ import { useSettingsForm, useGoalActions } from "../components/hooks/useActions"
 import { useGoals } from "../components/hooks/useBase44Entities";
 import GoalSettings from "../components/reports/GoalSettings";
 import { formatCurrency } from "../components/utils/currencyUtils";
-import { Settings as SettingsIcon, Check } from "lucide-react";
+import { Settings as SettingsIcon, Check, Upload } from "lucide-react";
+import { createPageUrl } from "@/utils";
 import { CURRENCY_OPTIONS } from "../components/utils/constants";
 
 export default function Settings() {
