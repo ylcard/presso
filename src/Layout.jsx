@@ -36,7 +36,7 @@ const LayoutContent = React.memo(({ children }) => {
         }
       `}</style>
       <div className="min-h-screen flex w-full" style={{ backgroundColor: 'var(--bg-subtle)' }}>
-        <Sidebar className="border-r border-gray-200">
+        <Sidebar className="hidden md:flex border-r border-gray-200">
           <SidebarHeader className="border-b border-gray-200 p-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
