@@ -100,5 +100,5 @@ export const categorizeTransaction = (transaction, userRules = [], categories = 
         }
     }
 
-    return { categoryId, categoryName };
+    return { categoryId, categoryName, priority };
 };
