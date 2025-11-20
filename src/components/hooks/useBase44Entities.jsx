@@ -179,11 +179,9 @@ export const useSystemBudgetManagement = (
       const currentMonth = now.getMonth(); 
       const currentYear = now.getFullYear();
       
-      // Guard: If viewing a different month, don't create or update system budgets
-      if (selectedMonth !== currentMonth || selectedYear !== currentYear) {
-        console.warn("Attempted to manage system budgets for a non-current month. Operation skipped.");
-        return;
-      }
+      // UPDATED 20-Jan-2025: Allow CREATION for past months if missing, but restrict UPDATES to current month
+      // This ensures historical data exists but preserves history from being overwritten by current goal changes
+      const isCurrentMonth = selectedMonth === currentMonth && selectedYear === currentYear;
       
       try {
         const systemTypes = ['needs', 'wants', 'savings'];
@@ -206,7 +204,8 @@ export const useSystemBudgetManagement = (
           
           if (existingBudget) {
             // Only update if the calculated amount significantly differs to avoid unnecessary writes
-            if (Math.abs(existingBudget.budgetAmount - amount) > 0.01) { 
+            // AND only if it's the current month (preserve history)
+            if (isCurrentMonth && Math.abs(existingBudget.budgetAmount - amount) > 0.01) { 
               await base44.entities.SystemBudget.update(existingBudget.id, {
                 budgetAmount: amount
               });

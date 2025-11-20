@@ -9,9 +9,9 @@ import { RotateCcw, Wallet } from "lucide-react";
 import { getMonthlyIncome, getMonthlyPaidExpenses } from "../utils/financialCalculations";
 
 // 1. Helper function is defined OUTSIDE the component for cleaner structure and useMemo
-const calculateTrendData = (allTransactions, currentMonth, currentYear) => {
+const calculateTrendData = (allTransactions, currentMonth, currentYear, monthsToShow = 6) => {
   const result = [];
-  for (let i = 5; i >= 0; i--) {
+  for (let i = monthsToShow - 1; i >= 0; i--) {
     let targetMonth = currentMonth - i;
     let targetYear = currentYear;
 
@@ -46,15 +46,18 @@ export default function TrendChart({
   setSelectedMonth,
   setSelectedYear
 }) {
+  const [monthsToShow, setMonthsToShow] = React.useState(6);
+
   // FIX: useMemo correctly calls the helper function and uses correct dependencies
   const data = useMemo(() => {
     // Pass the raw data and the target period for trend calculation
-    return calculateTrendData(allTransactions, currentMonth, currentYear);
-  }, [allTransactions, currentMonth, currentYear]);
+    return calculateTrendData(allTransactions, currentMonth, currentYear, monthsToShow);
+  }, [allTransactions, currentMonth, currentYear, monthsToShow]);
 
-  // Check for sufficient data (Threshold: at least 2 months with non-zero activity)
+  // Check for sufficient data (Threshold: at least 1 month with non-zero activity)
+  // UPDATED 20-Jan-2025: Lowered threshold to 1 month to show data even if history is short
   const activeMonths = data.filter(item => item.income > 0 || item.expense > 0).length;
-  const isInsufficientData = activeMonths < 2;
+  const isInsufficientData = activeMonths < 1;
 
   const maxVal = Math.max(...data.map(d => Math.max(d.income, d.expense)), 100);
   const scale = (value) => (value / maxVal) * 100;
@@ -69,7 +72,23 @@ export default function TrendChart({
   return (
     <Card className="border-none shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-lg font-semibold text-gray-800">6 Month Trend</CardTitle>
+        <div className="flex items-center gap-4">
+          <CardTitle className="text-lg font-semibold text-gray-800">Trend Analysis</CardTitle>
+          <div className="flex items-center bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setMonthsToShow(3)}
+              className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${monthsToShow === 3 ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              3M
+            </button>
+            <button
+              onClick={() => setMonthsToShow(6)}
+              className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${monthsToShow === 6 ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              6M
+            </button>
+          </div>
+        </div>
 
         {/* 3. Embedded Month Navigator (as requested) */}
         <div className="flex items-center space-x-3">
@@ -104,7 +123,7 @@ export default function TrendChart({
           <div className="h-52 flex flex-col items-center justify-center text-center text-gray-500 bg-gray-50 rounded-lg border border-dashed">
             <Wallet className="w-6 h-6 mb-2" />
             <p className="font-semibold">Insufficient Data</p>
-            <p className="text-sm mt-1">Need activity in at least two months to visualize a trend.</p>
+            <p className="text-sm mt-1">Need activity in at least {monthsToShow === 3 ? 'one month' : 'two months'} to visualize a trend.</p>
           </div>
         ) : (
           <div className="relative h-52 mt-4 px-2">
@@ -152,7 +171,7 @@ export default function TrendChart({
                     </div>
 
                     {/* X-Axis Label */}
-                    <span className={`text-xs font-medium ${idx === 5 ? 'text-gray-900 font-bold' : 'text-gray-400'}`}>
+                    <span className={`text-xs font-medium ${idx === monthsToShow - 1 ? 'text-gray-900 font-bold' : 'text-gray-400'}`}>
                       {item.label}
                     </span>
 
