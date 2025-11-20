@@ -66,6 +66,7 @@ export default function TransactionList({
               onDelete={onDelete}
               onSubmit={onSubmit}
               isSubmitting={isSubmitting}
+              categories={categories} // CREATED 20-NOV-2025: Pass all categories to TransactionItem for editing
             />
           ))}
         </div>

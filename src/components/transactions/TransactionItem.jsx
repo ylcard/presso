@@ -14,7 +14,8 @@ export default function TransactionItem({
   onEdit,
   onDelete,
   onSubmit,
-  isSubmitting
+  isSubmitting,
+  categories // CREATED 20-NOV-2025: Receive all categories
 }) {
   const { settings } = useSettings();
 
@@ -98,7 +99,7 @@ export default function TransactionItem({
         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
           <TransactionForm
             transaction={transaction}
-            categories={[]}
+            categories={categories} // CREATED 20-NOV-2025: Pass all categories to TransactionForm
             onSubmit={(data) => onSubmit(data, transaction)}
             onCancel={() => { }}
             isSubmitting={isSubmitting}
