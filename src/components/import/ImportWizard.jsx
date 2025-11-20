@@ -57,7 +57,7 @@ export default function ImportWizard() {
         try {
             showToast({ title: "Uploading...", description: "Uploading file for analysis." });
             const { file_url } = await base44.integrations.Core.UploadFile({ file: file });
-            
+
             showToast({ title: "Analyzing...", description: "Extracting data from PDF. This may take a moment." });
             const result = await base44.integrations.Core.ExtractDataFromUploadedFile({
                 file_url: file_url,
@@ -83,14 +83,14 @@ export default function ImportWizard() {
             });
 
             if (result.status === 'error') throw new Error(result.details);
-            
+
             // Updated 19-Nov-2025: Handle new schema structure with root object
             const extractedData = result.output?.transactions || [];
-            
+
             const processed = extractedData.map(item => {
                 const amountClean = parseFloat(item.amount);
                 const type = amountClean >= 0 ? 'income' : 'expense';
-                
+
                 // Enhanced categorization using rules and patterns
                 const catResult = categorizeTransaction(
                     { title: item.reason },
@@ -107,6 +107,7 @@ export default function ImportWizard() {
                     type,
                     category: catResult.categoryName || 'Uncategorized',
                     categoryId: catResult.categoryId || null,
+                    financial_priority: catResult.priority || 'wants',
                     isPaid: !!item.valueDate,
                     paidDate: item.valueDate || null,
                     originalData: item
@@ -135,7 +136,7 @@ export default function ImportWizard() {
             const amountRaw = row[mappings.amount];
             // Basic cleaning of amount (remove currency symbols, commas)
             const amountClean = amountRaw ? parseFloat(amountRaw.replace(/[^0-9.-]+/g, "")) : 0;
-            
+
             let type = 'expense';
             if (mappings.type && row[mappings.type]) {
                 type = row[mappings.type].toLowerCase().includes('income') ? 'income' : 'expense';
@@ -146,7 +147,7 @@ export default function ImportWizard() {
             // Enhanced categorization
             // First check if CSV has an explicit category column
             let catResult = { categoryId: null, categoryName: 'Uncategorized' };
-            
+
             if (mappings.category && row[mappings.category]) {
                 const csvCat = row[mappings.category];
                 const matchedCat = categories.find(c => c.name.toLowerCase() === csvCat.toLowerCase());
@@ -154,7 +155,7 @@ export default function ImportWizard() {
                     catResult = { categoryId: matchedCat.id, categoryName: matchedCat.name };
                 }
             }
-            
+
             // If no explicit mapping or not found, run auto-categorization
             if (!catResult.categoryId) {
                 catResult = categorizeTransaction(
@@ -238,7 +239,7 @@ export default function ImportWizard() {
                                 {error}
                             </div>
                         </div>
-                        <button 
+                        <button
                             onClick={() => setError(null)}
                             className="text-red-500 hover:text-red-700 p-1"
                             aria-label="Dismiss error"
@@ -263,15 +264,15 @@ export default function ImportWizard() {
                 )}
                 {step === 2 && (
                     <div className="space-y-6">
-                        <ColumnMapper 
-                            headers={csvData.headers} 
-                            mappings={mappings} 
-                            onMappingChange={handleMappingChange} 
+                        <ColumnMapper
+                            headers={csvData.headers}
+                            mappings={mappings}
+                            onMappingChange={handleMappingChange}
                         />
                         <div className="flex justify-end gap-4">
                             <CustomButton variant="outline" onClick={() => setStep(1)}>Back</CustomButton>
-                            <CustomButton 
-                                onClick={processData} 
+                            <CustomButton
+                                onClick={processData}
                                 disabled={!mappings.date || !mappings.amount || !mappings.title}
                             >
                                 Review Data <ArrowRight className="w-4 h-4 ml-2" />
@@ -281,11 +282,11 @@ export default function ImportWizard() {
                 )}
                 {step === 3 && (
                     <div className="space-y-6">
-                        <CategorizeReview 
-                            data={processedData} 
+                        <CategorizeReview
+                            data={processedData}
                             categories={categories}
                             onUpdateRow={handleUpdateRow}
-                            onDeleteRow={handleDeleteRow} 
+                            onDeleteRow={handleDeleteRow}
                         />
                         <div className="flex justify-end gap-4">
                             <CustomButton variant="outline" onClick={() => setStep(2)}>Back</CustomButton>
