@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import { useSettings } from "../utils/SettingsContext";
 import { parseDate, formatDateString, formatDate } from "../utils/dateUtils";
-import { useDayPicker } from "react-day-picker";
+import { useNavigation } from "react-day-picker";
 import { setMonth, setYear, startOfMonth } from "date-fns";
 
 /**
@@ -31,7 +31,7 @@ import { setMonth, setYear, startOfMonth } from "date-fns";
  * that look like plain text but open dropdowns on click.
  */
 function CalendarCaptionLabel({ displayMonth }) {
-  const { goToMonth } = useDayPicker();
+  const { goToMonth } = useNavigation();
   const months = [
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
