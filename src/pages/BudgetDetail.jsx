@@ -386,14 +386,19 @@ export default function BudgetDetail() {
             // const budgetStart = new Date(budget.startDate);
             // const budgetEnd = new Date(budget.endDate);
 
-            // FIX: System Budgets don't have intrinsic dates. 
-            // We must use the global selected period (monthStart/monthEnd).
-            // We also set the time to cover the full day (00:00 to 23:59).
-            const budgetStart = new Date(monthStart || budget.startDate);
-            budgetStart.setHours(0, 0, 0, 0);
+            // CORRECTED LOGIC:
+            // 1. Ignore 'monthStart' (Global Context) because it overrides the specific 
+            //    Budget ID we are viewing. If I view December Budget, I want Dec dates, 
+            //    even if my global app state is November.
+            // 2. Use 'parseDate' to ensure Local Midnight (00:00:00), fixing timezone bugs.
 
-            const budgetEnd = new Date(monthEnd || budget.endDate);
-            budgetEnd.setHours(23, 59, 59, 999);
+            const budgetStart = parseDate(budget.startDate);
+
+            const budgetEnd = parseDate(budget.endDate);
+            // Set end of day to ensure we catch expenses on the very last day
+            if (budgetEnd) {
+                budgetEnd.setHours(23, 59, 59, 999);
+            }
 
             const allCustomBudgetIds = allCustomBudgets.map(cb => cb.id);
 
