@@ -26,8 +26,9 @@ const HARDCODED_KEYWORDS = {
 };
 
 const FALLBACK_REGEX = [
-    { pattern: /(POWER|GAS|ELECTRIC|ENERGIA)/i, category: 'Electricity' },
+    { pattern: /(POWER|GAS|ELECTRIC|ENERGIA|NUFRI)/i, category: 'Electricity' },
     { pattern: /(VUELING|RYANAIR|EASYJET|WIZZAIR|ELAL|FINNAIR)/i, category: 'Flights' },
+    { pattern: /(BARKCELONA)/i, category: 'Pets' },
     { pattern: /(INTERMON)/i, category: 'Charity' },
     { pattern: /(MOBILITAT|BEENETWORK|BEE NETWORK|BEE|TRANSPORTE)/i, category: 'Transport' },
     { pattern: /(LA SIRENA|Mcdonalds)/i, category: 'Dining Out' },
