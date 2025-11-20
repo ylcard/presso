@@ -9,6 +9,7 @@ import PriorityChart from "../components/reports/PriorityChart";
 import GoalSettings from "../components/reports/GoalSettings";
 import MonthNavigator from "../components/ui/MonthNavigator";
 import TrendChart from "../components/reports/TrendChart";
+import ProjectionChart from "../components/reports/ProjectionChart";
 import ReportStats from "../components/reports/ReportStats";
 
 export default function Reports() {
@@ -62,15 +63,22 @@ export default function Reports() {
           endDate={monthEnd}
         />
 
-        {/* 2. Historical Context (New) */}
-        <TrendChart
-          allTransactions={transactions}
-          currentMonth={selectedMonth}
-          currentYear={selectedYear}
-          settings={settings}
-          setSelectedMonth={setSelectedMonth}
-          setSelectedYear={setSelectedYear}
-        />
+        {/* 2. Historical Context & Future Projection */}
+        <div className="grid lg:grid-cols-2 gap-8">
+          <TrendChart
+            allTransactions={transactions}
+            currentMonth={selectedMonth}
+            currentYear={selectedYear}
+            settings={settings}
+            setSelectedMonth={setSelectedMonth}
+            setSelectedYear={setSelectedYear}
+          />
+          <ProjectionChart
+            transactions={transactions}
+            categories={categories}
+            settings={settings}
+          />
+        </div>
 
         {/* 3. Detailed Breakdown & Goals */}
         <div className="grid lg:grid-cols-3 gap-8">
