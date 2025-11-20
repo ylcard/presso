@@ -4,6 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import TransactionItem from "./TransactionItem";
 
 // UPDATED 15-Jan-2025: Added onSubmit and isSubmitting props for proper edit form handling
+// UPDATED 20-Jan-2025: Added customBudgets, monthStart, monthEnd for cross-period detection
 export default function TransactionList({ 
   transactions, 
   categories, 
@@ -11,7 +12,10 @@ export default function TransactionList({
   onDelete, 
   isLoading,
   onSubmit,
-  isSubmitting
+  isSubmitting,
+  customBudgets = [], // ADDED 20-Jan-2025
+  monthStart = null, // ADDED 20-Jan-2025
+  monthEnd = null // ADDED 20-Jan-2025
 }) {
   const categoryMap = categories.reduce((acc, cat) => {
     acc[cat.id] = cat;
@@ -67,6 +71,9 @@ export default function TransactionList({
               onSubmit={onSubmit}
               isSubmitting={isSubmitting}
               categories={categories} // CREATED 20-NOV-2025: Pass all categories to TransactionItem for editing
+              customBudgets={customBudgets} // ADDED 20-Jan-2025: Pass for cross-period detection
+              monthStart={monthStart} // ADDED 20-Jan-2025
+              monthEnd={monthEnd} // ADDED 20-Jan-2025
             />
           ))}
         </div>
