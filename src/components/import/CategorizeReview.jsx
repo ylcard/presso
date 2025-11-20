@@ -31,6 +31,7 @@ export default function CategorizeReview({ data, categories, onUpdateRow, onDele
                                 <TableHead>Date</TableHead>
                                 <TableHead>Title</TableHead>
                                 <TableHead className="w-[200px]">Category</TableHead>
+                                <TableHead className="w-[120px]">Budget</TableHead>
                                 <TableHead className="text-right">Amount</TableHead>
                                 <TableHead>Type</TableHead>
                                 <TableHead className="w-[50px]"></TableHead>
@@ -48,7 +49,8 @@ export default function CategorizeReview({ data, categories, onUpdateRow, onDele
                                                 const cat = categories.find(c => c.id === value);
                                                 onUpdateRow(index, {
                                                     categoryId: value,
-                                                    category: cat ? cat.name : 'Uncategorized'
+                                                    category: cat ? cat.name : 'Uncategorized',
+                                                    financial_priority: cat ? (cat.priority || 'wants') : row.financial_priority
                                                 });
                                             }}
                                         >
@@ -67,6 +69,25 @@ export default function CategorizeReview({ data, categories, onUpdateRow, onDele
                                                 ))}
                                             </SelectContent>
                                         </Select>
+                                    </TableCell>
+                                    <TableCell>
+                                        {row.type === 'expense' ? (
+                                            <Select
+                                                value={row.financial_priority || 'wants'}
+                                                onValueChange={(val) => onUpdateRow(index, { financial_priority: val })}
+                                            >
+                                                <SelectTrigger className="w-full h-8">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="needs">Needs</SelectItem>
+                                                    <SelectItem value="wants">Wants</SelectItem>
+                                                    <SelectItem value="savings">Savings</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        ) : (
+                                            <span className="text-gray-400 text-xs">-</span>
+                                        )}
                                     </TableCell>
                                     <TableCell className={`text-right font-medium ${row.type === 'expense' ? 'text-red-600' : 'text-green-600'}`}>
                                         {formatCurrency(Math.abs(row.amount), settings)}
