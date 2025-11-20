@@ -427,7 +427,7 @@ export default function BudgetDetail() {
         } else {
             return transactions.filter(t => t.customBudgetId === budgetId);
         }
-    }, [transactions, budgetId, budget, categories, allCustomBudgets, monthStart, monthEnd]);
+    }, [transactions, budgetId, budget, categories, allCustomBudgets]);
 
     const relatedCustomBudgetsForDisplay = useMemo(() => {
         if (!budget || !budget.isSystemBudget) return [];
