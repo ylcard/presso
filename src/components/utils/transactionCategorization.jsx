@@ -23,23 +23,20 @@ const HARDCODED_KEYWORDS = {
     'AIRBNB': 'Travel',
     'HOTEL': 'Travel',
     'AIRLINES': 'Travel',
-    'finetwork': 'Connectivity',
-    'intermon': 'Charity',
-    'La sirena': 'Dining Out',
-    'orange': 'Connectivity',
-    'Caprabo': 'Groceries',
-    'Steam': 'Games',
-    'Steamgames': 'Games',
-    'Mercadona': 'Discretionary',
-    'impuls': 'Rent',
-    'TOC': 'Hotels'
 };
 
 const FALLBACK_REGEX = [
     { pattern: /(POWER|GAS|ELECTRIC|ENERGIA)/i, category: 'Electricity' },
+    { pattern: /(VUELING|RYANAIR|EASYJET|WIZZAIR|ELAL|FINNAIR)/i, category: 'Flights' },
+    { pattern: /(INTERMON)/i, category: 'Charity' },
+    { pattern: /(LA SIRENA)/i, category: 'Dining Out' },
+    { pattern: /(STEAM|STEAMGAMES)/i, category: 'Games' },
+    { pattern: /(CAPRABO)/i, category: 'Groceries' },
+    { pattern: /(MERCADONA)/i, category: 'Discretionary' },
+    { pattern: /(IMPULS|ADMINISTRACION)/i, category: 'Rent' },
     { pattern: /(AIGUES|WATER)/i, category: 'Water' },
-    { pattern: /(INTERNET|WIFI|CABLE|COMCAST|AT&T|VERIZON|T-MOBILE)/i, category: 'Connectivity' },
-    { pattern: /(HOSTEL|HOSTELS|HOTEL|HOTELS|HOSTELWORLD)/i, category: 'Hotels' },
+    { pattern: /(INTERNET|WIFI|CABLE|COMCAST|AT&T|VERIZON|T-MOBILE|ORANGE|FINETWORK)/i, category: 'Connectivity' },
+    { pattern: /(HOSTEL|HOSTELS|HOTEL|HOTELS|HOSTELWORLD|TOC|UNITE)/i, category: 'Hotels' },
     { pattern: /(HOSPITAL|DOCTOR|CLINIC|DENTIST|PHARMACY|CVS|WALGREENS|PERRUQUERS)/i, category: 'Health' }
 ];
 
