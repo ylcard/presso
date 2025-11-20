@@ -146,13 +146,13 @@ export default function ImportWizard() {
 
             // Enhanced categorization
             // First check if CSV has an explicit category column
-            let catResult = { categoryId: null, categoryName: 'Uncategorized' };
+            let catResult = { categoryId: null, categoryName: 'Uncategorized', priority: 'wants' };
 
             if (mappings.category && row[mappings.category]) {
                 const csvCat = row[mappings.category];
                 const matchedCat = categories.find(c => c.name.toLowerCase() === csvCat.toLowerCase());
                 if (matchedCat) {
-                    catResult = { categoryId: matchedCat.id, categoryName: matchedCat.name };
+                    catResult = { categoryId: matchedCat.id, categoryName: matchedCat.name, priority: matchedCat.priority || 'wants' };
                 }
             }
 
@@ -174,6 +174,7 @@ export default function ImportWizard() {
                 type,
                 category: catResult.categoryName || 'Uncategorized',
                 categoryId: catResult.categoryId || null,
+                financial_priority: catResult.priority || 'wants',
                 isPaid: false, // CSV usually doesn't imply paid status unless specified, default false
                 paidDate: null,
                 originalData: row
@@ -193,6 +194,7 @@ export default function ImportWizard() {
                 type: item.type,
                 date: new Date(item.date).toISOString().split('T')[0],
                 category_id: item.categoryId || categories.find(c => c.name === 'Uncategorized')?.id,
+                financial_priority: item.financial_priority,
                 originalAmount: item.originalAmount,
                 originalCurrency: item.originalCurrency,
                 isPaid: item.isPaid || false,
