@@ -156,6 +156,25 @@ export const useCashWallet = (user) => {
   return { cashWallet, isLoading };
 };
 
+// Hook for fetching category rules
+export const useCategoryRules = (user) => {
+  const { data: rules = [], isLoading } = useQuery({
+    queryKey: ['CATEGORY_RULES'],
+    queryFn: async () => {
+      if (!user) return [];
+      const allRules = await base44.entities.CategoryRule.list();
+      // Filter by user and sort by priority (ascending)
+      return allRules
+        .filter(r => r.user_email === user.email)
+        .sort((a, b) => (a.priority || 0) - (b.priority || 0));
+    },
+    initialData: [],
+    enabled: !!user,
+  });
+
+  return { rules, isLoading };
+};
+
 // Hook for managing system budgets (create/update logic)
 // IMPORTANT: This hook's duplicate detection logic must NOT be modified
 export const useSystemBudgetManagement = (
