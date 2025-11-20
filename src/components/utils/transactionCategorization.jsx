@@ -22,14 +22,25 @@ const HARDCODED_KEYWORDS = {
     'CHEVRON': 'Transport',
     'AIRBNB': 'Travel',
     'HOTEL': 'Travel',
-    'AIRLINES': 'Travel'
+    'AIRLINES': 'Travel',
+    'finetwork': 'Connectivity',
+    'intermon': 'Charity',
+    'La sirena': 'Dining Out',
+    'orange': 'Connectivity',
+    'Caprabo': 'Groceries',
+    'Steam': 'Games',
+    'Steamgames': 'Games',
+    'Mercadona': 'Discretionary',
+    'impuls': 'Rent',
+    'TOC': 'Hotels'
 };
 
 const FALLBACK_REGEX = [
-    { pattern: /(POWER|WATER|GAS|ELECTRIC|UTILITY)/i, category: 'Utilities' },
-    { pattern: /(INSURANCE|GEICO|PROGRESSIVE|STATE FARM)/i, category: 'Insurance' },
+    { pattern: /(POWER|GAS|ELECTRIC|ENERGIA)/i, category: 'Electricity' },
+    { pattern: /(AIGUES|WATER)/i, category: 'Water' },
     { pattern: /(INTERNET|WIFI|CABLE|COMCAST|AT&T|VERIZON|T-MOBILE)/i, category: 'Connectivity' },
-    { pattern: /(HOSPITAL|DOCTOR|CLINIC|DENTIST|PHARMACY|CVS|WALGREENS)/i, category: 'Health' }
+    { pattern: /(HOSTEL|HOSTELS|HOTEL|HOTELS|HOSTELWORLD)/i, category: 'Hotels' },
+    { pattern: /(HOSPITAL|DOCTOR|CLINIC|DENTIST|PHARMACY|CVS|WALGREENS|PERRUQUERS)/i, category: 'Health' }
 ];
 
 /**
@@ -52,7 +63,7 @@ export const categorizeTransaction = (transaction, userRules = [], categories = 
         const cat = categories.find(c =>
             isId ? c.id === idOrName : c.name.toUpperCase() === idOrName.toUpperCase()
         );
-        return cat ? { categoryId: cat.id, categoryName: cat.name,priority: cat.priority || 'wants' } : null;
+        return cat ? { categoryId: cat.id, categoryName: cat.name, priority: cat.priority || 'wants' } : null;
     };
 
     // 1. User Rules Check (Highest Priority)
