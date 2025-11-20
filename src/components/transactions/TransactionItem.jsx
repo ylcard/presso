@@ -7,6 +7,8 @@ import { useSettings } from "../utils/SettingsContext";
 import { formatCurrency } from "../utils/currencyUtils";
 import { getCategoryIcon } from "../utils/iconMapConfig";
 import TransactionForm from "./TransactionForm";
+// ADDED 20-Jan-2025: Import cross-period detection for Settlement View indicators
+import { detectCrossPeriodSettlement } from "../utils/calculationEngine";
 
 export default function TransactionItem({
   transaction,
@@ -15,7 +17,10 @@ export default function TransactionItem({
   onDelete,
   onSubmit,
   isSubmitting,
-  categories // CREATED 20-NOV-2025: Receive all categories
+  categories, // CREATED 20-NOV-2025: Receive all categories
+  customBudgets = [], // ADDED 20-Jan-2025: Receive custom budgets for cross-period detection
+  monthStart = null, // ADDED 20-Jan-2025: Current viewing period
+  monthEnd = null // ADDED 20-Jan-2025: Current viewing period
 }) {
   const { settings } = useSettings();
 
@@ -27,6 +32,11 @@ export default function TransactionItem({
   const currentYear = new Date().getFullYear();
   const paidYear = transaction.paidDate ? new Date(transaction.paidDate).getFullYear() : null;
   const showYear = paidYear && paidYear !== currentYear;
+  
+  // ADDED 20-Jan-2025: Detect cross-period settlements for visual indicators
+  const crossPeriodInfo = monthStart && monthEnd 
+    ? detectCrossPeriodSettlement(transaction, monthStart, monthEnd, customBudgets)
+    : { isCrossPeriod: false };
 
   return (
     <motion.div
@@ -85,6 +95,15 @@ export default function TransactionItem({
 
           {transaction.notes && (
             <p className="text-sm text-gray-400 mt-1 line-clamp-1">{transaction.notes}</p>
+          )}
+          
+          {crossPeriodInfo.isCrossPeriod && (
+            <div className="mt-2 flex items-center gap-2">
+              <div className="px-2 py-1 bg-orange-50 text-orange-700 text-xs rounded-md border border-orange-200 flex items-center gap-1">
+                <Circle className="w-3 h-3 fill-orange-500" />
+                <span>Linked to {crossPeriodInfo.bucketName} ({crossPeriodInfo.originalPeriod})</span>
+              </div>
+            </div>
           )}
         </div>
       </div>

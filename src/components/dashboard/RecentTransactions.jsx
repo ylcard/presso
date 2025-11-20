@@ -10,10 +10,12 @@ import { formatCurrency } from "../utils/currencyUtils";
 import { getCategoryIcon } from "../utils/iconMapConfig";
 import { useSettings } from "../utils/SettingsContext";
 import { usePeriod } from "../hooks/usePeriod";
+// ADDED 20-Jan-2025: Import cross-period detection for Settlement View indicators
+import { detectCrossPeriodSettlement } from "../utils/calculationEngine";
 
 export default function RecentTransactions({ transactions, categories, customBudgets }) {
   const { settings } = useSettings();
-  const { currentYear } = usePeriod();
+  const { currentYear, monthStart, monthEnd } = usePeriod();
 
   const categoryMap = createEntityMap(categories);
   const customBudgetMap = createEntityMap(customBudgets || []);
@@ -55,6 +57,14 @@ export default function RecentTransactions({ transactions, categories, customBud
             
             const paidYear = transaction.paidDate ? new Date(transaction.paidDate).getFullYear() : null;
             const showYear = paidYear && paidYear !== currentYear;
+            
+            // ADDED 20-Jan-2025: Detect cross-period settlements for visual indicators
+            const crossPeriodInfo = detectCrossPeriodSettlement(
+              transaction, 
+              monthStart, 
+              monthEnd, 
+              customBudgets || []
+            );
             
             return (
               <div 
@@ -98,6 +108,14 @@ export default function RecentTransactions({ transactions, categories, customBud
                           <span className="text-gray-300">•</span>
                           <Badge variant="outline" className="text-xs">
                             {customBudget.name}
+                          </Badge>
+                        </>
+                      )}
+                      {crossPeriodInfo.isCrossPeriod && (
+                        <>
+                          <span className="text-gray-300">•</span>
+                          <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200">
+                            Linked to {crossPeriodInfo.bucketName}
                           </Badge>
                         </>
                       )}
