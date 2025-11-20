@@ -36,9 +36,11 @@ export default function RemainingBudgetCard({
         </div>
 
         <div className="text-center mb-6">
-          <p className="text-white/90 text-sm mb-2">Remaining Budget</p>
-          <h2 className="text-4xl md:text-5xl font-bold text-white">
-            {formatCurrency(remainingBudget, settings)}
+          <p className="text-white/90 text-sm mb-2">
+            {remainingBudget < 0 ? "Overspent by" : "Remaining Budget"}
+          </p>
+          <h2 className={`text-4xl md:text-5xl font-bold ${remainingBudget < 0 ? 'text-red-200' : 'text-white'}`}>
+            {formatCurrency(Math.abs(remainingBudget), settings)}
           </h2>
         </div>
 
