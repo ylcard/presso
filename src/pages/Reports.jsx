@@ -13,94 +13,108 @@ import ProjectionChart from "../components/reports/ProjectionChart";
 import ReportStats from "../components/reports/ReportStats";
 
 export default function Reports() {
-  const { user, settings } = useSettings();
+    const { user, settings } = useSettings();
 
-  // Period management
-  const {
-    selectedMonth,
-    setSelectedMonth,
-    selectedYear,
-    setSelectedYear,
-    displayDate,
-    monthStart, // Required for ReportStats calculation
-    monthEnd  // Required for ReportStats calculation
-  } = usePeriod();
+    // Period management
+    const {
+        selectedMonth,
+        setSelectedMonth,
+        selectedYear,
+        setSelectedYear,
+        displayDate,
+        monthStart, // Required for ReportStats calculation
+        monthEnd  // Required for ReportStats calculation
+    } = usePeriod();
 
-  // Data fetching
-  const { transactions, isLoading: loadingTransactions } = useTransactions();
-  const { categories, isLoading: loadingCategories } = useCategories();
-  const { goals, isLoading: loadingGoals } = useGoals(user);
+    // Data fetching
+    const { transactions, isLoading: loadingTransactions } = useTransactions();
+    const { categories, isLoading: loadingCategories } = useCategories();
+    const { goals, isLoading: loadingGoals } = useGoals(user);
 
-  // Derived data
-  const monthlyTransactions = useMonthlyTransactions(transactions, selectedMonth, selectedYear);
-  const monthlyIncome = useMonthlyIncome(transactions, selectedMonth, selectedYear);
+    // Derived data
+    const monthlyTransactions = useMonthlyTransactions(transactions, selectedMonth, selectedYear);
+    const monthlyIncome = useMonthlyIncome(transactions, selectedMonth, selectedYear);
 
-  // Goal mutations and actions
-  const { handleGoalUpdate, isSaving } = useGoalActions(user, goals);
+    // Goal mutations and actions
+    const { handleGoalUpdate, isSaving } = useGoalActions(user, goals);
 
-  const isLoading = loadingTransactions || loadingCategories || loadingGoals;
+    const isLoading = loadingTransactions || loadingCategories || loadingGoals;
 
-  return (
-    <div className="min-h-screen p-4 md:p-8">
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-4">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Financial Reports</h1>
-            <p className="text-gray-500 mt-1">
-              Performance analysis for {displayDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-            </p>
-          </div>
+    return (
+        <div className="min-h-screen p-4 md:p-8">
+            <div className="max-w-7xl mx-auto space-y-8">
+                {/* Header Section */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-4">
+                    <div>
+                        <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Financial Reports</h1>
+                        <p className="text-gray-500 mt-1">
+                            Performance analysis for {displayDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                        </p>
+                    </div>
+                </div>
+
+                {/* 1. High-Level KPIs (New) */}
+                <ReportStats
+                    transactions={monthlyTransactions}
+                    monthlyIncome={monthlyIncome}
+                    isLoading={isLoading}
+                    settings={settings}
+                    startDate={monthStart}
+                    endDate={monthEnd}
+                />
+
+                {/* 2. Historical Context & Future Projection */}
+                <div className="grid lg:grid-cols-2 gap-8">
+                    <TrendChart
+                        allTransactions={transactions}
+                        currentMonth={selectedMonth}
+                        currentYear={selectedYear}
+                        settings={settings}
+                        setSelectedMonth={setSelectedMonth}
+                        setSelectedYear={setSelectedYear}
+                    />
+                    <ProjectionChart
+                        transactions={transactions}
+                        categories={categories}
+                        settings={settings}
+                    />
+                </div>
+
+                {/* 3. Detailed Breakdown & Goals */}
+                {/* LAYOUT FIX: Use items-start to align tops, distinct columns for mismatched heights */}
+                <div className="grid lg:grid-cols-3 gap-8 items-start">
+
+                    {/* Main Column (2/3): Detailed List needs the width */}
+                    <div className="lg:col-span-2">
+
+                        <MonthlyBreakdown
+                            transactions={monthlyTransactions}
+                            categories={categories}
+                            monthlyIncome={monthlyIncome}
+                            isLoading={isLoading}
+                        />
+                    </div>
+                    +
+                    {/* Sidebar Column (1/3): Chart + Goals */}
+                    {/* 'sticky' keeps it in view while you scroll down the long breakdown list */}
+                    <div className="space-y-8 lg:sticky lg:top-8">
+                        <PriorityChart
+                            transactions={monthlyTransactions}
+                            categories={categories}
+                            goals={goals}
+                            monthlyIncome={monthlyIncome}
+                            isLoading={isLoading}
+                        />
+
+                        {/* Added Goals here to balance the height against the long breakdown list */}
+                        <GoalSettings
+                            goals={goals}
+                            onUpdate={handleGoalUpdate}
+                            isSaving={isSaving}
+                        />
+                    </div>
+                </div>
+            </div>
         </div>
-
-        {/* 1. High-Level KPIs (New) */}
-        <ReportStats
-          transactions={monthlyTransactions}
-          monthlyIncome={monthlyIncome}
-          isLoading={isLoading}
-          settings={settings}
-          startDate={monthStart}
-          endDate={monthEnd}
-        />
-
-        {/* 2. Historical Context & Future Projection */}
-        <div className="grid lg:grid-cols-2 gap-8">
-          <TrendChart
-            allTransactions={transactions}
-            currentMonth={selectedMonth}
-            currentYear={selectedYear}
-            settings={settings}
-            setSelectedMonth={setSelectedMonth}
-            setSelectedYear={setSelectedYear}
-          />
-          <ProjectionChart
-            transactions={transactions}
-            categories={categories}
-            settings={settings}
-          />
-        </div>
-
-        {/* 3. Detailed Breakdown & Goals */}
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Left Column: Composition Analysis */}
-          <div className="lg:col-span-2 space-y-8">
-            <PriorityChart
-              transactions={monthlyTransactions}
-              categories={categories}
-              goals={goals}
-              monthlyIncome={monthlyIncome}
-              isLoading={isLoading}
-            />
-
-            <MonthlyBreakdown
-              transactions={monthlyTransactions}
-              categories={categories}
-              monthlyIncome={monthlyIncome}
-              isLoading={isLoading}
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+    );
 }
