@@ -124,11 +124,11 @@ export default function TrendChart({
                                                     style={{ height: `${expenseHeight}%` }}
                                                 ></div>
 
-                                                {/* Net Flow Marker (Line Chart Simulation) */}
+                                                {/* Net Flow Marker - Floating Pill at top of highest bar */}
                                                 <div
-                                                    className="absolute bottom-0 w-1 rounded-full border-2 border-white shadow-lg z-10"
+                                                    className="absolute w-2 h-2 rounded-full border border-white shadow-sm z-20"
                                                     style={{
-                                                        height: `${scale(Math.abs(netFlow))}%`,
+                                                        bottom: `${Math.max(incomeHeight, expenseHeight) + 2}%`,
                                                         backgroundColor: netFlow >= 0 ? '#3b82f6' : '#ef4444'
                                                     }}
                                                 />
