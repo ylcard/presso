@@ -15,8 +15,18 @@ export default function ProjectionChart({
     // Extract the safe baseline calculated in parent (Reports.js)
     const safeMonthlyAverage = projectionData?.totalProjectedMonthly || 0;
 
-    const data = useMemo(() => {
+    const { data, sixMonthAvg } = useMemo(() => {
         const today = new Date();
+
+        // --- 0. CALCULATE 6-MONTH AVERAGE (Context) ---
+        let totalPastExpenses = 0;
+        for (let i = 1; i <= 6; i++) {
+            const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+            const bounds = getMonthBoundaries(d.getMonth(), d.getFullYear());
+            totalPastExpenses += Math.abs(getMonthlyPaidExpenses(transactions, bounds.monthStart, bounds.monthEnd));
+        }
+        const avgExp = totalPastExpenses / 6;
+
 
         // --- 1. LAST MONTH (Context) ---
         const lastMonthDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
@@ -65,10 +75,12 @@ export default function ProjectionChart({
                 type: 'future'
             }
         ];
+        return { data: result, sixMonthAvg: avgExp };
     }, [transactions, safeMonthlyAverage]);
 
     // Scaling for the chart
     const maxVal = Math.max(...data.map(d => Math.max(d.income, d.expense)), 100) * 1.1;
+    const avgHeight = Math.min((sixMonthAvg / maxVal) * 100, 100);
 
     // Insight Text Logic
     const currentNet = data[1].income - data[1].expense;
@@ -93,7 +105,17 @@ export default function ProjectionChart({
             <CardContent className="flex-1 min-h-0">
                 <div className="h-full min-h-[200px] flex flex-col justify-end">
                     {/* The Chart Area - 3 distinct columns */}
-                    <div className="flex items-end justify-between h-full gap-4 pt-6 px-2">
+                    <div className="flex items-end justify-between h-full gap-4 pt-6 px-2 relative">
+
+                        {/* 6-Month Average Line (Background) */}
+                        <div
+                            className="absolute w-full border-t-2 border-gray-300 border-dashed z-0 opacity-50 left-0"
+                            style={{ bottom: `calc(${avgHeight}% + 24px)` }} // +24px accounts for the label height approx
+                        />
+                        <span className="absolute right-0 text-[10px] text-gray-400 bg-white px-1 z-0" style={{ bottom: `calc(${avgHeight}% + 24px)` }}>
+                            6M Avg
+                        </span>
+
                         {data.map((item, idx) => {
                             const incomeHeight = Math.max((item.income / maxVal) * 100, 2);
                             const expenseHeight = Math.max((item.expense / maxVal) * 100, 2);
@@ -109,7 +131,7 @@ export default function ProjectionChart({
                                     )}
 
                                     {/* Visual Bars Container */}
-                                    <div className="flex items-end justify-center gap-1 w-full h-full px-2 md:px-6 z-10">
+                                    <div className="flex items-end justify-center gap-1 w-full flex-1 px-2 md:px-6 z-10">
                                         {/* Income Bar */}
                                         <div
                                             className={`flex-1 rounded-t-sm transition-all duration-300 ${isTarget ? 'bg-emerald-100 border border-emerald-200 border-dashed' : 'bg-emerald-300'}`}
@@ -123,7 +145,7 @@ export default function ProjectionChart({
                                     </div>
 
                                     {/* Labels */}
-                                    <div className="text-center mt-2">
+                                    <div className="text-center mt-2 h-8">
                                         <p className={`text-xs font-bold ${item.type === 'current' ? 'text-blue-600' : 'text-gray-700'}`}>{item.label}</p>
                                         <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">{item.subLabel}</p>
                                     </div>
