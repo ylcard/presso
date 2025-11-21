@@ -12,7 +12,7 @@ export default function CategoryCard({ category, onEdit, onDelete }) {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             whileHover={{ scale: 1.02 }}
-            className="relative p-3 rounded-lg border border-gray-100 hover:shadow-md transition-all group flex items-center gap-3"
+            className="relative p-4 rounded-xl border border-gray-100 hover:shadow-md transition-all group flex items-center gap-4"
             style={{ backgroundColor: `${category.color}05` }}
         >
             {/* Compact Icon - Left Side */}
@@ -24,7 +24,7 @@ export default function CategoryCard({ category, onEdit, onDelete }) {
             </div>
 
             {/* Content - Middle */}
-            <div className="flex-1 min-w-0 pr-8">
+            <div className="flex-1 min-w-0 pr-14">
                 <h2 className="font-bold text-gray-900 text-sm truncate select-none">{category.name}</h2>
             </div>
 
