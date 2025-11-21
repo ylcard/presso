@@ -30,7 +30,7 @@ export default function CategoryCard({ category, onEdit, onDelete }) {
             </div>
 
             {/* Actions - Right Side (Horizontal now) */}
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 <CustomButton
                     variant="ghost"
                     size="icon-sm"
