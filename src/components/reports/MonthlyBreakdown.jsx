@@ -7,14 +7,35 @@ import { useMonthlyBreakdown } from "../hooks/useDerivedData";
 import { formatCurrency } from "../utils/currencyUtils";
 import { getCategoryIcon } from "../utils/iconMapConfig";
 
-export default function MonthlyBreakdown({ transactions, categories, monthlyIncome, isLoading }) {
+export default function MonthlyBreakdown({
+    transactions,
+    categories,
+    monthlyIncome,
+    isLoading,
+    allCustomBudgets,
+    selectedMonth,
+    selectedYear
+}) {
     const { settings } = useSettings();
 
-    // Use the extracted hook for calculations
-    const { categoryBreakdown, totalExpenses } = useMonthlyBreakdown(transactions, categories, monthlyIncome);
+    // Use the extracted hook which now calculates needs/wants internally using financialCalculations
+    const { categoryBreakdown, totalExpenses, needsTotal, wantsTotal } = useMonthlyBreakdown(
+        transactions, categories, monthlyIncome, allCustomBudgets, selectedMonth, selectedYear
+    );
 
     // SORTING: Ensure highest expenses are first (Top Left)
     const sortedBreakdown = [...categoryBreakdown].sort((a, b) => b.amount - a.amount);
+
+    // Helper for header styling
+    const SummaryItem = ({ label, amount }) => (
+        <div className="text-center px-3">
+            <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider mb-0.5">{label}</p>
+            <p className="text-sm font-bold text-gray-900">{formatCurrency(amount, settings)}</p>
+        </div>
+    );
+
+    // Helper for header divider
+    const Divider = () => <div className="h-8 w-px bg-gray-200"></div>;
 
     return (
         <Card className="w-full h-full border-none shadow-lg flex flex-col bg-white">
@@ -41,16 +62,16 @@ export default function MonthlyBreakdown({ transactions, categories, monthlyInco
                             </div>
 
                             {/* The "Fancier" Summary Section */}
-                            <div className="flex items-center gap-6 bg-gray-50 px-4 py-2 rounded-lg border border-gray-100">
-                                <div className="text-center">
-                                    <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Total Income</p>
-                                    <p className="text-sm font-bold text-gray-900">{formatCurrency(monthlyIncome, settings)}</p>
-                                </div>
-                                <div className="h-8 w-px bg-gray-300"></div>
-                                <div className="text-center">
-                                    <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Total Expenses</p>
-                                    <p className="text-sm font-bold text-gray-900">{formatCurrency(totalExpenses, settings)}</p>
-                                </div>
+                            <div className="flex items-center bg-gray-50 px-1 py-2 rounded-xl border border-gray-100">
+                                <SummaryItem label="Income" amount={monthlyIncome} />
+                                <Divider />
+                                <SummaryItem label="Expenses" amount={totalExpenses} />
+
+                                {/* Extra columns for Needs/Wants */}
+                                <Divider />
+                                <SummaryItem label="Needs" amount={needsTotal} />
+                                <Divider />
+                                <SummaryItem label="Wants" amount={wantsTotal} />
                             </div>
                         </div>
                     </CardHeader>
