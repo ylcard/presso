@@ -85,7 +85,7 @@ export default function TrendChart({
                             setSelectedMonth(month);
                             setSelectedYear(year);
                         }}
-                        alignReset="left"
+                        alignReset="inline"
                     />
                 </div>
             </CardHeader>
