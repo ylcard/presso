@@ -48,16 +48,16 @@ export default function Reports() {
         <div className="min-h-screen px-4 md:px-8 pb-4 md:pb-8 pt-2 md:pt-4">
             <div className="max-w-7xl mx-auto space-y-8">
                 {/* Header Section */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-4">
-                    <div>
-                        <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Financial Reports</h1>
-                        <p className="text-gray-500 mt-1">
-                            Performance analysis for {displayDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
+                    <div className="flex-1">
+                        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Financial Reports</h1>
+                        <p className="text-gray-500 text-sm mt-1">
+                            Performance analysis
                         </p>
                     </div>
 
-                    {/* Global Month Navigator */}
-                    <div className="bg-white p-1.5 rounded-xl shadow-sm border border-gray-100">
+                    {/* Global Month Navigator - Clean, no border box */}
+                    <div className="flex-none">
                         <MonthNavigator
                             currentMonth={selectedMonth}
                             currentYear={selectedYear}
