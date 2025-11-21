@@ -89,6 +89,8 @@ export default function Reports() {
                             categories={categories}
                             monthlyIncome={monthlyIncome}
                             isLoading={isLoading}
+                            selectedMonth={selectedMonth}
+                            selectedYear={selectedYear}
                         />
                     </div>
                     <div className="lg:col-span-1 h-full">
