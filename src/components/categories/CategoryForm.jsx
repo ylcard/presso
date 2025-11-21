@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { X, Circle, ChevronDown, Search, Check } from "lucide-react"; // Added Icons
+import { X, Circle, ChevronDown, Search, Check } from "lucide-react";
 import { iconMap, ICON_OPTIONS } from "../utils/iconMapConfig";
 import { motion, AnimatePresence } from "framer-motion";
 
