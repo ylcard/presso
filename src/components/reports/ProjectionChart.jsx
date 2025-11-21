@@ -99,52 +99,54 @@ export default function ProjectionChart({
                             const expenseHeight = Math.max((item.expense / maxVal) * 100, 2);
                             const isTarget = item.type === 'future';
 
-                            <div key={idx} className="flex-1 flex flex-col items-center justify-end h-full relative group">
-                                {/* Arrow connector (Current -> Next) */}
-                                {idx === 1 && (
-                                    <div className="absolute top-[30%] -right-4 text-gray-300 z-0">
-                                        <ArrowRight className="w-4 h-4" />
+                            return (
+                                <div key={idx} className="flex-1 flex flex-col items-center justify-end h-full relative group">
+                                    {/* Arrow connector (Current -> Next) */}
+                                    {idx === 1 && (
+                                        <div className="absolute top-[30%] -right-4 text-gray-300 z-0">
+                                            <ArrowRight className="w-4 h-4" />
+                                        </div>
+                                    )}
+
+                                    {/* Visual Bars Container */}
+                                    <div className="flex items-end justify-center gap-1 w-full h-full px-2 md:px-6 z-10">
+                                        {/* Income Bar */}
+                                        <div
+                                            className={`flex-1 rounded-t-sm transition-all duration-300 ${isTarget ? 'bg-emerald-100 border border-emerald-200 border-dashed' : 'bg-emerald-300'}`}
+                                            style={{ height: `${incomeHeight}%` }}
+                                        />
+                                        {/* Expense Bar */}
+                                        <div
+                                            className={`flex-1 rounded-t-sm transition-all duration-300 ${isTarget ? 'bg-rose-100 border border-rose-200 border-dashed' : 'bg-rose-300'}`}
+                                            style={{ height: `${expenseHeight}%` }}
+                                        />
                                     </div>
-                                )}
 
-                                {/* Visual Bars Container */}
-                                <div className="flex items-end justify-center gap-1 w-full h-full px-2 md:px-6 z-10">
-                                    {/* Income Bar */}
-                                    <div
-                                        className={`flex-1 rounded-t-sm transition-all duration-300 ${isTarget ? 'bg-emerald-100 border border-emerald-200 border-dashed' : 'bg-emerald-300'}`}
-                                        style={{ height: `${incomeHeight}%` }}
-                                    />
-                                    {/* Expense Bar */}
-                                    <div
-                                        className={`flex-1 rounded-t-sm transition-all duration-300 ${isTarget ? 'bg-rose-100 border border-rose-200 border-dashed' : 'bg-rose-300'}`}
-                                        style={{ height: `${expenseHeight}%` }}
-                                    />
-                                </div>
+                                    {/* Labels */}
+                                    <div className="text-center mt-2">
+                                        <p className={`text-xs font-bold ${item.type === 'current' ? 'text-blue-600' : 'text-gray-700'}`}>{item.label}</p>
+                                        <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">{item.subLabel}</p>
+                                    </div>
 
-                                {/* Labels */}
-                                <div className="text-center mt-2">
-                                    <p className={`text-xs font-bold ${item.type === 'current' ? 'text-blue-600' : 'text-gray-700'}`}>{item.label}</p>
-                                    <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">{item.subLabel}</p>
-                                </div>
-
-                                {/* Hover Tooltip */}
-                                <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-xs p-2 rounded shadow-lg z-20 whitespace-nowrap pointer-events-none">
-                                    <p className="font-bold mb-1 border-b border-gray-700 pb-1">{item.label}</p>
-                                    <div className="space-y-1">
-                                        <p className="flex justify-between gap-4 text-emerald-300">
-                                            <span>Income:</span> <span>{formatCurrency(item.income, settings)}</span>
-                                        </p>
-                                        <p className="flex justify-between gap-4 text-rose-300">
-                                            <span>Expense:</span> <span>{formatCurrency(item.expense, settings)}</span>
-                                        </p>
-                                        {isTarget && (
-                                            <p className="text-[10px] text-gray-400 italic pt-1">
-                                                *Based on Safe Baseline
+                                    {/* Hover Tooltip */}
+                                    <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-xs p-2 rounded shadow-lg z-20 whitespace-nowrap pointer-events-none">
+                                        <p className="font-bold mb-1 border-b border-gray-700 pb-1">{item.label}</p>
+                                        <div className="space-y-1">
+                                            <p className="flex justify-between gap-4 text-emerald-300">
+                                                <span>Income:</span> <span>{formatCurrency(item.income, settings)}</span>
                                             </p>
-                                        )}
+                                            <p className="flex justify-between gap-4 text-rose-300">
+                                                <span>Expense:</span> <span>{formatCurrency(item.expense, settings)}</span>
+                                            </p>
+                                            {isTarget && (
+                                                <p className="text-[10px] text-gray-400 italic pt-1">
+                                                    *Based on Safe Baseline
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            );
                         })}
                     </div>
                 </div>
