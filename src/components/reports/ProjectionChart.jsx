@@ -4,7 +4,7 @@ import { formatCurrency } from "../utils/currencyUtils";
 import { estimateCurrentMonth } from "../utils/projectionUtils";
 import { getMonthBoundaries } from "../utils/dateUtils";
 import { getMonthlyIncome, getMonthlyPaidExpenses } from "../utils/financialCalculations";
-import { ArrowRight, TrendingUp, TrendingDown, Target } from "lucide-react";
+import { ArrowRight, TrendingUp, TrendingDown } from "lucide-react";
 
 export default function ProjectionChart({
     transactions = [],
@@ -52,7 +52,7 @@ export default function ProjectionChart({
         const nextIncome = lastIncome;
         const nextExpense = safeMonthlyAverage;
 
-        return [
+        const chartData = [
             {
                 label: 'Last Month',
                 subLabel: lastMonthDate.toLocaleDateString('en-US', { month: 'short' }),
@@ -75,7 +75,7 @@ export default function ProjectionChart({
                 type: 'future'
             }
         ];
-        return { data: result, sixMonthAvg: avgExp };
+        return { data: chartData, sixMonthAvg: avgExp };
     }, [transactions, safeMonthlyAverage]);
 
     // Scaling for the chart
