@@ -75,8 +75,8 @@ export default function Reports() {
                 </div>
 
                 {/* 3. Detailed Breakdown & Goals */}
-                <div className="grid lg:grid-cols-3 gap-8 items-start">
-                    <div className="lg:col-span-2">
+                <div className="grid lg:grid-cols-3 gap-8">
+                    <div className="lg:col-span-2 h-full">
 
                         <MonthlyBreakdown
                             transactions={monthlyTransactions}
@@ -85,7 +85,7 @@ export default function Reports() {
                             isLoading={isLoading}
                         />
                     </div>
-                    <div className="lg:col-span-1 lg:sticky lg:top-8">
+                    <div className="lg:col-span-1 h-full">
                         <PriorityChart
                             transactions={monthlyTransactions}
                             categories={categories}
