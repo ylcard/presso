@@ -62,7 +62,7 @@ export default function Reports() {
                             currentMonth={selectedMonth}
                             currentYear={selectedYear}
                             onMonthChange={(m, y) => { setSelectedMonth(m); setSelectedYear(y); }}
-                            alignReset="left"
+                            horizontal={true}
                         />
                     </div>
                 </div>
