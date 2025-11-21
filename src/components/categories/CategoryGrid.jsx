@@ -17,7 +17,7 @@ export default function CategoryGrid({ categories, onEdit, onDelete, isLoading }
           <CardTitle>Your Categories</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {Array(6).fill(0).map((_, i) => (
               <Skeleton key={i} className="h-32 w-full" />
             ))}
@@ -66,7 +66,7 @@ export default function CategoryGrid({ categories, onEdit, onDelete, isLoading }
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                 {priorityCategories.map((category) => (
                   <CategoryCard
                     key={category.id}
