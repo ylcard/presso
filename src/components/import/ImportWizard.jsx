@@ -17,15 +17,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 
 const STEPS = [
     { id: 1, label: "Upload" },
-    { id: 2, label: "Map Columns" },
-    { id: 3, label: "Review" },
-    { id: 4, label: "Finish" }
+    { id: 2, label: "Review" },
+    { id: 3, label: "Finish" }
 ];
 
 export default function ImportWizard({ onSuccess }) {
     const [step, setStep] = useState(1);
     const [file, setFile] = useState(null);
     const [csvData, setCsvData] = useState({ headers: [], data: [] });
+    const [showColumnMapper, setShowColumnMapper] = useState(false);
     const [mappings, setMappings] = useState({});
     const [processedData, setProcessedData] = useState([]);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -46,7 +46,7 @@ export default function ImportWizard({ onSuccess }) {
             const text = await selectedFile.text();
             const parsed = parseCSV(text);
             setCsvData(parsed);
-            setStep(2);
+            setShowColumnMapper(true);
             showToast({ title: "File parsed", description: `Found ${parsed.data.length} rows.` });
         }
     };
@@ -115,7 +115,7 @@ export default function ImportWizard({ onSuccess }) {
             }).filter(item => item.amount !== 0 && item.date);
 
             setProcessedData(processed);
-            setStep(3);
+            setStep(2);
             showToast({ title: "Success", description: `Extracted ${processed.length} transactions from PDF.` });
         } catch (error) {
             console.error('PDF Processing Error:', error);
@@ -182,7 +182,7 @@ export default function ImportWizard({ onSuccess }) {
         }).filter(item => item.amount !== 0 && item.date);
 
         setProcessedData(processed);
-        setStep(3);
+        setStep(2);
     };
 
     const handleImport = async () => {
@@ -264,29 +264,35 @@ export default function ImportWizard({ onSuccess }) {
                                 <p className="text-sm text-gray-500">Extracting transaction data...</p>
                             </div>
                         </div>
+                    ) : showColumnMapper ? (
+                        // If CSV uploaded, show Mapper (still Step 1 visually)
+                        <div className="space-y-6">
+
+                            <ColumnMapper
+                                headers={csvData.headers}
+                                mappings={mappings}
+                                onMappingChange={handleMappingChange}
+                            />
+                            <div className="flex justify-end gap-4">
+                                <CustomButton variant="outline" onClick={() => {
+                                    setShowColumnMapper(false);
+                                    setFile(null);
+                                }}>Back</CustomButton>
+                                <CustomButton
+                                    onClick={processData}
+                                    disabled={!mappings.date || !mappings.amount || !mappings.title}
+                                >
+                                    Review Data <ArrowRight className="w-4 h-4 ml-2" />
+                                </CustomButton>
+                            </div>
+                        </div>
                     ) : (
+                        // Default Step 1 state: Upload
                         <FileUploader onFileSelect={handleFileSelect} />
                     )
                 )}
+
                 {step === 2 && (
-                    <div className="space-y-6">
-                        <ColumnMapper
-                            headers={csvData.headers}
-                            mappings={mappings}
-                            onMappingChange={handleMappingChange}
-                        />
-                        <div className="flex justify-end gap-4">
-                            <CustomButton variant="outline" onClick={() => setStep(1)}>Back</CustomButton>
-                            <CustomButton
-                                onClick={processData}
-                                disabled={!mappings.date || !mappings.amount || !mappings.title}
-                            >
-                                Review Data <ArrowRight className="w-4 h-4 ml-2" />
-                            </CustomButton>
-                        </div>
-                    </div>
-                )}
-                {step === 3 && (
                     <div className="space-y-6">
                         <CategorizeReview
                             data={processedData}
@@ -295,7 +301,11 @@ export default function ImportWizard({ onSuccess }) {
                             onDeleteRow={handleDeleteRow}
                         />
                         <div className="flex justify-end gap-4">
-                            <CustomButton variant="outline" onClick={() => setStep(2)}>Back</CustomButton>
+                            <CustomButton variant="outline" onClick={() => {
+                                setStep(1);
+                                // If we have CSV data, go back to mapper, otherwise file uploader
+                                if (csvData.data.length > 0) setShowColumnMapper(true);
+                            }}>Back</CustomButton>
                             <CustomButton variant="primary" onClick={handleImport} disabled={isProcessing}>
                                 {isProcessing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
                                 Import {processedData.length} Transactions
