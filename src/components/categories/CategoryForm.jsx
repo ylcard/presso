@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { X, Circle, ChevronDown, Search, Check } from "lucide-react"; // Added Icons
 import { motion } from "framer-motion";
 import { iconMap, ICON_OPTIONS } from "../utils/iconMapConfig";
+import { motion, AnimatePresence } from "framer-motion";
 
 const PRIORITY_OPTIONS = [
     { value: 'needs', label: 'Needs', description: 'Essential expenses' },
