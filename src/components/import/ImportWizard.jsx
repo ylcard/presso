@@ -4,7 +4,6 @@ import { Steps } from "@/components/ui/steps"; // Assuming Steps component exist
 import FileUploader from "./FileUploader";
 import ColumnMapper from "./ColumnMapper";
 import CategorizeReview from "./CategorizeReview";
-// import ImportReview from "./ImportReview"; // OBSOLETE: Replaced by CategorizeReview
 import { parseCSV } from "@/components/utils/simpleCsvParser";
 import { base44 } from "@/api/base44Client";
 import { useSettings } from "@/components/utils/SettingsContext";
@@ -22,7 +21,7 @@ const STEPS = [
     { id: 4, label: "Finish" }
 ];
 
-export default function ImportWizard() {
+export default function ImportWizard({ onSuccess }) {
     const [step, setStep] = useState(1);
     const [file, setFile] = useState(null);
     const [csvData, setCsvData] = useState({ headers: [], data: [] });
@@ -204,7 +203,11 @@ export default function ImportWizard() {
             await base44.entities.Transaction.bulkCreate(transactionsToCreate);
 
             showToast({ title: "Success", description: `Imported ${transactionsToCreate.length} transactions.` });
-            navigate(createPageUrl("Transactions"));
+            if (onSuccess) {
+                onSuccess();
+            } else {
+                navigate(createPageUrl("Dashboard"));
+            }
         } catch (error) {
             console.error(error);
             showToast({ title: "Error", description: "Failed to import transactions.", variant: "destructive" });
