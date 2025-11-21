@@ -669,14 +669,10 @@ export const useBudgetBarsData = (
     const totalActualSavings = automaticSavings + manualSavings;
     const savingsShortfall = Math.max(0, savingsTargetAmount - totalActualSavings);
 
-    // FIXED 14-Jan-2025: Properly integrate totalActualSavings into savingsBudget for BudgetBar rendering
     if (savingsBudget) {
       savingsBudget.actualSavings = totalActualSavings;
       savingsBudget.savingsTarget = savingsTargetAmount;
       savingsBudget.maxHeight = Math.max(savingsTargetAmount, totalActualSavings);
-
-      // CRITICAL FIX: Update stats.paidAmount to reflect total actual savings (automatic + manual)
-      // This ensures the BudgetBar component renders the correct bar height and "Actual" label
       savingsBudget.stats.paidAmount = totalActualSavings;
       savingsBudget.stats.totalSpent = totalActualSavings;
     }
