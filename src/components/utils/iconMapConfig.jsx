@@ -3,7 +3,7 @@ import {
   Gift, Music, Dumbbell, Book, Briefcase, DollarSign, CreditCard, Wallet, 
   PiggyBank, Laptop, Smartphone, Tv, Pizza, Fuel, Bus, HandCoins, Beer, 
   Popcorn, Gamepad2, Wifi, Droplets, Podcast, Hotel, Banknote, Cross, Pill, Guitar,
-  Drama, Cat, ShoppingBasket, Store, CarTaxiFront
+  Drama, Cat, ShoppingBasket, Store, CarTaxiFront, House
 } from "lucide-react";
 
 // Central icon map - single source of truth for all category icons
