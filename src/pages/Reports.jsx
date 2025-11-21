@@ -8,6 +8,7 @@ import PriorityChart from "../components/reports/PriorityChart";
 import TrendChart from "../components/reports/TrendChart";
 import ProjectionChart from "../components/reports/ProjectionChart";
 import ReportStats from "../components/reports/ReportStats";
+import { calculateProjection } from "../components/utils/projectionUtils";
 
 export default function Reports() {
     const { user, settings } = useSettings();
@@ -34,6 +35,9 @@ export default function Reports() {
 
     const isLoading = loadingTransactions || loadingCategories || loadingGoals;
 
+    // Calculate the "Safe Baseline" using your existing logic
+    const projectionData = React.useMemo(() => calculateProjection(transactions, categories, 6), [transactions, categories]);
+
     return (
         <div className="min-h-screen px-4 md:px-8 pb-4 md:pb-8 pt-2 md:pt-4">
             <div className="max-w-7xl mx-auto space-y-8">
@@ -53,6 +57,7 @@ export default function Reports() {
                     monthlyIncome={monthlyIncome}
                     isLoading={isLoading}
                     settings={settings}
+                    safeBaseline={projectionData.totalProjectedMonthly}
                     startDate={monthStart}
                     endDate={monthEnd}
                 />
@@ -71,6 +76,7 @@ export default function Reports() {
                         transactions={transactions}
                         categories={categories}
                         settings={settings}
+                        projectionData={projectionData}
                     />
                 </div>
 
