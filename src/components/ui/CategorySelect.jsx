@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/popover";
 import { iconMap } from "../utils/iconMapConfig";
 
-export function CategorySelect({ value, onValueChange, categories, placeholder = "Select category" }) {
+export default function CategorySelect({ value, onValueChange, categories, placeholder = "Select category" }) {
     const [open, setOpen] = useState(false);
 
     // SORTING LOGIC: Needs -> Wants -> Savings -> Others (then Alphabetical)
