@@ -85,6 +85,7 @@ export default function TrendChart({
                             setSelectedMonth(month);
                             setSelectedYear(year);
                         }}
+                        horizontal={true}
                     />
                 </div>
             </CardHeader>
