@@ -34,12 +34,17 @@ import QuickAddBudget from "../components/dashboard/QuickAddBudget";
 import CashWalletCard from "../components/cashwallet/CashWalletCard";
 import CashWithdrawDialog from "../components/cashwallet/CashWithdrawDialog";
 import CashDepositDialog from "../components/cashwallet/CashDepositDialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { CustomButton } from "@/components/ui/CustomButton";
+import { Upload } from "lucide-react";
+import ImportWizard from "../components/import/ImportWizard";
 
 export default function Dashboard() {
     const { user, settings } = useSettings();
     const [showQuickAdd, setShowQuickAdd] = useState(false);
     const [showQuickAddIncome, setShowQuickAddIncome] = useState(false);
     const [showQuickAddBudget, setShowQuickAddBudget] = useState(false);
+    const [showImportWizard, setShowImportWizard] = useState(false);
 
     // Period management
     const { selectedMonth, setSelectedMonth, selectedYear, setSelectedYear, monthStart, monthEnd } = usePeriod();
@@ -148,6 +153,17 @@ export default function Dashboard() {
                                     triggerClassName="text-white border-white/30 hover:bg-white/20 hover:border-white/50"
                                 />
                             }
+                            importDataButton={
+                                <CustomButton
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-white border-white/30 hover:bg-white/20 hover:border-white/50 w-full justify-start"
+                                    onClick={() => setShowImportWizard(true)}
+                                >
+                                    <Upload className="w-4 h-4 mr-2" />
+                                    Import CSV
+                                </CustomButton>
+                            }
                         />
                     </div>
                     <div className="md:col-span-1">
@@ -216,6 +232,16 @@ export default function Dashboard() {
                     baseCurrency={settings.baseCurrency}
                     settings={settings}
                 />
+
+                <Dialog open={showImportWizard} onOpenChange={setShowImportWizard}>
+                    <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                            <DialogTitle>Import Data</DialogTitle>
+                            <DialogDescription>Upload and import transactions from CSV files</DialogDescription>
+                        </DialogHeader>
+                        <ImportWizard onSuccess={() => setShowImportWizard(false)} />
+                    </DialogContent>
+                </Dialog>
             </div>
         </div>
     );
