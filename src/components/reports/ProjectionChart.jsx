@@ -103,7 +103,7 @@ export default function ProjectionChart({
                 </p>
             </CardHeader>
             <CardContent className="flex-1 min-h-0">
-                <div className="h-full min-h-[200px] flex flex-col justify-end">
+                <div className="h-64 flex flex-col justify-end mt-4">
                     {/* The Chart Area - 3 distinct columns */}
                     <div className="flex items-end justify-between h-full gap-4 pt-6 px-2 relative">
 
@@ -125,7 +125,7 @@ export default function ProjectionChart({
                                 <div key={idx} className="flex-1 flex flex-col items-center justify-end h-full relative group">
                                     {/* Arrow connector (Current -> Next) */}
                                     {idx === 1 && (
-                                        <div className="absolute top-[30%] -right-4 text-gray-300 z-0">
+                                        <div className="absolute top-1/2 -translate-y-1/2 -right-4 text-gray-300 z-0">
                                             <ArrowRight className="w-4 h-4" />
                                         </div>
                                     )}
