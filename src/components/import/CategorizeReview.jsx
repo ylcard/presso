@@ -43,32 +43,36 @@ export default function CategorizeReview({ data, categories, onUpdateRow, onDele
                                     <TableCell>{row.date}</TableCell>
                                     <TableCell>{row.title}</TableCell>
                                     <TableCell>
-                                        <Select
-                                            value={row.categoryId || "uncategorized"}
-                                            onValueChange={(value) => {
-                                                const cat = categories.find(c => c.id === value);
-                                                onUpdateRow(index, {
-                                                    categoryId: value,
-                                                    category: cat ? cat.name : 'Uncategorized',
-                                                    financial_priority: cat ? (cat.priority || 'wants') : row.financial_priority
-                                                });
-                                            }}
-                                        >
-                                            <SelectTrigger className="w-full h-8">
-                                                <SelectValue placeholder="Select Category" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="uncategorized">Uncategorized</SelectItem>
-                                                {categories.map((cat) => (
-                                                    <SelectItem key={cat.id} value={cat.id}>
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color || '#ccc' }}></span>
-                                                            {cat.name}
-                                                        </div>
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                        {row.type === 'expense' ? (
+                                            <Select
+                                                value={row.categoryId || "uncategorized"}
+                                                onValueChange={(value) => {
+                                                    const cat = categories.find(c => c.id === value);
+                                                    onUpdateRow(index, {
+                                                        categoryId: value,
+                                                        category: cat ? cat.name : 'Uncategorized',
+                                                        financial_priority: cat ? (cat.priority || 'wants') : row.financial_priority
+                                                    });
+                                                }}
+                                            >
+                                                <SelectTrigger className="w-full h-8">
+                                                    <SelectValue placeholder="Select Category" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="uncategorized">Uncategorized</SelectItem>
+                                                    {categories.map((cat) => (
+                                                        <SelectItem key={cat.id} value={cat.id}>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color || '#ccc' }}></span>
+                                                                {cat.name}
+                                                            </div>
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        ) : (
+                                            <span className="text-gray-400 text-xs">-</span>
+                                        )}
                                     </TableCell>
                                     <TableCell>
                                         {row.type === 'expense' ? (
