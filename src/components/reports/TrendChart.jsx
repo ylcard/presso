@@ -85,7 +85,7 @@ export default function TrendChart({
                             setSelectedMonth(month);
                             setSelectedYear(year);
                         }}
-                        alignReset="left"
+                        horizontal={true}
                     />
                 </div>
             </CardHeader>
@@ -99,73 +99,73 @@ export default function TrendChart({
                         <p className="text-sm mt-1">Need activity in at least {monthsToShow === 3 ? 'one month' : 'two months'} to visualize a trend.</p>
                     </div>
                 ) : (
-                    <div className="relative h-52 mt-4 px-2">
-                        {/* Legend */}
-                        <div className="absolute top-0 right-0 text-xs text-gray-500 space-y-1 z-10">
-                            <div className="flex items-center">
-                                <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-2"></span> Income
-                            </div>
-                            <div className="flex items-center">
-                                <span className="inline-block w-2 h-2 rounded-full bg-rose-500 mr-2"></span> Expense
+                    <>
+                        <div className="relative h-52 mt-4 px-2">
+                            {/* Chart Container - Horizontal Axis */}
+                            <div className="flex items-end justify-between h-full">
+                                {data.map((item, idx) => {
+                                    const netFlow = item.income - item.expense;
+                                    const incomeHeight = scale(item.income);
+                                    const expenseHeight = scale(item.expense);
+
+                                    return (
+                                        <div key={idx} className="flex-1 flex flex-col items-center gap-3 group relative h-full justify-end px-2">
+                                            <div className="w-full h-full relative flex items-end justify-center">
+
+                                                {/* Stacked Bar/Area for Income */}
+                                                <div
+                                                    className="absolute bottom-0 w-8 rounded-t-md transition-all duration-300 bg-emerald-300 opacity-60 hover:opacity-80"
+                                                    style={{ height: `${incomeHeight}%` }}
+                                                ></div>
+
+                                                {/* Expense Bar (Overlay for Stacked Look) */}
+                                                <div
+                                                    className="absolute bottom-0 w-8 rounded-t-md transition-all duration-300 bg-rose-400 opacity-80 hover:opacity-100"
+                                                    style={{ height: `${expenseHeight}%` }}
+                                                ></div>
+
+                                                {/* Net Flow Marker (Line Chart Simulation) */}
+                                                <div
+                                                    className="absolute bottom-0 w-1 rounded-full border-2 border-white shadow-lg z-10"
+                                                    style={{
+                                                        height: `${scale(Math.abs(netFlow))}%`,
+                                                        backgroundColor: netFlow >= 0 ? '#3b82f6' : '#ef4444'
+                                                    }}
+                                                />
+                                            </div>
+
+                                            {/* X-Axis Label */}
+                                            <span className={`text-xs font-medium ${idx === monthsToShow - 1 ? 'text-gray-900 font-bold' : 'text-gray-400'}`}>
+                                                {item.label}
+                                            </span>
+
+                                            {/* Hover Tooltip */}
+                                            <div className="absolute bottom-12 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-800 text-white text-xs p-2 rounded shadow-lg z-10 whitespace-nowrap pointer-events-none">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-emerald-300">In: {formatCurrency(item.income, settings)}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <span className="text-rose-300">Out: {formatCurrency(item.expense, settings)}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2 mt-1 border-t border-gray-700 pt-1">
+                                                    <span className={`${netFlow >= 0 ? 'text-blue-300' : 'text-red-300'}`}>Net: {formatCurrency(netFlow, settings)}</span>
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
-
-                        {/* Chart Container - Horizontal Axis */}
-                        <div className="flex items-end justify-between h-full">
-                            {data.map((item, idx) => {
-                                const netFlow = item.income - item.expense;
-                                const incomeHeight = scale(item.income);
-                                const expenseHeight = scale(item.expense);
-
-                                return (
-                                    <div key={idx} className="flex-1 flex flex-col items-center gap-3 group relative h-full justify-end px-2">
-                                        <div className="w-full h-full relative flex items-end justify-center">
-
-                                            {/* Stacked Bar/Area for Income */}
-                                            <div
-                                                className="absolute bottom-0 w-8 rounded-t-md transition-all duration-300 bg-emerald-300 opacity-60 hover:opacity-80"
-                                                style={{ height: `${incomeHeight}%` }}
-                                            ></div>
-
-                                            {/* Expense Bar (Overlay for Stacked Look) */}
-                                            <div
-                                                className="absolute bottom-0 w-8 rounded-t-md transition-all duration-300 bg-rose-400 opacity-80 hover:opacity-100"
-                                                style={{ height: `${expenseHeight}%` }}
-                                            ></div>
-
-                                            {/* Net Flow Marker (Line Chart Simulation) */}
-                                            <div
-                                                className="absolute bottom-0 w-1 rounded-full border-2 border-white shadow-lg z-10"
-                                                style={{
-                                                    height: `${scale(Math.abs(netFlow))}%`,
-                                                    backgroundColor: netFlow >= 0 ? '#3b82f6' : '#ef4444'
-                                                }}
-                                            />
-                                        </div>
-
-                                        {/* X-Axis Label */}
-                                        <span className={`text-xs font-medium ${idx === monthsToShow - 1 ? 'text-gray-900 font-bold' : 'text-gray-400'}`}>
-                                            {item.label}
-                                        </span>
-
-                                        {/* Hover Tooltip */}
-                                        <div className="absolute bottom-12 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-800 text-white text-xs p-2 rounded shadow-lg z-10 whitespace-nowrap pointer-events-none">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-emerald-300">In: {formatCurrency(item.income, settings)}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <span className="text-rose-300">Out: {formatCurrency(item.expense, settings)}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2 mt-1 border-t border-gray-700 pt-1">
-                                                <span className={`${netFlow >= 0 ? 'text-blue-300' : 'text-red-300'}`}>Net: {formatCurrency(netFlow, settings)}</span>
-                                            </div>
-                                        </div>
-
-                                    </div>
-                                );
-                            })}
+                        <div className="flex justify-center items-center gap-6 mt-6 pb-2">
+                            <div className="flex items-center text-xs font-medium text-gray-600">
+                                <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2"></span> Income
+                            </div>
+                            <div className="flex items-center text-xs font-medium text-gray-600">
+                                <span className="inline-block w-2.5 h-2.5 rounded-full bg-rose-500 mr-2"></span> Expense
+                            </div>
                         </div>
-                    </div>
+                    </>
                 )}
             </CardContent>
         </Card>
