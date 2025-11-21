@@ -3,8 +3,9 @@ import { CustomButton } from "@/components/ui/CustomButton";
 import { ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import MonthYearPickerPopover from "./MonthYearPickerPopover";
+import { getMonthName } from "../utils/dateUtils";
 
-export default function MonthNavigator({ currentMonth, currentYear, onMonthChange, alignReset = "right" }) {
+export default function MonthNavigator({ currentMonth, currentYear, onMonthChange, horizontal = false }) {
     const now = new Date();
     const isCurrentMonth = currentMonth === now.getMonth() && currentYear === now.getFullYear();
 
@@ -28,16 +29,11 @@ export default function MonthNavigator({ currentMonth, currentYear, onMonthChang
         onMonthChange(now.getMonth(), now.getFullYear());
     };
 
-    const monthNames = [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"
-    ];
-
     return (
         // Dynamic classes:
-        // alignReset='right' (default) -> flex-row -> [Picker] [Reset]
-        // alignReset='left' -> flex-row-reverse -> [Reset] [Picker]
-        <div className={`flex items-center gap-2 w-fit ${alignReset === 'left' ? 'flex-row-reverse' : 'flex-row'}`}>
+        // - Default: flex-col (Picker Top, Reset Bottom)
+        // - Horizontal: flex-row-reverse (Reset Left, Picker Right)
+        <div className={`flex items-center gap-2 w-fit ${horizontal ? "flex-row-reverse" : "flex-col"}`}>
             <div className="flex items-center gap-2 bg-white rounded-lg shadow-sm border border-gray-200 p-1">
                 <CustomButton
                     variant="ghost"
@@ -56,7 +52,7 @@ export default function MonthNavigator({ currentMonth, currentYear, onMonthChang
                     <button
                         className="px-4 py-1 min-w-[160px] text-center font-bold text-gray-900 hover:text-blue-600 transition-colors cursor-pointer rounded hover:bg-blue-50"
                     >
-                        {monthNames[currentMonth]} {currentYear}
+                        {getMonthName(currentMonth)} {currentYear}
                     </button>
                 </MonthYearPickerPopover>
 
@@ -73,16 +69,16 @@ export default function MonthNavigator({ currentMonth, currentYear, onMonthChang
             <AnimatePresence>
                 {!isCurrentMonth && (
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.8, width: 0 }}
-                        animate={{ opacity: 1, scale: 1, width: "auto" }}
-                        exit={{ opacity: 0, scale: 0.8, width: 0 }}
-                        className="overflow-hidden"
+                        // Animate width for horizontal, height for vertical
+                        initial={{ opacity: 0, scale: 0.8, [horizontal ? "width" : "height"]: 0 }}
+                        animate={{ opacity: 1, scale: 1, [horizontal ? "width" : "height"]: "auto" }}
+                        exit={{ opacity: 0, scale: 0.8, [horizontal ? "width" : "height"]: 0 }}
                     >
                         <CustomButton
                             variant="ghost"
                             size="icon"
                             onClick={goToCurrentMonth}
-                            className="h-8 w-8 rounded-full text-gray-400 hover:text-blue-600 hover:bg-blue-50"
+                            className={`h-6 w-6 rounded-full text-gray-400 hover:text-blue-600 hover:bg-blue-50 ${horizontal ? "mr-1" : "mt-1"}`}
                             title="Reset to Current Month"
                         >
                             <RotateCcw className="w-3 h-3" />
@@ -93,5 +89,6 @@ export default function MonthNavigator({ currentMonth, currentYear, onMonthChang
         </div>
     );
 }
+
 
 
