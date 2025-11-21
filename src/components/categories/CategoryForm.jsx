@@ -7,17 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { X, Circle, ChevronDown, Search, Check } from "lucide-react"; // Added Icons
 import { iconMap, ICON_OPTIONS } from "../utils/iconMapConfig";
 import { motion, AnimatePresence } from "framer-motion";
-
-const PRIORITY_OPTIONS = [
-    { value: 'needs', label: 'Needs', description: 'Essential expenses' },
-    { value: 'wants', label: 'Wants', description: 'Discretionary spending' },
-    { value: 'savings', label: 'Savings', description: 'Savings and investments' }
-];
-
-const PRESET_COLORS = [
-    '#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6',
-    '#EC4899', '#14B8A6', '#F97316', '#06B6D4', '#6366F1'
-];
+import { PRIORITY_OPTIONS, PRESET_COLORS } from "../utils/constants";
 
 export default function CategoryForm({ category, onSubmit, onCancel, isSubmitting }) {
     const [formData, setFormData] = useState({
