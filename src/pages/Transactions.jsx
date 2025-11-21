@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { CustomButton } from "@/components/ui/CustomButton";
-import { Trash, Loader2 } from "lucide-react";
+import { Trash, Loader2, Plus, ArrowDown } from "lucide-react";
 import { useConfirm } from "../components/ui/ConfirmDialogProvider";
 import { base44 } from "@/api/base44Client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -89,14 +89,31 @@ export default function Transactions() {
                         <p className="text-gray-500 mt-1">Track your income and expenses</p>
                     </div>
                     <div className="flex flex-wrap items-center gap-4">
+                        {/* Add Income - Success Variant (Green) */}
+                        <CustomButton
+                            variant="success"
+                            onClick={() => setShowAddIncome(true)}
+                        >
+                            <ArrowDown className="w-4 h-4 mr-2" />
+                            Add Income
+                        </CustomButton>
+
+                        {/* Add Expense - Create Variant (Blue/Purple Gradient) */}
+                        <CustomButton
+                            variant="create"
+                            onClick={() => setShowAddExpense(true)}
+                        >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Add Expense
+                        </CustomButton>
+
+                        {/* Modals (Logic only, no triggers) */}
                         <QuickAddIncome
                             open={showAddIncome}
                             onOpenChange={setShowAddIncome}
                             onSubmit={handleSubmit}
                             isSubmitting={isSubmitting}
-                            renderTrigger={true}
-                            triggerVariant="outline"
-                            triggerSize="default"
+                            renderTrigger={false}
                         />
                         <QuickAddTransaction
                             open={showAddExpense}
@@ -106,9 +123,7 @@ export default function Transactions() {
                             onSubmit={handleSubmit}
                             isSubmitting={isSubmitting}
                             transactions={transactions}
-                            renderTrigger={true}
-                            triggerVariant="primary"
-                            triggerSize="default"
+                            renderTrigger={false}
                         />
                         {filteredTransactions.length > 0 && (
                             <CustomButton
