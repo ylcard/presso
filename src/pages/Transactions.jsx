@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { CustomButton } from "@/components/ui/CustomButton";
-import { Plus, Trash, Loader2 } from "lucide-react";
+import { Trash, Loader2 } from "lucide-react";
 import { useConfirm } from "../components/ui/ConfirmDialogProvider";
 import { base44 } from "@/api/base44Client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -12,7 +12,9 @@ import { useTransactionActions } from "../components/hooks/useActions";
 import { useSettings } from "../components/utils/SettingsContext";
 import { usePeriod } from "../components/hooks/usePeriod";
 import { chunkArray } from "../components/utils/generalUtils";
-import TransactionForm from "../components/transactions/TransactionForm";
+// import TransactionForm from "../components/transactions/TransactionForm";
+import QuickAddTransaction from "../components/transactions/QuickAddTransaction";
+import QuickAddIncome from "../components/transactions/QuickAddIncome";
 import TransactionList from "../components/transactions/TransactionList";
 import TransactionFilters from "../components/transactions/TransactionFilters";
 
@@ -21,7 +23,9 @@ export default function Transactions() {
     const { confirmAction } = useConfirm();
     const queryClient = useQueryClient();
     const [isBulkDeleting, setIsBulkDeleting] = React.useState(false);
-    
+    const [showAddIncome, setShowAddIncome] = useState(false);
+    const [showAddExpense, setShowAddExpense] = useState(false);
+
     // ADDED 20-Jan-2025: Fetch period for cross-period detection
     const { monthStart, monthEnd } = usePeriod();
 
@@ -37,7 +41,13 @@ export default function Transactions() {
     const { handleSubmit, handleEdit, handleDelete, isSubmitting } = useTransactionActions(
         null,
         null,
-        cashWallet
+        cashWallet,
+        {
+            onSuccess: () => {
+                setShowAddIncome(false);
+                setShowAddExpense(false);
+            }
+        }
     );
 
     const handleBulkDelete = async () => {
@@ -51,7 +61,7 @@ export default function Transactions() {
                 try {
                     // Batch deletions to avoid API limits
                     const chunks = chunkArray(filteredTransactions, 50); // Process 50 at a time
-                    
+
                     for (const chunk of chunks) {
                         const deletePromises = chunk.map(t => base44.entities.Transaction.delete(t.id));
                         await Promise.all(deletePromises);
@@ -79,24 +89,31 @@ export default function Transactions() {
                         <p className="text-gray-500 mt-1">Track your income and expenses</p>
                     </div>
                     <div className="flex flex-wrap items-center gap-4">
-                        <TransactionForm
-                            transaction={null}
+                        <QuickAddIncome
+                            open={showAddIncome}
+                            onOpenChange={setShowAddIncome}
+                            onSubmit={handleSubmit}
+                            isSubmitting={isSubmitting}
+                            renderTrigger={true}
+                            triggerVariant="outline"
+                            triggerSize="default"
+                        />
+                        <QuickAddTransaction
+                            open={showAddExpense}
+                            onOpenChange={setShowAddExpense}
                             categories={categories}
-                            onSubmit={(data) => handleSubmit(data, null)}
-                            onCancel={() => { }}
+                            customBudgets={allCustomBudgets}
+                            onSubmit={handleSubmit}
                             isSubmitting={isSubmitting}
                             transactions={transactions}
-                            trigger={
-                                <CustomButton variant="primary" className="shadow-lg">
-                                    <Plus className="w-4 h-4 mr-2" />
-                                    Add Transaction
-                                </CustomButton>
-                            }
+                            renderTrigger={true}
+                            triggerVariant="primary"
+                            triggerSize="default"
                         />
                         {filteredTransactions.length > 0 && (
-                            <CustomButton 
-                                variant="destructive" 
-                                onClick={handleBulkDelete} 
+                            <CustomButton
+                                variant="destructive"
+                                onClick={handleBulkDelete}
                                 disabled={isBulkDeleting}
                             >
                                 {isBulkDeleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash className="w-4 h-4 mr-2" />}
