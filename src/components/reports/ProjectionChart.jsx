@@ -78,75 +78,73 @@ export default function ProjectionChart({
         <Card className="border-none shadow-sm h-full flex flex-col">
             <CardHeader className="pb-2 flex-none">
                 <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg font-semibold text-gray-800">Forecast</CardTitle>
-
-                    {/* Evolution Badge */}
-                    <div className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${evolution > 5 ? 'bg-rose-100 text-rose-700' : evolution < -5 ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'}`}>
-                        {evolution > 0 ? '↑' : '↓'} {Math.abs(evolution).toFixed(1)}% vs 6M Avg
+                    <CardTitle className="text-lg font-semibold text-gray-800">Financial Horizon</CardTitle>
+                    <div className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium ${isPositive ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                        {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                        {isPositive ? 'Savings Proj.' : 'Overspend Risk'}
                     </div>
                 </div>
-                <p className="text-sm text-gray-500">Timeline: Actuals → Today → Safe Baseline</p>
+                <p className="text-sm text-gray-500">
+                    {isPositive
+                        ? `On track to save ${formatCurrency(currentNet, settings)} this month.`
+                        : `Projected to overspend by ${formatCurrency(Math.abs(currentNet), settings)}.`}
+                </p>
             </CardHeader>
             <CardContent className="flex-1 min-h-0">
                 <div className="h-full min-h-[200px] flex flex-col justify-end">
-                    <div className="flex items-end justify-between h-full gap-2 pt-6">
-                        {chartData.map((item, idx) => {
-                            const height = Math.max((item.amount / maxVal) * 100, 2);
+                    {/* The Chart Area - 3 distinct columns */}
+                    <div className="flex items-end justify-between h-full gap-4 pt-6 px-2">
+                        {data.map((item, idx) => {
+                            const incomeHeight = Math.max((item.income / maxVal) * 100, 2);
+                            const expenseHeight = Math.max((item.expense / maxVal) * 100, 2);
+                            const isTarget = item.type === 'future';
 
-                            return (
-                                <div key={idx} className="flex-1 flex flex-col items-center gap-2 group relative h-full justify-end">
+                            <div key={idx} className="flex-1 flex flex-col items-center justify-end h-full relative group">
+                                {/* Arrow connector (Current -> Next) */}
+                                {idx === 1 && (
+                                    <div className="absolute top-[30%] -right-4 text-gray-300 z-0">
+                                        <ArrowRight className="w-4 h-4" />
+                                    </div>
+                                )}
 
+                                {/* Visual Bars Container */}
+                                <div className="flex items-end justify-center gap-1 w-full h-full px-2 md:px-6 z-10">
+                                    {/* Income Bar */}
+                                    <div
+                                        className={`flex-1 rounded-t-sm transition-all duration-300 ${isTarget ? 'bg-emerald-100 border border-emerald-200 border-dashed' : 'bg-emerald-300'}`}
+                                        style={{ height: `${incomeHeight}%` }}
+                                    />
+                                    {/* Expense Bar */}
+                                    <div
+                                        className={`flex-1 rounded-t-sm transition-all duration-300 ${isTarget ? 'bg-rose-100 border border-rose-200 border-dashed' : 'bg-rose-300'}`}
+                                        style={{ height: `${expenseHeight}%` }}
+                                    />
+                                </div>
 
-                                    {/* Tooltip */}
-                                    <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-xs p-2 rounded shadow-lg z-10 whitespace-nowrap pointer-events-none">
-                                        <p className="font-bold mb-1">{item.label}</p>
-                                        <p>{formatCurrency(item.amount, settings)}</p>
-                                        {item.type === 'current' && (
-                                            <p className="text-gray-400 text-[10px] mt-1">
-                                                Spent: {formatCurrency(item.actualPart, settings)}<br />
-                                                Est. Rem: {formatCurrency(item.projectedPart, settings)}
+                                {/* Labels */}
+                                <div className="text-center mt-2">
+                                    <p className={`text-xs font-bold ${item.type === 'current' ? 'text-blue-600' : 'text-gray-700'}`}>{item.label}</p>
+                                    <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">{item.subLabel}</p>
+                                </div>
+
+                                {/* Hover Tooltip */}
+                                <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-xs p-2 rounded shadow-lg z-20 whitespace-nowrap pointer-events-none">
+                                    <p className="font-bold mb-1 border-b border-gray-700 pb-1">{item.label}</p>
+                                    <div className="space-y-1">
+                                        <p className="flex justify-between gap-4 text-emerald-300">
+                                            <span>Income:</span> <span>{formatCurrency(item.income, settings)}</span>
+                                        </p>
+                                        <p className="flex justify-between gap-4 text-rose-300">
+                                            <span>Expense:</span> <span>{formatCurrency(item.expense, settings)}</span>
+                                        </p>
+                                        {isTarget && (
+                                            <p className="text-[10px] text-gray-400 italic pt-1">
+                                                *Based on Safe Baseline
                                             </p>
                                         )}
                                     </div>
-                                    {/* Bar Visuals */}
-                                    <div className="w-full max-w-[32px] md:max-w-[44px] relative h-full flex items-end">
-
-                                        {item.type === 'current' ? (
-                                            // CURRENT (Stacked: Striped + Solid)
-                                            <div className="w-full relative flex flex-col-reverse justify-start h-full" style={{ height: `${height}%` }}>
-                                                {/* Projected Remaining */}
-                                                <div
-                                                    className="w-full bg-[url('https://www.transparenttextures.com/patterns/diagonal-stripes-light.png')] bg-blue-300 opacity-50 rounded-t-sm border-t border-x border-blue-300"
-                                                    style={{ height: `${(item.projectedPart / item.amount) * 100}%` }}
-                                                />
-                                                {/* Actual Spent */}
-                                                <div
-                                                    className="w-full bg-blue-600 rounded-b-sm"
-                                                    style={{ height: `${(item.actualPart / item.amount) * 100}%` }}
-                                                />
-                                                {/* "Today" Icon */}
-                                                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full pb-1">
-                                                    <CalendarClock className="w-3 h-3 text-blue-600" />
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            // HISTORY or FUTURE
-                                            <div
-                                                className={`w-full rounded-t-sm transition-all duration-300 
-                                                        ${item.type === 'history' ? 'bg-gray-300 hover:bg-gray-400' : ''}
-                                                        ${item.type === 'future' ? 'bg-blue-50 border border-blue-200 border-dashed' : ''}
-                                                    `}
-                                                style={{ height: `${height}%` }}
-                                            />
-                                        )}
-                                    </div>
-
-                                    {/* Label */}
-                                    <span className={`text-[10px] md:text-xs font-medium ${item.type === 'current' ? 'text-blue-600 font-bold' : 'text-gray-500'}`}>
-                                        {item.label}
-                                    </span>
                                 </div>
-                            );
+                            </div>
                         })}
                     </div>
                 </div>
