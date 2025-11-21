@@ -1,6 +1,6 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Wallet } from "lucide-react";
+import { TrendingUp, TrendingDown, Wallet, ArrowUpRight, ArrowDownRight, Target, Calculator } from "lucide-react";
 import { formatCurrency } from "../utils/currencyUtils";
 import { getMonthlyPaidExpenses } from "../utils/financialCalculations";
 import { motion } from "framer-motion";
@@ -30,7 +30,7 @@ export default function ReportStats({
     const prevPaidExpenses = Math.abs(getMonthlyPaidExpenses(prevTransactions));
 
     const netFlow = monthlyIncome - totalPaidExpenses;
-    // const prevNetFlow = prevMonthlyIncome - prevPaidExpenses;
+    const prevNetFlow = prevMonthlyIncome - prevPaidExpenses;
 
     const savingsRate = monthlyIncome > 0
         ? ((monthlyIncome - totalPaidExpenses) / monthlyIncome) * 100
@@ -57,6 +57,12 @@ export default function ReportStats({
 
     // 3. Comparisons
     const savingsRateDiff = savingsRate - prevSavingsRate;
+
+    // Helper for Net Flow % change (handles negative numbers safely)
+    // Formula: (Current - Prev) / |Prev|
+    const netFlowDiffPercent = prevNetFlow !== 0
+        ? ((netFlow - prevNetFlow) / Math.abs(prevNetFlow)) * 100
+        : 0;
 
     const getArrow = (diff) => diff >= 0
         ? <ArrowUpRight className="w-3 h-3" />
@@ -102,6 +108,11 @@ export default function ReportStats({
                         >
                             {formatCurrency(netFlow, settings)}
                         </motion.h3>
+                        {/* Analysis Badge - Comparison vs Last Month */}
+                        <div className={`flex items-center gap-1 mt-2 text-xs font-medium ${netFlowDiffPercent >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                            {getArrow(netFlowDiffPercent)}
+                            <span>{Math.abs(netFlowDiffPercent).toFixed(0)}% vs last month</span>
+                        </div>
                         {/* Projection Badge */}
                         {isCurrentMonth ? (
                             <div className={`flex items-center gap-1 mt-2 text-xs font-medium ${projectedNetFlow >= 0 ? 'text-blue-600' : 'text-rose-500'}`}>
