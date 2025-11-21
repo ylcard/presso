@@ -277,8 +277,10 @@ export const useActiveBudgets = (allCustomBudgets, allSystemBudgets, selectedMon
 };
 
 // Hook for filtering custom budgets by period
+// REFACTORED 13-Jan-2025: Standardized month boundary calculation using dateUtils
 export const useCustomBudgetsFiltered = (allCustomBudgets, selectedMonth, selectedYear) => {
     return useMemo(() => {
+        // REFACTORED 13-Jan-2025: Use dateUtils functions for consistent month boundaries
         const monthStart = getFirstDayOfMonth(selectedMonth, selectedYear);
         const monthEnd = getLastDayOfMonth(selectedMonth, selectedYear);
 
@@ -293,6 +295,11 @@ export const useCustomBudgetsFiltered = (allCustomBudgets, selectedMonth, select
     }, [allCustomBudgets, selectedMonth, selectedYear]);
 };
 
+// REFACTORED 12-Jan-2025: Updated to use granular expense functions from financialCalculations
+// REFACTORED 13-Jan-2025: Standardized month boundary calculation using dateUtils
+// FIXED 14-Jan-2025: Corrected Savings budget calculation
+// CRITICAL FIX 14-Jan-2025: Fixed parameter order in getMonthBoundaries call
+// CRITICAL FIX 14-Jan-2025: Fixed date comparison - now comparing Date objects, not Date vs string
 export const useBudgetsAggregates = (
     transactions,
     categories,
@@ -302,6 +309,7 @@ export const useBudgetsAggregates = (
     selectedYear
 ) => {
     // Filter custom budgets based on date overlap
+    // CRITICAL FIX 14-Jan-2025: Convert monthStart and monthEnd strings to Date objects before comparison
     const customBudgets = useMemo(() => {
         const { monthStart, monthEnd } = getMonthBoundaries(selectedMonth, selectedYear);
         const monthStartDate = parseDate(monthStart);
@@ -316,7 +324,11 @@ export const useBudgetsAggregates = (
         });
     }, [allCustomBudgets, selectedMonth, selectedYear]);
 
+    // REFACTORED 12-Jan-2025: Calculate system budget stats using financialCalculations functions directly
+    // REFACTORED 13-Jan-2025: Standardized month boundary calculation using dateUtils
+    // FIXED 14-Jan-2025: Corrected Savings budget calculation
     const systemBudgetsWithStats = useMemo(() => {
+        // REFACTORED 13-Jan-2025: Use dateUtils functions for consistent month boundaries
         const monthStart = getFirstDayOfMonth(selectedMonth, selectedYear);
         const monthEnd = getLastDayOfMonth(selectedMonth, selectedYear);
 
@@ -337,6 +349,7 @@ export const useBudgetsAggregates = (
                 const customUnpaid = getUnpaidCustomBudgetExpenses(transactions, allCustomBudgets, monthStart, monthEnd);
                 unpaidAmount = directUnpaid + customUnpaid;
             } else if (sb.systemBudgetType === 'savings') {
+                // FIXED 14-Jan-2025: Use correct getPaidSavingsExpenses function for manual savings tracking
                 paidAmount = getPaidSavingsExpenses(transactions, categories, monthStart, monthEnd, allCustomBudgets);
                 unpaidAmount = 0; // Savings typically doesn't have unpaid expenses
             }
@@ -389,8 +402,15 @@ export const useBudgetsAggregates = (
 };
 
 // Hook for transaction filtering
+// REFACTORED 13-Jan-2025: Moved createLocalString logic to dateUtils.toLocalDateString
 export const useTransactionFiltering = (transactions) => {
     const now = new Date();
+
+    // REFACTORED 13-Jan-2025: Use toLocalDateString from dateUtils instead of inline function
+    // This prevents timezone offset issues when converting dates to strings
+    // DEPRECATED CODE (12-Nov-2025): Removed buggy toISOString() approach
+    // const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+    // const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
 
     // Calculate the first and last day of the current month (local time)
     const currentMonthStartDate = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -448,6 +468,9 @@ export const useTransactionFiltering = (transactions) => {
     };
 };
 
+// REFACTORED 13-Jan-2025: Updated to filter custom budget expenses by selected month's paidDate
+// REFACTORED 13-Jan-2025: Standardized month boundary calculation using dateUtils
+// FIXED 14-Jan-2025: Corrected Savings budget calculation and properly integrated totalActualSavings
 export const useBudgetBarsData = (
     systemBudgets,
     customBudgets,
@@ -497,6 +520,7 @@ export const useBudgetBarsData = (
                 paidAmount = getPaidNeedsExpenses(transactions, categories, startDate, endDate, allCustomBudgets);
                 expectedAmount = getUnpaidNeedsExpenses(transactions, categories, startDate, endDate, allCustomBudgets);
             } else if (sb.systemBudgetType === 'savings') {
+                // FIXED 14-Jan-2025: Use correct getPaidSavingsExpenses for manual savings tracking
                 paidAmount = getPaidSavingsExpenses(transactions, categories, startDate, endDate, allCustomBudgets);
                 expectedAmount = 0;
             }
@@ -539,6 +563,7 @@ export const useBudgetBarsData = (
 
             const digitalAllocated = cb.allocatedAmount || 0;
 
+            // UPDATED 13-Jan-2025: Filter by paidDate within selected month for paid expenses
             const digitalSpent = digitalTransactions
                 .filter(t => {
                     if (t.type !== 'expense') return false;
@@ -564,6 +589,7 @@ export const useBudgetBarsData = (
                 const currencyCode = allocation.currencyCode;
                 const allocated = allocation.amount || 0;
 
+                // UPDATED 13-Jan-2025: Filter by paidDate within selected month for paid expenses
                 const spent = cashTransactions
                     .filter(t => {
                         if (t.type !== 'expense') return false;
@@ -593,7 +619,7 @@ export const useBudgetBarsData = (
                 });
             }
 
-            let paidAmount = digitalSpent;
+            let paidAmount = digitalSpent; // Corrected: digitalSpent already represents paid transactions
             if (cashByCurrency) {
                 Object.values(cashByCurrency).forEach(cashData => {
                     paidAmount += cashData?.spent || 0;
@@ -643,10 +669,14 @@ export const useBudgetBarsData = (
         const totalActualSavings = automaticSavings + manualSavings;
         const savingsShortfall = Math.max(0, savingsTargetAmount - totalActualSavings);
 
+        // FIXED 14-Jan-2025: Properly integrate totalActualSavings into savingsBudget for BudgetBar rendering
         if (savingsBudget) {
             savingsBudget.actualSavings = totalActualSavings;
             savingsBudget.savingsTarget = savingsTargetAmount;
             savingsBudget.maxHeight = Math.max(savingsTargetAmount, totalActualSavings);
+
+            // CRITICAL FIX: Update stats.paidAmount to reflect total actual savings (automatic + manual)
+            // This ensures the BudgetBar component renders the correct bar height and "Actual" label
             savingsBudget.stats.paidAmount = totalActualSavings;
             savingsBudget.stats.totalSpent = totalActualSavings;
         }
@@ -662,15 +692,8 @@ export const useBudgetBarsData = (
 };
 
 // Hook for monthly breakdown calculations
-export const useMonthlyBreakdown = (transactions, categories, monthlyIncome, allCustomBudgets = [], selectedMonth, selectedYear) => {
+export const useMonthlyBreakdown = (transactions, categories, monthlyIncome) => {
     return useMemo(() => {
-        // 1. Get Date Boundaries for financial calculations
-        // Default to current month if not provided (safeguard)
-        const safeMonth = selectedMonth ?? new Date().getMonth();
-        const safeYear = selectedYear ?? new Date().getFullYear();
-        const { monthStart, monthEnd } = getMonthBoundaries(safeMonth, safeYear);
-
-        // 2. Calculate Category Breakdown (Existing Logic)
         const categoryMap = createEntityMap(categories);
 
         const expensesByCategory = transactions
@@ -700,26 +723,11 @@ export const useMonthlyBreakdown = (transactions, categories, monthlyIncome, all
             })
             .sort((a, b) => b.amount - a.amount);
 
-        // 3. Calculate Needs & Wants using centralized financialCalculations
-        // Needs = Paid + Unpaid Needs
-        const paidNeeds = getPaidNeedsExpenses(transactions, categories, monthStart, monthEnd, allCustomBudgets);
-        const unpaidNeeds = getUnpaidNeedsExpenses(transactions, categories, monthStart, monthEnd, allCustomBudgets);
-        const needsTotal = paidNeeds + unpaidNeeds;
-
-        // Wants = Direct Paid/Unpaid Wants + Custom Budgets (Paid/Unpaid)
-        const directPaidWants = getDirectPaidWantsExpenses(transactions, categories, monthStart, monthEnd, allCustomBudgets);
-        const directUnpaidWants = getDirectUnpaidWantsExpenses(transactions, categories, monthStart, monthEnd, allCustomBudgets);
-        const customPaid = getPaidCustomBudgetExpenses(transactions, allCustomBudgets, monthStart, monthEnd);
-        const customUnpaid = getUnpaidCustomBudgetExpenses(transactions, allCustomBudgets, monthStart, monthEnd);
-        const wantsTotal = directPaidWants + directUnpaidWants + customPaid + customUnpaid;
-
         return {
             categoryBreakdown,
-            totalExpenses,
-            needsTotal,
-            wantsTotal
+            totalExpenses
         };
-    }, [transactions, categories, monthlyIncome, allCustomBudgets, selectedMonth, selectedYear]);
+    }, [transactions, categories, monthlyIncome]);
 };
 
 // Hook for priority chart data calculations
