@@ -60,8 +60,8 @@ export const formatDateString = (date) => {
     // CRITICAL STEP: Construct a NEW Date object using the input's LOCAL year, month, and day.
     // This resets the time to 00:00:00 in the LOCAL timezone, nullifying any offset issues.
     const d = new Date(
-        inputDate.getFullYear(), 
-        inputDate.getMonth(), 
+        inputDate.getFullYear(),
+        inputDate.getMonth(),
         inputDate.getDate()
     );
 
@@ -69,7 +69,7 @@ export const formatDateString = (date) => {
     // Months are 0-indexed, so add 1
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
-    
+
     return `${year}-${month}-${day}`;
 };
 
@@ -106,4 +106,15 @@ export const getMonthBoundaries = (month, year) => {
         monthStart: getFirstDayOfMonth(month, year),
         monthEnd: getLastDayOfMonth(month, year)
     };
+};
+
+/**
+ * Returns the full month name for a given month index (0-11)
+ * @param {number} monthIndex - 0 for January, 11 for December
+ * @param {string} [locale='en-US'] - The locale to use
+ * @returns {string} e.g. "January"
+ */
+export const getMonthName = (monthIndex, locale = 'en-US') => {
+    const date = new Date(2000, monthIndex, 1); // Year doesn't matter
+    return date.toLocaleString(locale, { month: 'long' });
 };
