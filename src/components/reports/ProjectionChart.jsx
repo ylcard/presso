@@ -2,7 +2,9 @@ import React, { useMemo } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "../utils/currencyUtils";
 import { estimateCurrentMonth } from "../utils/projectionUtils";
-import { CalendarClock } from "lucide-react";
+import { getMonthBoundaries } from "../utils/dateUtils";
+import { getMonthlyIncome, getMonthlyPaidExpenses } from "../utils/financialCalculations";
+import { ArrowRight, TrendingUp, TrendingDown, Target } from "lucide-react";
 
 export default function ProjectionChart({
     transactions = [],
@@ -13,78 +15,64 @@ export default function ProjectionChart({
     // Extract the safe baseline calculated in parent (Reports.js)
     const safeMonthlyAverage = projectionData?.totalProjectedMonthly || 0;
 
-    const { chartData, evolution } = useMemo(() => {
+    const data = useMemo(() => {
         const today = new Date();
-        const data = [];
 
-        // 1. PAST: Generate last 6 months of ACTUAL history
-        let pastSum = 0;
-        let pastCount = 0;
+        // --- 1. LAST MONTH (Context) ---
+        const lastMonthDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        const lastBoundaries = getMonthBoundaries(lastMonthDate.getMonth(), lastMonthDate.getFullYear());
+        const lastIncome = getMonthlyIncome(transactions, lastBoundaries.monthStart, lastBoundaries.monthEnd);
+        const lastExpenses = Math.abs(getMonthlyPaidExpenses(transactions, lastBoundaries.monthStart, lastBoundaries.monthEnd));
 
-        for (let i = 6; i > 0; i--) {
-            const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-
-            // Simple sum for the history bar (Reality)
-            const monthTotal = transactions
-                .filter(t => {
-                    const tDate = new Date(t.isPaid && t.paidDate ? t.paidDate : t.date);
-                    return t.type === 'expense' &&
-                        tDate.getMonth() === d.getMonth() &&
-                        tDate.getFullYear() === d.getFullYear();
-                })
-                .reduce((sum, t) => sum + Number(t.amount), 0);
-
-            data.push({
-                label: d.toLocaleDateString('en-US', { month: 'short' }),
-                amount: monthTotal,
-                type: 'history'
-            });
-
-            pastSum += monthTotal;
-            pastCount++;
-        }
-
-        // 2. PRESENT: Current Month (Hybrid)
+        // --- 2. THIS MONTH (Projection) ---
         const currentMonthTransactions = transactions.filter(t => {
             const tDate = new Date(t.date);
             return tDate.getMonth() === today.getMonth() &&
                 tDate.getFullYear() === today.getFullYear();
         });
 
-        // Use the utility to estimate end-of-month based on safe baseline
-        const currentEst = estimateCurrentMonth(currentMonthTransactions, safeMonthlyAverage);
+        // Income: Sum of Actual + Planned Income for this month (simplified to Actual here for safety)
+        const currentBoundaries = getMonthBoundaries(today.getMonth(), today.getFullYear());
+        const currentIncome = getMonthlyIncome(transactions, currentBoundaries.monthStart, currentBoundaries.monthEnd);
+        // Expense: Hybrid Projection
+        const currentExpenseProj = estimateCurrentMonth(currentMonthTransactions, safeMonthlyAverage).total;
 
-        data.push({
-            label: 'Now',
-            amount: currentEst.total, // Total projected height
-            actualPart: currentEst.actual,
-            projectedPart: currentEst.remaining,
-            type: 'current'
-        });
+        // --- 3. NEXT MONTH (Target) ---
+        // We assume Income is stable (uses Last Month as proxy) for a conservative estimate
+        const nextIncome = lastIncome;
+        const nextExpense = safeMonthlyAverage;
 
-        // 3. FUTURE: Next 3 Months (Baseline)
-        for (let i = 1; i <= 3; i++) {
-            const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
-
-            // We use the "Safe Baseline" here (cleaned of outliers)
-            data.push({
-                label: d.toLocaleDateString('en-US', { month: 'short' }),
-                amount: safeMonthlyAverage,
+        return [
+            {
+                label: 'Last Month',
+                subLabel: lastMonthDate.toLocaleDateString('en-US', { month: 'short' }),
+                income: lastIncome,
+                expense: lastExpenses,
+                type: 'past'
+            },
+            {
+                label: 'This Month',
+                subLabel: 'Projected',
+                income: currentIncome,
+                expense: currentExpenseProj,
+                type: 'current'
+            },
+            {
+                label: 'Next Month',
+                subLabel: 'Target',
+                income: nextIncome,
+                expense: nextExpense,
                 type: 'future'
-            });
-        }
-
-        // 4. Evolution Stat: Compare Future Baseline vs Past Average
-        const averagePast = pastCount > 0 ? pastSum / pastCount : 0;
-        const diffPercent = averagePast > 0
-            ? ((safeMonthlyAverage - averagePast) / averagePast) * 100
-            : 0;
-
-        return { chartData: data, evolution: diffPercent };
+            }
+        ];
     }, [transactions, safeMonthlyAverage]);
 
     // Scaling for the chart
-    const maxVal = Math.max(...chartData.map(d => d.amount), safeMonthlyAverage) * 1.15;
+    const maxVal = Math.max(...data.map(d => Math.max(d.income, d.expense)), 100) * 1.1;
+
+    // Insight Text Logic
+    const currentNet = data[1].income - data[1].expense;
+    const isPositive = currentNet >= 0;
 
     return (
         <Card className="border-none shadow-sm h-full flex flex-col">
