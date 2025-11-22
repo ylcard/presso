@@ -109,7 +109,7 @@ const LayoutContent = React.memo(({ children }) => {
 
 LayoutContent.displayName = 'LayoutContent';
 
-export default function Layout({ children, currentPageName }) {
+export default function Layout({ children }) {
   return (
     <SettingsProvider>
       <ConfirmDialogProvider>
