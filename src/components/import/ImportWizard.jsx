@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Steps } from "@/components/ui/steps"; // Assuming Steps component exists or I'll mimic it
 import FileUploader from "./FileUploader";
@@ -84,7 +84,6 @@ export default function ImportWizard({ onSuccess }) {
 
             if (result.status === 'error') throw new Error(result.details);
 
-            // Updated 19-Nov-2025: Handle new schema structure with root object
             const extractedData = result.output?.transactions || [];
 
             const processed = extractedData.map(item => {
@@ -119,7 +118,6 @@ export default function ImportWizard({ onSuccess }) {
             showToast({ title: "Success", description: `Extracted ${processed.length} transactions from PDF.` });
         } catch (error) {
             console.error('PDF Processing Error:', error);
-            // CREATED 19-Nov-2025: Set permanent error state instead of relying solely on toast
             setError(`PDF Processing Failed: ${error.message || "Unknown error"}`);
             setFile(null);
         } finally {
@@ -239,7 +237,7 @@ export default function ImportWizard({ onSuccess }) {
 
             {/* Content */}
             <div className="min-h-[400px]">
-                {/* CREATED 19-Nov-2025: Permanent error display */}
+                {/* Permanent error display */}
                 {error && (
                     <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start justify-between gap-3">
                         <div className="flex gap-3">
