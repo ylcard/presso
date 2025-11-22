@@ -1,4 +1,3 @@
-import React from "react";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
