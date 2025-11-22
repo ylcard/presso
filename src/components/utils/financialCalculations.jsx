@@ -2,7 +2,7 @@
  * @file Financial Calculations Utilities
  * @description Centralized functions for calculating expenses, income, and budget statistics.
  * @created 11-Nov-2025 - Consolidated from expenseCalculations
- * @updated 15-Jan-2025 - Exported isCashExpense helper function for use in other modules
+ * @updated 15-Nov-2025 - Exported isCashExpense helper function for use in other modules
  */
 
 import { parseDate } from "./dateUtils";
@@ -13,7 +13,6 @@ import { parseDate } from "./dateUtils";
  * @param {object} transaction - The transaction object.
  * @returns {boolean} True if the transaction is a cash expense from the wallet.
  */
-// UPDATED 15-Jan-2025: Changed from private (const) to exported function for use in useDerivedData
 export const isCashExpense = (transaction) => {
     return transaction.isCashTransaction && transaction.cashTransactionType === 'expense_from_wallet';
 };
