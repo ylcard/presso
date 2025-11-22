@@ -19,7 +19,7 @@ import { getCurrencyBalance, getRemainingAllocatedCash } from "../utils/cashAllo
 import { getCurrencySymbol } from "../utils/currencyUtils";
 import { calculateConvertedAmount, getRateForDate } from "../utils/currencyCalculations";
 import { SUPPORTED_CURRENCIES } from "../utils/constants";
-import { formatDateString, parseDate, isDateInRange } from "../utils/dateUtils";
+import { formatDateString, isDateInRange } from "../utils/dateUtils";
 import { normalizeAmount } from "../utils/generalUtils";
 
 export default function TransactionFormContent({
@@ -144,7 +144,6 @@ export default function TransactionFormContent({
     // Filter budgets to show active + planned statuses
     // This allows linking expenses to future/past budgets while keeping the list manageable
     const filteredBudgets = (() => {
-        const txDate = new Date(formData.date);
         // Filter for active and planned budgets
         let statusFiltered = allBudgets.filter(b => {
             // 1. SYSTEM BUDGETS: DATE RANGE MATCH
