@@ -1,7 +1,5 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Calendar as CalendarIcon } from "lucide-react";
-// UPDATED 16-Jan-2025: Replaced Button with CustomButton for consistency
-// import { Button } from "@/components/ui/button";
 import { CustomButton } from "@/components/ui/CustomButton";
 import {
     Popover,
@@ -87,10 +85,3 @@ export default function DateRangePicker({ startDate, endDate, onRangeChange }) {
         </Popover>
     );
 }
-
-// UPDATED 16-Jan-2025: Replaced shadcn Button with CustomButton
-// - Trigger button uses CustomButton with variant="outline"
-// - Cancel button uses CustomButton with variant="outline"
-// - Apply button uses CustomButton with variant="primary" (gradient blue-purple)
-// - Removed manual gradient styling as variant="primary" provides it
-// - All functionality preserved, consistent styling applied
