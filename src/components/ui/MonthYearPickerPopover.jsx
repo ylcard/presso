@@ -51,7 +51,7 @@ export default function MonthYearPickerPopover({ currentMonth, currentYear, onMo
                     <div className="space-y-2">
                         <label className="text-xs font-medium text-gray-600">Month</label>
                         <Select
-                            value={tempMonth.toString()}
+                            value={String(tempMonth)}
                             onValueChange={(value) => setTempMonth(parseInt(value))}
                         >
                             <SelectTrigger>
@@ -70,7 +70,7 @@ export default function MonthYearPickerPopover({ currentMonth, currentYear, onMo
                     <div className="space-y-2">
                         <label className="text-xs font-medium text-gray-600">Year</label>
                         <Select
-                            value={tempYear.toString()}
+                            value={String(tempYear)}
                             onValueChange={(value) => setTempYear(parseInt(value))}
                         >
                             <SelectTrigger>
