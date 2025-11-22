@@ -27,7 +27,7 @@ export default function AllocationForm({
 
     const [formData, setFormData] = useState({
         categoryId: '',
-        allocatedAmount: '',
+        allocatedAmount: null,
         allocationType: 'digital',
         currency: availableCashCurrencies.length > 0 ? availableCashCurrencies[0] : baseCurrency
     });
@@ -36,14 +36,14 @@ export default function AllocationForm({
         if (allocation) {
             setFormData({
                 categoryId: allocation.categoryId || '',
-                allocatedAmount: allocation.allocatedAmount?.toString() || '',
+                allocatedAmount: allocation.allocatedAmount || null,
                 allocationType: allocation.allocationType || 'digital',
                 currency: allocation.currency || (availableCashCurrencies.length > 0 ? availableCashCurrencies[0] : baseCurrency)
             });
         } else {
             setFormData({
                 categoryId: '',
-                allocatedAmount: '',
+                allocatedAmount: null,
                 allocationType: 'digital',
                 currency: availableCashCurrencies.length > 0 ? availableCashCurrencies[0] : baseCurrency
             });
@@ -71,11 +71,11 @@ export default function AllocationForm({
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        const normalizedAmount = normalizeAmount(formData.allocatedAmount);
+        // const normalizedAmount = normalizeAmount(formData.allocatedAmount);
 
         onSubmit({
             ...formData,
-            allocatedAmount: parseFloat(normalizedAmount),
+            allocatedAmount: formData.allocatedAmount,
             currency: formData.allocationType === 'digital' ? baseCurrency : formData.currency
         });
     };
