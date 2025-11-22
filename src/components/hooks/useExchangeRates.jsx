@@ -1,4 +1,6 @@
 import { useState } from "react";
+
+
 import { base44 } from "@/api/base44Client";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { QUERY_KEYS } from "./queryKeys";
@@ -37,10 +39,6 @@ export const useExchangeRates = () => {
         setIsRefreshing(true);
 
         try {
-            // FIX 2 (CRITICAL): Use ensureQueryData instead of getQueryData.
-            // If the Dashboard is currently loading rates (isLoading), this PAUSES execution 
-            // until the DB load finishes. This prevents checking against an empty array 
-            // during the first 300ms of the app loading.
             const ratesToCheck = await queryClient.ensureQueryData({
                 queryKey: [QUERY_KEYS.EXCHANGE_RATES],
                 queryFn: () => base44.entities.ExchangeRate.list('-date'),
@@ -106,11 +104,6 @@ Only include the rates for the currencies I listed above.`;
                 }
             });
 
-            // DEPRECATED: To be deleted once verified everything works
-            // Fetch all existing rates to check for duplicates
-            // const allExistingRates = await base44.entities.ExchangeRate.list();
-
-            // OPTIMIZATION: Do not fetch list() again. Use the latest cache state.
             // This handles the edge case where a rate might have been added while the LLM was thinking.
             const currentRates = queryClient.getQueryData([QUERY_KEYS.EXCHANGE_RATES]) || ratesToCheck;
 
@@ -119,17 +112,10 @@ Only include the rates for the currencies I listed above.`;
             const ratesToUpdate = [];
 
             for (const [currency, rate] of Object.entries(response.rates)) {
-                // SAFETY CHECK: Re-verify freshness one last time before writing.
+                // Re-verify freshness one last time before writing.
                 // If a fresh rate (within 14 days) exists, we skip writing to DB entirely.
-                // This satisfies the constraint: "PREVENT writing to the database in case there's a fresh rate already"
                 const isNowFresh = areRatesFresh(currentRates, currency, 'USD', date, 14);
                 if (isNowFresh) continue;
-
-
-
-                // Check if rate already exists for this date/currency pair
-                // To be deleted once verified everything works
-                // const existingRate = allExistingRates.find(
 
                 const existingRate = currentRates.find(
                     r => r.date === date &&
@@ -165,7 +151,7 @@ Only include the rates for the currencies I listed above.`;
 
             // Invalidate the query to refresh the data
             if (ratesToCreate.length > 0 || ratesToUpdate.length > 0) {
-                await queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EXCHANGE_RATES] }); // Await the invalidation
+                await queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.EXCHANGE_RATES] });
 
                 return {
                     success: true,
