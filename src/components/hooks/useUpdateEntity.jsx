@@ -6,8 +6,7 @@ import { showToast } from "@/components/ui/use-toast";
 /**
  * Generic hook for entity updates with centralized mutation logic.
  * 
- * CREATED 16-Jan-2025: Centralized entity update logic to reduce boilerplate
- * and ensure consistency across all entity types.
+ * Centralized entity update logic to reduce boilerplate and ensure consistency across all entity types.
  * 
  * @param {Object} config - Configuration object
  * @param {string} config.entityName - Name of the entity (e.g., 'Transaction', 'Category', 'CustomBudget')
