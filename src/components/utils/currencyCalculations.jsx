@@ -63,34 +63,7 @@ export function getRateForDate(exchangeRates, currencyCode, date) {
         return 1.0;
     }
 
-    // First, try to find an exact match for the date
-    // const exactMatch = exchangeRates.find(
-    //   r => r.fromCurrency === currencyCode && 
-    //        r.toCurrency === 'USD' && 
-    //        r.date === date
-    // );
-
-    // if (exactMatch) {
-    //   return exactMatch.rate;
-    // }
-
-    // If no exact match, find the most recent rate within the 14-day window
-    // const targetDate = new Date(date);
-    // const fourteenDaysAgo = new Date(targetDate);
-    // fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-
-    // const candidateRates = exchangeRates.filter(
-    //   r => r.fromCurrency === currencyCode && 
-    //        r.toCurrency === 'USD'
-    // );
-
-    // Find rates within the freshness window
-    // const freshRates = candidateRates.filter(r => {
-    //   const rateDate = new Date(r.date);
-    //   return rateDate >= fourteenDaysAgo && rateDate <= targetDate;
-    // });
-
-    // ROBUST DATE LOGIC: Find all rates within the freshness window (0 to 14 days)
+    // Find all rates within the freshness window (0 to 14 days)
     const targetDateObj = startOfDay(parseISO(date));
     const windowDays = 14;
 
@@ -125,24 +98,6 @@ export function getRateForDate(exchangeRates, currencyCode, date) {
  * @returns {boolean} True if rates are fresh, false if stale or missing
  */
 export function areRatesFresh(exchangeRates, sourceCurrency, targetCurrency, date) {
-    // If either currency is USD, we don't need to check freshness
-    // if (sourceCurrency === 'USD' || targetCurrency === 'USD') {
-    //   // Only need to check the non-USD currency
-    //   const currencyToCheck = sourceCurrency === 'USD' ? targetCurrency : sourceCurrency;
-    //   if (currencyToCheck === 'USD') {
-    //     return true; // Both are USD
-    //   }
-
-    //   const rate = getRateForDate(exchangeRates, currencyToCheck, date);
-    //   return rate !== null;
-    // }
-
-    // Check if both required rates are available within the freshness window
-    // const sourceRate = getRateForDate(exchangeRates, sourceCurrency, date);
-    // const targetRate = getRateForDate(exchangeRates, targetCurrency, date);
-
-    // return sourceRate !== null && targetRate !== null;
-
     // Logic simplified: Determine which currencies need lookup
     const neededCurrencies = [];
     if (sourceCurrency !== 'USD') neededCurrencies.push(sourceCurrency);
@@ -156,19 +111,3 @@ export function areRatesFresh(exchangeRates, sourceCurrency, targetCurrency, dat
         return rate !== null;
     });
 }
-
-/**
- * List of commonly supported currencies
- */
-// export const SUPPORTED_CURRENCIES = [
-//   { code: 'USD', name: 'US Dollar', symbol: '$' },
-//   { code: 'EUR', name: 'Euro', symbol: '€' },
-//   { code: 'GBP', name: 'British Pound', symbol: '£' },
-//   { code: 'JPY', name: 'Japanese Yen', symbol: '¥' },
-//   { code: 'CAD', name: 'Canadian Dollar', symbol: 'C$' },
-//   { code: 'AUD', name: 'Australian Dollar', symbol: 'A$' },
-//   { code: 'CHF', name: 'Swiss Franc', symbol: 'CHF' },
-//   { code: 'CNY', name: 'Chinese Yuan', symbol: '¥' },
-//   { code: 'INR', name: 'Indian Rupee', symbol: '₹' },
-//   { code: 'MXN', name: 'Mexican Peso', symbol: '$' },
-// ];
