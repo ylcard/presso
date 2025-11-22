@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { showToast } from "@/components/ui/use-toast";
-// ADDED 16-Jan-2025: Import new generic CRUD hooks
 import { useCreateEntity } from "./useCreateEntity";
 import { useUpdateEntity } from "./useUpdateEntity";
 import { useDeleteEntity } from "./useDeleteEntity";
@@ -15,149 +14,8 @@ import {
     updateCurrencyBalance,
 } from "../utils/cashAllocationUtils";
 import { parseDate } from "../utils/dateUtils";
-// ADDED 17-Jan-2025: Import createPageUrl for redirect after budget deletion
 import { createPageUrl } from "@/utils";
 
-// COMMENTED OUT 16-Jan-2025: Removed redundant dashboard hooks - data integrity issues
-// These hooks contained critical flaws:
-// 1. deleteBudgetMutation failed to return cash to wallet (missing returnCashToWallet)
-// 2. createBudgetMutation ignored intelligent status assignment (planned vs active)
-// 3. Missing SYSTEM_BUDGETS invalidation in transaction creation
-// Solution: Enhanced main hooks (useTransactionActions, useCustomBudgetActions) now accept options.onSuccess callbacks
-//
-// // Hook for transaction mutations (Dashboard)
-// export const useTransactionMutationsDashboard = (setShowQuickAdd, setShowQuickAddIncome) => {
-//   const queryClient = useQueryClient();
-//
-//   const createMutation = useMutation({
-//     mutationFn: (data) => base44.entities.Transaction.create(data),
-//     onSuccess: () => {
-//       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TRANSACTIONS] });
-//       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.SYSTEM_BUDGETS] });
-//       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CASH_WALLET] });
-//       setShowQuickAdd(false);
-//       setShowQuickAddIncome(false);
-//       showToast({
-//         title: "Success",
-//         description: "Transaction added successfully",
-//       });
-//     },
-//     onError: (error) => {
-//       console.error('Error creating transaction:', error);
-//       showToast({
-//         title: "Error",
-//         description: error?.message || "Failed to create transaction. Please try again.",
-//         variant: "destructive",
-//       });
-//     },
-//   });
-//
-//   return {
-//     createTransaction: createMutation.mutate,
-//     isCreating: createMutation.isPending,
-//   };
-// };
-//
-// // Hook for budget mutations (Dashboard)
-// export const useBudgetMutationsDashboard = (user, transactions, allCustomBudgets, setShowQuickAddBudget) => {
-//   const queryClient = useQueryClient();
-//
-//   const createBudgetMutation = useMutation({
-//     mutationFn: (data) => base44.entities.CustomBudget.create({
-//       ...data,
-//       user_email: user.email,
-//       isSystemBudget: false
-//     }),
-//     onSuccess: () => {
-//       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CUSTOM_BUDGETS] });
-//       setShowQuickAddBudget(false);
-//       showToast({
-//         title: "Success",
-//         description: "Budget created successfully",
-//       });
-//     },
-//     onError: (error) => {
-//       console.error('Error creating budget:', error);
-//       showToast({
-//         title: "Error",
-//         description: error?.message || "Failed to create budget. Please try again.",
-//         variant: "destructive",
-//       });
-//     },
-//   });
-//
-//   const deleteBudgetMutation = useMutation({
-//     mutationFn: async (id) => {
-//       const budgetTransactions = transactions.filter(t => t.customBudgetId === id);
-//       
-//       for (const transaction of budgetTransactions) {
-//         await base44.entities.Transaction.delete(transaction.id);
-//       }
-//       
-//       await base44.entities.CustomBudget.delete(id);
-//     },
-//     onSuccess: () => {
-//       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CUSTOM_BUDGETS] });
-//       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TRANSACTIONS] });
-//       showToast({
-//         title: "Success",
-//         description: "Budget deleted successfully",
-//       });
-//     },
-//     onError: (error) => {
-//       console.error('Error deleting budget:', error);
-//       showToast({
-//         title: "Error",
-//         description: error?.message || "Failed to delete budget. Please try again.",
-//         variant: "destructive",
-//       });
-//     },
-//   });
-//
-//   const completeBudgetMutation = useMutation({
-//     mutationFn: async (id) => {
-//       const budget = allCustomBudgets.find(cb => cb.id === id);
-//       if (!budget) return;
-//       
-//       const budgetTransactions = transactions.filter(t => t.customBudgetId === id && t.isPaid);
-//       const actualSpent = budgetTransactions.reduce((sum, t) => sum + t.amount, 0);
-//       
-//       await base44.entities.CustomBudget.update(id, { 
-//         status: 'completed',
-//         allocatedAmount: actualSpent,
-//         originalAllocatedAmount: budget.originalAllocatedAmount || budget.allocatedAmount
-//       });
-//     },
-//     onSuccess: () => {
-//       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CUSTOM_BUDGETS] });
-//       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TRANSACTIONS] });
-//       showToast({
-//         title: "Success",
-//         description: "Budget marked as completed",
-//       });
-//     },
-//     onError: (error) => {
-//       console.error('Error completing budget:', error);
-//       showToast({
-//         title: "Error",
-//         description: error?.message || "Failed to complete budget. Please try again.",
-//         variant: "destructive",
-//       });
-//     },
-//   });
-//
-//   return {
-//     createBudget: createBudgetMutation.mutate,
-//     deleteBudget: deleteBudgetMutation.mutate,
-//     completeBudget: completeBudgetMutation.mutate,
-//     isCreating: createBudgetMutation.isPending,
-//     isDeleting: deleteBudgetMutation.isPending,
-//     isCompleting: completeBudgetMutation.isPending,
-//   };
-// };
-
-// REFACTORED 16-Jan-2025: Now uses generic useCreateEntity, useUpdateEntity, and useDeleteEntity hooks
-// ENHANCED 16-Jan-2025: Added options parameter with onSuccess callback support for Dashboard integration
 // Hook for transaction actions (CRUD operations - Transactions page)
 export const useTransactionActions = (setShowForm, setEditingTransaction, cashWallet, options = {}) => {
     const queryClient = useQueryClient();
@@ -280,7 +138,7 @@ export const useTransactionActions = (setShowForm, setEditingTransaction, cashWa
     };
 };
 
-// REFACTORED 16-Jan-2025: Now uses generic useCreateEntity, useUpdateEntity, and useDeleteEntity hooks
+// Uses generic useCreateEntity, useUpdateEntity, and useDeleteEntity hooks
 // Hook for category actions (CRUD operations)
 export const useCategoryActions = (setShowForm, setEditingCategory) => {
     // CREATE: Use generic hook (no preprocessing needed)
@@ -340,18 +198,9 @@ export const useGoalActions = (user, goals) => {
         mutationFn: ({ id, data }) => base44.entities.BudgetGoal.update(id, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GOALS] });
-            // showToast({
-            //     title: "Success",
-            //     description: "Goal updated successfully",
-            // });
         },
         onError: (error) => {
             console.error('Error updating goal:', error);
-            // showToast({
-            //     title: "Error",
-            //     description: error?.message || "Failed to update goal. Please try again.",
-            //     variant: "destructive",
-            // });
         },
     });
 
@@ -359,40 +208,14 @@ export const useGoalActions = (user, goals) => {
         mutationFn: (data) => base44.entities.BudgetGoal.create(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GOALS] });
-            // showToast({
-            //     title: "Success",
-            //     description: "Goal created successfully",
-            // });
         },
         onError: (error) => {
             console.error('Error creating goal:', error);
-            // showToast({
-            //     title: "Error",
-            //     description: error?.message || "Failed to create goal. Please try again.",
-            //     variant: "destructive",
-            // });
         },
     });
 
     const handleGoalUpdate = async (priority, percentage) => {
         const existingGoal = goals.find(g => g.priority === priority);
-
-        // try {
-        //     if (existingGoal) {
-        //         await updateGoalMutation.mutateAsync({
-        //             id: existingGoal.id,
-        //             data: { target_percentage: percentage }
-        //         });
-        //     } else if (user) {
-        //         await createGoalMutation.mutateAsync({
-        //             priority,
-        //             target_percentage: percentage,
-        //             user_email: user.email
-        //         });
-        //     }
-        // } catch (error) {
-        //     console.error('Error in handleGoalUpdate:', error);
-        // }
 
         try {
             if (existingGoal) {
@@ -426,11 +249,6 @@ export const useGoalActions = (user, goals) => {
     };
 };
 
-// REFACTORED 16-Jan-2025: Major refactor using generic CRUD hooks
-// FIXED 16-Jan-2025: Custom budget deletion now uses base44.entities.CustomBudget.get(id) instead of list().find()
-// ENHANCED 16-Jan-2025: Added options parameter with onSuccess callback support for Dashboard integration
-// UPDATED 17-Jan-2025: Exposed handleDeleteDirect to fix nested confirmation issue
-// FIXED 17-Jan-2025: Added onAfterSuccess to redirect to Budgets page after deletion
 // Hook for custom budget actions (CRUD operations)
 export const useCustomBudgetActions = (user, transactions, cashWallet, options = {}) => {
     const [showForm, setShowForm] = useState(false);
@@ -475,7 +293,7 @@ export const useCustomBudgetActions = (user, transactions, cashWallet, options =
         entityName: 'CustomBudget',
         queryKeysToInvalidate: [QUERY_KEYS.CUSTOM_BUDGETS, QUERY_KEYS.CASH_WALLET, ['budget'], ['allBudgets']],
         onBeforeUpdate: async ({ id, data }) => {
-            // CRITICAL FIX 16-Jan-2025: Use get() instead of list().find() for efficiency
+            // CRITICAL: Use get() instead of list().find() for efficiency
             const existingBudget = await base44.entities.CustomBudget.get(id);
 
             if (!existingBudget) {
@@ -512,17 +330,13 @@ export const useCustomBudgetActions = (user, transactions, cashWallet, options =
         }
     });
 
-    // DELETE: Use generic hook with robust transaction deletion and cash return
-    // CRITICAL FIX 16-Jan-2025: Now uses base44.entities.CustomBudget.get(id) for efficiency
-    // UPDATED 17-Jan-2025: Destructured deleteDirect and exposed as handleDeleteDirect
-    // FIXED 17-Jan-2025: Added onAfterSuccess to redirect to Budgets page after deletion
     const { handleDelete: handleDeleteBudget, deleteDirect, isDeleting } = useDeleteEntity({
         entityName: 'CustomBudget',
         queryKeysToInvalidate: [QUERY_KEYS.CUSTOM_BUDGETS, QUERY_KEYS.TRANSACTIONS, QUERY_KEYS.CASH_WALLET],
         confirmTitle: "Delete Budget",
         confirmMessage: "Are you sure you want to delete this budget? This will also delete all associated transactions and return cash allocations to your wallet.",
         onBeforeDelete: async (budgetId) => {
-            // CRITICAL FIX 16-Jan-2025: Use efficient get() instead of list().find()
+            // CRITICAL5: Use efficient get() instead of list().find()
             const budget = await base44.entities.CustomBudget.get(budgetId);
 
             if (!budget) {
@@ -550,7 +364,7 @@ export const useCustomBudgetActions = (user, transactions, cashWallet, options =
             }
         },
         onAfterSuccess: () => {
-            // ADDED 17-Jan-2025: Redirect to Budgets page after successful deletion
+            // Redirect to Budgets page after successful deletion
             window.location.href = createPageUrl("Budgets");
         }
     });
@@ -560,7 +374,7 @@ export const useCustomBudgetActions = (user, transactions, cashWallet, options =
         entityName: 'CustomBudget',
         queryKeysToInvalidate: [QUERY_KEYS.CUSTOM_BUDGETS, QUERY_KEYS.CASH_WALLET],
         onBeforeUpdate: async ({ id, data }) => {
-            // CRITICAL FIX 16-Jan-2025: Use get() instead of list().find()
+            // CRITICAL: Use get() instead of list().find()
             const budget = await base44.entities.CustomBudget.get(id);
 
             if (!budget) {
@@ -630,7 +444,7 @@ export const useCustomBudgetActions = (user, transactions, cashWallet, options =
         handleSubmit,
         handleEdit,
         handleDelete: handleDeleteBudget,
-        handleDeleteDirect: deleteDirect, // ADDED 17-Jan-2025: Expose direct delete for callers with own confirmation
+        handleDeleteDirect: deleteDirect,
         handleStatusChange,
         isSubmitting: createMutation.isPending || updateMutation.isPending,
     };
