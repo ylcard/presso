@@ -1,4 +1,3 @@
-import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, Wallet, ArrowUpRight, ArrowDownRight, Target } from "lucide-react";
 import { formatCurrency } from "../utils/currencyUtils";
@@ -136,4 +135,3 @@ export default function ReportStats({
         </div>
     );
 }
-
