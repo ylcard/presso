@@ -25,14 +25,14 @@ export default function Transactions() {
     const [showAddIncome, setShowAddIncome] = useState(false);
     const [showAddExpense, setShowAddExpense] = useState(false);
 
-    // ADDED 20-Jan-2025: Fetch period for cross-period detection
+    // Fetch period for cross-period detection
     const { monthStart, monthEnd } = usePeriod();
 
     // Data fetching
     const { transactions, isLoading } = useTransactions();
     const { categories } = useCategories();
     const { cashWallet } = useCashWallet(user);
-    const { allCustomBudgets } = useCustomBudgetsAll(user); // ADDED 20-Jan-2025
+    const { allCustomBudgets } = useCustomBudgetsAll(user);
 
     // Filtering logic
     const { filters, setFilters, filteredTransactions } = useTransactionFiltering(transactions);
@@ -58,8 +58,8 @@ export default function Transactions() {
             async () => {
                 setIsBulkDeleting(true);
                 try {
-                    // Batch deletions to avoid API limits
-                    const chunks = chunkArray(filteredTransactions, 50); // Process 50 at a time
+                    // Batch deletions to avoid API limits, proccesses 50 at a time
+                    const chunks = chunkArray(filteredTransactions, 50);
 
                     for (const chunk of chunks) {
                         const deletePromises = chunk.map(t => base44.entities.Transaction.delete(t.id));
