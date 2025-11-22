@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "../utils/currencyUtils";
 import MonthNavigator from "../ui/MonthNavigator";
@@ -41,7 +41,7 @@ export default function TrendChart({
     setSelectedMonth,
     setSelectedYear
 }) {
-    const [monthsToShow, setMonthsToShow] = React.useState(6);
+    const [monthsToShow, setMonthsToShow] = useState(6);
 
     const data = useMemo(() => {
         // Pass the raw data and the target period for trend calculation
