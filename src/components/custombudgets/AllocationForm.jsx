@@ -143,7 +143,7 @@ export default function AllocationForm({
 
             {/* Category Selection */}
             <div className="space-y-2">
-                <Label htmlFor="categoryId">Category *</Label>
+                <Label htmlFor="categoryId">Category</Label>
                 <CategorySelect
                     value={formData.categoryId}
                     onValueChange={(value) => setFormData({ ...formData, categoryId: value })}
@@ -154,7 +154,7 @@ export default function AllocationForm({
             {/* Amount and Currency */}
             <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                    <Label htmlFor="allocatedAmount">Amount *</Label>
+                    <Label htmlFor="allocatedAmount">Amount</Label>
                     <AmountInput
                         id="allocatedAmount"
                         value={formData.allocatedAmount}
@@ -168,7 +168,7 @@ export default function AllocationForm({
                 {/* Currency - Only show for cash allocations and limited to available currencies */}
                 {formData.allocationType === 'cash' && availableCashCurrencies.length > 0 && (
                     <div className="space-y-2">
-                        <Label htmlFor="currency">Currency *</Label>
+                        <Label htmlFor="currency">Currency</Label>
                         <CurrencySelect
                             value={formData.currency}
                             onValueChange={(value) => setFormData({ ...formData, currency: value })}
