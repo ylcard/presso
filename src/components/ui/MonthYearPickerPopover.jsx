@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { getMonthName } from "@/utils/dateUtils";
+import { getMonthName } from "../utils/dateUtils";
 import { CustomButton } from "@/components/ui/CustomButton";
 import {
     Popover,
