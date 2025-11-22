@@ -19,7 +19,7 @@ import { getCurrencyBalance, getRemainingAllocatedCash } from "../utils/cashAllo
 import { getCurrencySymbol } from "../utils/currencyUtils";
 import { calculateConvertedAmount, getRateForDate } from "../utils/currencyCalculations";
 import { SUPPORTED_CURRENCIES } from "../utils/constants";
-import { formatDateString, parseDate, getTodayString } from "../utils/dateUtils";
+import { parseDate, getTodayString } from "../utils/dateUtils";
 import { normalizeAmount } from "../utils/generalUtils";
 
 export default function TransactionFormContent({
