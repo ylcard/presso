@@ -4,21 +4,21 @@
  * user settings for date formatting and utility functions for storage/retrieval.
  */
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Calendar } from "@/components/ui/calendar";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
 } from "@/components/ui/popover";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "@/components/ui/select";
 import { useSettings } from "../utils/SettingsContext";
 import { parseDate, formatDateString, formatDate } from "../utils/dateUtils";
@@ -31,62 +31,62 @@ import { setMonth, setYear, startOfMonth } from "date-fns";
  * that look like plain text but open dropdowns on click.
  */
 function CalendarCaptionLabel({ displayMonth }) {
-  const { goToMonth } = useNavigation();
-  const months = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ];
+    const { goToMonth } = useNavigation();
+    const months = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    ];
 
-  // Generate a range of years (e.g., 2000 - 2050)
-  const startYear = 2000;
-  const endYear = 2050;
-  const years = Array.from({ length: endYear - startYear + 1 }, (_, i) => startYear + i);
+    // Generate a range of years (e.g., 2000 - 2050)
+    const startYear = 2000;
+    const endYear = 2050;
+    const years = Array.from({ length: endYear - startYear + 1 }, (_, i) => startYear + i);
 
-  const handleMonthChange = (value) => {
-    const newMonth = parseInt(value);
-    goToMonth(setMonth(startOfMonth(displayMonth), newMonth));
-  };
+    const handleMonthChange = (value) => {
+        const newMonth = parseInt(value);
+        goToMonth(setMonth(startOfMonth(displayMonth), newMonth));
+    };
 
-  const handleYearChange = (value) => {
-    const newYear = parseInt(value);
-    goToMonth(setYear(startOfMonth(displayMonth), newYear));
-  };
+    const handleYearChange = (value) => {
+        const newYear = parseInt(value);
+        goToMonth(setYear(startOfMonth(displayMonth), newYear));
+    };
 
-  return (
-    <div className="flex items-center gap-1">
-      <Select
-        value={displayMonth.getMonth().toString()}
-        onValueChange={handleMonthChange}
-      >
-        <SelectTrigger className="h-auto p-0 border-none shadow-none font-medium hover:bg-transparent hover:text-primary focus:ring-0 [&>svg]:hidden bg-transparent">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {months.map((month, index) => (
-            <SelectItem key={month} value={index.toString()}>
-              {month}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+    return (
+        <div className="flex items-center gap-1">
+            <Select
+                value={displayMonth.getMonth().toString()}
+                onValueChange={handleMonthChange}
+            >
+                <SelectTrigger className="h-auto p-0 border-none shadow-none font-medium hover:bg-transparent hover:text-primary focus:ring-0 [&>svg]:hidden bg-transparent">
+                    <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                    {months.map((month, index) => (
+                        <SelectItem key={month} value={index.toString()}>
+                            {month}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
 
-      <Select
-        value={displayMonth.getFullYear().toString()}
-        onValueChange={handleYearChange}
-      >
-        <SelectTrigger className="h-auto p-0 border-none shadow-none font-medium hover:bg-transparent hover:text-primary focus:ring-0 [&>svg]:hidden bg-transparent">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {years.map((year) => (
-            <SelectItem key={year} value={year.toString()}>
-              {year}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-  );
+            <Select
+                value={displayMonth.getFullYear().toString()}
+                onValueChange={handleYearChange}
+            >
+                <SelectTrigger className="h-auto p-0 border-none shadow-none font-medium hover:bg-transparent hover:text-primary focus:ring-0 [&>svg]:hidden bg-transparent">
+                    <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                    {years.map((year) => (
+                        <SelectItem key={year} value={year.toString()}>
+                            {year}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+        </div>
+    );
 }
 
 /**
@@ -102,55 +102,55 @@ function CalendarCaptionLabel({ displayMonth }) {
  * @returns {JSX.Element} The date picker component.
  */
 export default function DatePicker({ value, onChange, placeholder = "Pick a date", className = "" }) {
-  const { settings } = useSettings();
+    const { settings } = useSettings();
 
-  /**
-   * @type {[boolean, function(boolean)]} Internal state to control the open/closed state of the Popover.
-   */
-  const [open, setOpen] = useState(false);
-  
-  // Parse the date string to a Date object
-  const dateValue = value ? parseDate(value) : undefined;
+    /**
+     * @type {[boolean, function(boolean)]} Internal state to control the open/closed state of the Popover.
+     */
+    const [open, setOpen] = useState(false);
 
-  /**
-   * Handles the date selection from the Calendar component.
-   * Converts the selected Date object back into the standardized YYYY-MM-DD string format
-   * before calling the external onChange handler.
-   * @param {Date|undefined} date - The date object selected from the Calendar.
-   */
-  const handleSelect = (date) => {
-    if (date) {
-      // Convert to YYYY-MM-DD format (timezone agnostic)
-      const formattedDate = formatDateString(date);
-      onChange(formattedDate);
-      setOpen(false);
-    }
-  };
+    // Parse the date string to a Date object
+    const dateValue = value ? parseDate(value) : undefined;
 
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <CustomButton
-          variant="outline"
-          className={`w-full justify-start text-left font-normal ${!value && "text-muted-foreground"} ${className}`}
-        >
-          <CalendarIcon className="mr-2 h-4 w-4" />
-          {value ? formatDate(value, settings.dateFormat) : <span>{placeholder}</span>}
-        </CustomButton>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start" sideOffset={4}>
-        <Calendar
-          mode="single"
-          selected={dateValue}
-          onSelect={handleSelect}
-          initialFocus
-          className="w-fit rounded-md border"
-          fixedWeeks
-          components={{
-            CaptionLabel: CalendarCaptionLabel
-          }}
-        />
-      </PopoverContent>
-    </Popover>
-  );
+    /**
+     * Handles the date selection from the Calendar component.
+     * Converts the selected Date object back into the standardized YYYY-MM-DD string format
+     * before calling the external onChange handler.
+     * @param {Date|undefined} date - The date object selected from the Calendar.
+     */
+    const handleSelect = (date) => {
+        if (date) {
+            // Convert to YYYY-MM-DD format (timezone agnostic)
+            const formattedDate = formatDateString(date);
+            onChange(formattedDate);
+            setOpen(false);
+        }
+    };
+
+    return (
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                <CustomButton
+                    variant="outline"
+                    className={`w-full justify-start text-left font-normal ${!value && "text-muted-foreground"} ${className}`}
+                >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {value ? formatDate(value, settings.dateFormat) : <span>{placeholder}</span>}
+                </CustomButton>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start" sideOffset={4}>
+                <Calendar
+                    mode="single"
+                    selected={dateValue}
+                    onSelect={handleSelect}
+                    initialFocus
+                    className="w-fit rounded-md border"
+                    fixedWeeks
+                    components={{
+                        CaptionLabel: CalendarCaptionLabel
+                    }}
+                />
+            </PopoverContent>
+        </Popover>
+    );
 }
