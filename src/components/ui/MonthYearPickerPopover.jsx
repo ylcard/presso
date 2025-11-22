@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { getMonthName } from "@/utils/dateUtils";
 import { CustomButton } from "@/components/ui/CustomButton";
 import {
     Popover,
@@ -17,10 +19,7 @@ export default function MonthYearPickerPopover({ currentMonth, currentYear, onMo
     const [tempMonth, setTempMonth] = useState(currentMonth);
     const [tempYear, setTempYear] = useState(currentYear);
 
-    const monthNames = [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"
-    ];
+
 
     // Generate year options: current year ± 5 years
     const currentYearNow = new Date().getFullYear();
@@ -59,9 +58,9 @@ export default function MonthYearPickerPopover({ currentMonth, currentYear, onMo
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                {monthNames.map((month, index) => (
+                                {Array.from({ length: 12 }).map((_, index) => (
                                     <SelectItem key={index} value={index.toString()}>
-                                        {month}
+                                        {getMonthName(index)}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
