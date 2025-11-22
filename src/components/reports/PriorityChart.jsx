@@ -1,4 +1,3 @@
-import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -52,8 +51,8 @@ export default function PriorityChart({ transactions, categories, goals, monthly
                                     <Cell
                                         key={`cell-${index}`}
                                         fill={entry.color}
-                                        fillOpacity={0.2} // 20% Opacity
-                                        stroke={entry.color} // Solid border so the top is clearly visible
+                                        fillOpacity={0.2}
+                                        stroke={entry.color}
                                     />
                                 ))}
                             </Bar>
