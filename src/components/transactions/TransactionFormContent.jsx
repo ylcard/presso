@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CustomButton } from "@/components/ui/CustomButton";
@@ -42,7 +42,7 @@ export default function TransactionFormContent({
         originalCurrency: settings?.baseCurrency || 'USD',
         type: 'expense',
         category_id: '',
-        financial_priority: '', // ADDED 20-Jan-2025: Transaction-specific priority
+        financial_priority: '',
         date: formatDateString(new Date()),
         isPaid: false,
         paidDate: '',
@@ -78,7 +78,7 @@ export default function TransactionFormContent({
                 originalCurrency: settings?.baseCurrency || 'USD',
                 type: 'expense',
                 category_id: '',
-                financial_priority: '', // ADDED 20-Jan-2025
+                financial_priority: '',
                 date: formatDateString(new Date()),
                 isPaid: false,
                 paidDate: '',
@@ -107,7 +107,7 @@ export default function TransactionFormContent({
         c => c.code === formData.originalCurrency
     )?.symbol || getCurrencySymbol(formData.originalCurrency);
 
-    // LOGIC UPDATE: Auto-set Priority based on Category
+    // Auto-set Priority based on Category
     useEffect(() => {
         if (formData.category_id) {
             const selectedCategory = categories.find(c => c.id === formData.category_id);
@@ -117,7 +117,7 @@ export default function TransactionFormContent({
         }
     }, [formData.category_id, categories]);
 
-    // LOGIC UPDATE: Auto-select System Budget based on Priority
+    // Auto-select System Budget based on Priority
     // If priority changes to 'wants', try to find a budget named 'Wants'
     useEffect(() => {
         if (formData.financial_priority && allBudgets.length > 0) {
@@ -141,16 +141,12 @@ export default function TransactionFormContent({
         }
     }, [formData.financial_priority, allBudgets]);
 
-    // ENHANCEMENT (2025-01-11): Filter budgets to show active + planned statuses
+    // Filter budgets to show active + planned statuses
     // This allows linking expenses to future/past budgets while keeping the list manageable
     const filteredBudgets = (() => {
         const txDate = new Date(formData.date);
         // Filter for active and planned budgets
         let statusFiltered = allBudgets.filter(b => {
-            // Include system budgets
-            // if (b.isSystemBudget) return true;
-            // Include active and planned custom budgets
-            // return b.status === 'active' || b.status === 'planned';
 
             // 1. SYSTEM BUDGETS: STRICT MONTH MATCH
             // You cannot spend from "December Groceries" in November.
@@ -177,7 +173,6 @@ export default function TransactionFormContent({
             }
         }
 
-        //return statusFiltered;
         const sortedBudgets = [...statusFiltered].sort((a, b) => {
             if (a.isSystemBudget && !b.isSystemBudget) return -1;
             if (!a.isSystemBudget && b.isSystemBudget) return 1;
