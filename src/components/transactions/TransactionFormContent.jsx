@@ -5,7 +5,7 @@ import { CustomButton } from "@/components/ui/CustomButton";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { RefreshCw, AlertCircle, PlayCircle, Clock, CheckCircle2 } from "lucide-react";
+import { RefreshCw, AlertCircle, Clock, CheckCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
 import AmountInput from "../ui/AmountInput";
@@ -18,7 +18,7 @@ import { useExchangeRates } from "../hooks/useExchangeRates";
 import { getCurrencyBalance, getRemainingAllocatedCash } from "../utils/cashAllocationUtils";
 import { getCurrencySymbol } from "../utils/currencyUtils";
 import { calculateConvertedAmount, getRateForDate } from "../utils/currencyCalculations";
-import { SUPPORTED_CURRENCIES } from "../utils/constants";
+import { SUPPORTED_CURRENCIES, FINANCIAL_PRIORITIES } from "../utils/constants";
 import { formatDateString, isDateInRange, formatDate } from "../utils/dateUtils";
 import { normalizeAmount } from "../utils/generalUtils";
 
@@ -179,8 +179,27 @@ export default function TransactionFormContent({
         }
 
         const sortedBudgets = [...statusFiltered].sort((a, b) => {
+            // 1. System Budgets First
             if (a.isSystemBudget && !b.isSystemBudget) return -1;
             if (!a.isSystemBudget && b.isSystemBudget) return 1;
+
+            // 2. Sort System Budgets by Priority Order (Needs > Wants > Savings)
+            if (a.isSystemBudget && b.isSystemBudget) {
+                const orderA = FINANCIAL_PRIORITIES[a.systemBudgetType]?.order ?? 99;
+                const orderB = FINANCIAL_PRIORITIES[b.systemBudgetType]?.order ?? 99;
+                return orderA - orderB;
+            }
+
+            // 3. Sort Custom Budgets by Status (Active > Planned > Completed)
+            const statusOrder = { active: 0, planned: 1, completed: 2 };
+            const statusA = statusOrder[a.status] ?? 99;
+            const statusB = statusOrder[b.status] ?? 99;
+
+            if (statusA !== statusB) {
+                return statusA - statusB;
+            }
+
+            // 4. Sort by Name within same status
             return a.name.localeCompare(b.name);
         });
         return sortedBudgets;
@@ -497,19 +516,22 @@ export default function TransactionFormContent({
                                 {filteredBudgets.map((budget) => (
                                     <SelectItem key={budget.id} value={budget.id}>
                                         <div className="flex items-center">
+                                            {/* Icons on the left */}
                                             {budget.isSystemBudget && <span className="text-blue-600 mr-2">★</span>}
+                                            {!budget.isSystemBudget && (
+                                                <>
+                                                    {budget.status === 'active' && <Clock className="w-3 h-3 text-orange-500 mr-2" />}
+                                                    {budget.status === 'planned' && <Clock className="w-3 h-3 text-blue-500 mr-2" />}
+                                                    {budget.status === 'completed' && <CheckCircle className="w-3 h-3 text-green-500 mr-2" />}
+                                                </>
+                                            )}
+
                                             <span>{budget.name}</span>
+
                                             {budget.isSystemBudget && (
                                                 <span className="text-gray-500 ml-2 text-xs">
                                                     ({formatDate(budget.startDate, 'MMM yyyy')})
                                                 </span>
-                                            )}
-                                            {!budget.isSystemBudget && (
-                                                <>
-                                                    {budget.status === 'active' && <PlayCircle className="w-3 h-3 text-green-500 ml-2" />}
-                                                    {budget.status === 'planned' && <Clock className="w-3 h-3 text-blue-500 ml-2" />}
-                                                    {budget.status === 'completed' && <CheckCircle2 className="w-3 h-3 text-gray-400 ml-2" />}
-                                                </>
                                             )}
                                         </div>
                                     </SelectItem>
