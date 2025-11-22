@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Label } from "@/components/ui/label";
 import AmountInput from "../ui/AmountInput";
@@ -21,9 +21,11 @@ export default function AllocationForm({
     const hasCashAllocations = customBudget?.cashAllocations && customBudget.cashAllocations.length > 0;
 
     // Extract available currencies from customBudget.cashAllocations
-    const availableCashCurrencies = hasCashAllocations
-        ? customBudget.cashAllocations.map(alloc => alloc.currencyCode)
-        : [];
+    const availableCashCurrencies = useMemo(() => {
+        return hasCashAllocations
+            ? customBudget.cashAllocations.map(alloc => alloc.currencyCode)
+            : [];
+    }, [customBudget, hasCashAllocations]);
 
     const [formData, setFormData] = useState({
         categoryId: '',
