@@ -21,7 +21,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { useSettings } from "../utils/SettingsContext";
-import { parseDate, formatDateString, formatDate } from "../utils/dateUtils";
+import { parseDate, formatDateString, formatDate, getMonthName } from "../utils/dateUtils";
 import { useNavigation } from "react-day-picker";
 import { setMonth, setYear, startOfMonth } from "date-fns";
 
@@ -32,10 +32,6 @@ import { setMonth, setYear, startOfMonth } from "date-fns";
  */
 function CalendarCaptionLabel({ displayMonth }) {
     const { goToMonth } = useNavigation();
-    const months = [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"
-    ];
 
     // Generate a range of years (e.g., 2000 - 2050)
     const startYear = 2000;
@@ -62,9 +58,9 @@ function CalendarCaptionLabel({ displayMonth }) {
                     <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                    {months.map((month, index) => (
-                        <SelectItem key={month} value={index.toString()}>
-                            {month}
+                    {Array.from({ length: 12 }).map((_, index) => (
+                        <SelectItem key={index} value={index.toString()}>
+                            {getMonthName(index)}
                         </SelectItem>
                     ))}
                 </SelectContent>
