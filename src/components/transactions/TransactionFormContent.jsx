@@ -141,21 +141,32 @@ export default function TransactionFormContent({
         }
     }, [formData.financial_priority, allBudgets]);
 
-    // Filter budgets to show active + planned statuses
+    // Filter budgets to show active + planned statuses + relevant completed budgets
     // This allows linking expenses to future/past budgets while keeping the list manageable
     const filteredBudgets = (() => {
-        // Filter for active and planned budgets
+        // Determine the effective date for budget matching
+        // If it's a paid expense, use the paid date. Otherwise, use the transaction date.
+        const effectiveDateStr = (formData.isPaid && formData.paidDate) ? formData.paidDate : formData.date;
+
+        // Filter logic
         let statusFiltered = allBudgets.filter(b => {
             // 1. SYSTEM BUDGETS: DATE RANGE MATCH
-            // Check if the transaction date falls within the system budget's period
+            // Check if the effective date falls within the system budget's period
             if (b.isSystemBudget) {
-                return isDateInRange(formData.date, b.startDate, b.endDate);
+                return isDateInRange(effectiveDateStr, b.startDate, b.endDate);
             }
 
-            // 2. CUSTOM BUDGETS: STATUS BASED
-            // Include active, planned, AND completed budgets
-            // This allows adding expenses to past trips or projects that are technically "completed"
-            return b.status === 'active' || b.status === 'planned' || b.status === 'completed';
+            // 2. CUSTOM BUDGETS: INTELLIGENT FILTERING
+
+            // A. Date Range Match: Always show if the expense falls within the budget's dates
+            // This covers "Completed" budgets (e.g., adding a late expense to a past trip)
+            if (isDateInRange(effectiveDateStr, b.startDate, b.endDate)) {
+                return true;
+            }
+
+            // B. Status Based: Show Active and Planned budgets
+            // This allows flexibility (e.g., pre-booking a hotel for a trip that hasn't started yet)
+            return b.status === 'active' || b.status === 'planned';
         });
 
         // If editing and the transaction has a budget, ensure it's always in the list
@@ -163,7 +174,6 @@ export default function TransactionFormContent({
             const preSelectedBudget = allBudgets.find(b => b.id === initialTransaction.customBudgetId);
             if (preSelectedBudget && !statusFiltered.find(b => b.id === preSelectedBudget.id)) {
                 // Add the pre-selected budget at the beginning
-
                 return [preSelectedBudget, ...statusFiltered];
             }
         }
