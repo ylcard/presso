@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,7 +38,7 @@ import CustomBudgetForm from "../components/custombudgets/CustomBudgetForm";
 import ExpensesCardContent from "../components/budgetdetail/ExpensesCardContent";
 import { QUERY_KEYS } from "../components/hooks/queryKeys";
 
-// REFACTORED 13-Jan-2025: Updated to accept monthStart and monthEnd parameters for filtering paid expenses by selected month
+// Filters paid expenses by selected month
 const getCustomBudgetStats = (customBudget, transactions, monthStart, monthEnd) => {
     const budgetTransactions = transactions.filter(t => t.customBudgetId === customBudget.id);
 
@@ -121,7 +121,7 @@ const getCustomBudgetStats = (customBudget, transactions, monthStart, monthEnd) 
     };
 };
 
-// REFACTORED 11-Nov-2025: Helper to calculate system budget stats using expenseCalculations functions
+// Helper to calculate system budget stats using expenseCalculations functions
 const getSystemBudgetStats = (systemBudget, transactions, categories, allCustomBudgets, startDate, endDate) => {
     let paidAmount = 0;
     let unpaidAmount = 0;
@@ -165,7 +165,7 @@ const getSystemBudgetStats = (systemBudget, transactions, categories, allCustomB
     };
 };
 
-// REFACTORED 11-Nov-2025: Helper for custom budget allocation stats
+// Helper for custom budget allocation stats
 const getCustomBudgetAllocationStats = (customBudget, allocations, transactions) => {
     const budgetTransactions = transactions.filter(t => t.customBudgetId === customBudget.id);
 
@@ -212,7 +212,7 @@ export default function BudgetDetail() {
     const [showQuickAdd, setShowQuickAdd] = useState(false);
     const { confirmAction } = useConfirm();
 
-    const { selectedMonth, selectedYear, monthStart, monthEnd } = usePeriod();
+    const { monthStart, monthEnd } = usePeriod();
 
     const urlParams = new URLSearchParams(window.location.search);
     const budgetId = urlParams.get('id');
@@ -383,10 +383,6 @@ export default function BudgetDetail() {
         if (!budget) return [];
 
         if (budget.isSystemBudget) {
-            // const budgetStart = new Date(budget.startDate);
-            // const budgetEnd = new Date(budget.endDate);
-
-            // CORRECTED LOGIC:
             // 1. Ignore 'monthStart' (Global Context) because it overrides the specific 
             //    Budget ID we are viewing. If I view December Budget, I want Dec dates, 
             //    even if my global app state is November.
@@ -491,8 +487,7 @@ export default function BudgetDetail() {
         budgetActions.handleSubmit(data, budget);
     };
 
-    // CRITICAL FIX 16-Jan-2025: Removed premature redirect that caused confirmation dialog to close immediately
-    // UPDATED 17-Jan-2025: Use handleDeleteDirect to avoid nested confirmation
+    // Use handleDeleteDirect to avoid nested confirmation
     // Navigation now happens automatically via useDeleteEntity's onAfterSuccess callback in useCustomBudgetActions
     const handleDeleteBudget = () => {
         confirmAction(
@@ -500,7 +495,7 @@ export default function BudgetDetail() {
             "This will delete the budget and all associated transactions. This action cannot be undone.",
             async () => {
                 await budgetActions.handleDeleteDirect(budgetId);
-                // CRITICAL: Navigation moved to useDeleteEntity's onAfterSuccess to prevent premature redirect
+                // Navigation moved to useDeleteEntity's onAfterSuccess to prevent premature redirect
                 // The `budgetActions.handleDeleteDirect` (which wraps `useDeleteEntity`) is now responsible for navigation.
             },
             { destructive: true }
