@@ -19,7 +19,7 @@ import { getCurrencyBalance, getRemainingAllocatedCash } from "../utils/cashAllo
 import { getCurrencySymbol } from "../utils/currencyUtils";
 import { calculateConvertedAmount, getRateForDate } from "../utils/currencyCalculations";
 import { SUPPORTED_CURRENCIES } from "../utils/constants";
-import { formatDateString, isDateInRange } from "../utils/dateUtils";
+import { formatDateString, isDateInRange, formatDate } from "../utils/dateUtils";
 import { normalizeAmount } from "../utils/generalUtils";
 
 export default function TransactionFormContent({
@@ -498,6 +498,11 @@ export default function TransactionFormContent({
                                     <SelectItem key={budget.id} value={budget.id}>
                                         {budget.isSystemBudget && <span className="text-blue-600 mr-1">★</span>}
                                         {budget.name}
+                                        {budget.isSystemBudget && (
+                                            <span className="text-gray-500 ml-2 text-xs">
+                                                ({formatDate(budget.startDate, 'MMM yyyy')})
+                                            </span>
+                                        )}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
