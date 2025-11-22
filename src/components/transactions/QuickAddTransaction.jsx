@@ -42,18 +42,16 @@ export default function QuickAddTransaction({
                     </CustomButton>
                 </DialogTrigger>
             )}
-            <DialogContent className="sm:max-w-[500px] fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+            <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
                     <DialogTitle>Quick Add Expense</DialogTitle>
                 </DialogHeader>
                 <TransactionFormContent
                     initialTransaction={defaultCustomBudgetId ? {
-                        amount: null,
                         customBudgetId: defaultCustomBudgetId,
-                        date: customBudgets.find(b => b.id === defaultCustomBudgetId)?.startDate
                     } : null}
                     categories={categories}
-                    allBudgets={customBudgets}
+                    allBudgets={customBudgets || []}
                     onSubmit={onSubmit}
                     onCancel={() => onOpenChange(false)}
                     isSubmitting={isSubmitting}
