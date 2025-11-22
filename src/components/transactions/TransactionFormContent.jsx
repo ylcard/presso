@@ -5,7 +5,7 @@ import { CustomButton } from "@/components/ui/CustomButton";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { RefreshCw, AlertCircle } from "lucide-react";
+import { RefreshCw, AlertCircle, PlayCircle, Clock, CheckCircle2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
 import AmountInput from "../ui/AmountInput";
@@ -496,13 +496,22 @@ export default function TransactionFormContent({
                             <SelectContent>
                                 {filteredBudgets.map((budget) => (
                                     <SelectItem key={budget.id} value={budget.id}>
-                                        {budget.isSystemBudget && <span className="text-blue-600 mr-1">★</span>}
-                                        {budget.name}
-                                        {budget.isSystemBudget && (
-                                            <span className="text-gray-500 ml-2 text-xs">
-                                                ({formatDate(budget.startDate, 'MMM yyyy')})
-                                            </span>
-                                        )}
+                                        <div className="flex items-center">
+                                            {budget.isSystemBudget && <span className="text-blue-600 mr-2">★</span>}
+                                            <span>{budget.name}</span>
+                                            {budget.isSystemBudget && (
+                                                <span className="text-gray-500 ml-2 text-xs">
+                                                    ({formatDate(budget.startDate, 'MMM yyyy')})
+                                                </span>
+                                            )}
+                                            {!budget.isSystemBudget && (
+                                                <>
+                                                    {budget.status === 'active' && <PlayCircle className="w-3 h-3 text-green-500 ml-2" />}
+                                                    {budget.status === 'planned' && <Clock className="w-3 h-3 text-blue-500 ml-2" />}
+                                                    {budget.status === 'completed' && <CheckCircle2 className="w-3 h-3 text-gray-400 ml-2" />}
+                                                </>
+                                            )}
+                                        </div>
                                     </SelectItem>
                                 ))}
                             </SelectContent>
