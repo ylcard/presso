@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "../utils/currencyUtils";
 import { estimateCurrentMonth } from "../utils/projectionUtils";
@@ -110,7 +110,7 @@ export default function ProjectionChart({
                         {/* 6-Month Average Line (Background) */}
                         <div
                             className="absolute w-full border-t-2 border-gray-300 border-dashed z-0 opacity-50 left-0"
-                            style={{ bottom: `calc(${avgHeight}% + 24px)` }} // +24px accounts for the label height approx
+                            style={{ bottom: `calc(${avgHeight}% + 24px)` }}
                         />
                         <span className="absolute right-0 text-[10px] text-gray-400 bg-white px-1 z-0" style={{ bottom: `calc(${avgHeight}% + 24px)` }}>
                             6M Avg
