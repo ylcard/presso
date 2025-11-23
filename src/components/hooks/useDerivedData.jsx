@@ -14,6 +14,7 @@ import {
     getMonthlyPaidExpenses,
     getPaidSavingsExpenses,
     isCashExpense,
+    calculateCustomBudgetStats,
 } from "../utils/financialCalculations";
 import { FINANCIAL_PRIORITIES } from "../utils/constants";
 import { getCategoryIcon } from "../utils/iconMapConfig";
@@ -522,102 +523,20 @@ export const useBudgetBarsData = (
 
         // Custom budgets calculation - UPDATED to filter expenses by selected month's paidDate
         const customBudgetsData = custom.map(cb => {
-            const budgetTransactions = transactions.filter(t => t.customBudgetId === cb.id);
+            // Use the centralized calculation logic
+            const stats = calculateCustomBudgetStats(cb, transactions, monthStart, monthEnd);
 
-            const digitalTransactions = budgetTransactions.filter(
-                t => !t.isCashTransaction || t.cashTransactionType !== 'expense_from_wallet'
-            );
-            const cashTransactions = budgetTransactions.filter(
-                t => t.isCashTransaction && t.cashTransactionType === 'expense_from_wallet'
-            );
-
-            const digitalAllocated = cb.allocatedAmount || 0;
-
-            // Filter by paidDate within selected month for paid expenses
-            const digitalSpent = digitalTransactions
-                .filter(t => {
-                    if (t.type !== 'expense') return false;
-                    if (!t.isPaid || !t.paidDate) return false;
-
-                    // Filter by paidDate within selected month
-                    if (monthStartDate && monthEndDate) {
-                        const paidDate = parseDate(t.paidDate);
-                        return paidDate >= monthStartDate && paidDate <= monthEndDate;
-                    }
-                    return true;
-                })
-                .reduce((sum, t) => sum + (t.originalAmount || t.amount), 0);
-
-            const digitalUnpaid = digitalTransactions
-                .filter(t => t.type === 'expense' && !t.isPaid)
-                .reduce((sum, t) => sum + (t.originalAmount || t.amount), 0);
-
-            const cashByCurrency = {};
-            const cashAllocations = cb.cashAllocations || [];
-
-            cashAllocations.forEach(allocation => {
-                const currencyCode = allocation.currencyCode;
-                const allocated = allocation.amount || 0;
-
-                // Filter by paidDate within selected month for paid expenses
-                const spent = cashTransactions
-                    .filter(t => {
-                        if (t.type !== 'expense') return false;
-                        if (t.cashCurrency !== currencyCode) return false;
-                        if (!t.isPaid || !t.paidDate) return false;
-
-                        // Filter by paidDate within selected month
-                        if (monthStartDate && monthEndDate) {
-                            const paidDate = parseDate(t.paidDate);
-                            return paidDate >= monthStartDate && paidDate <= monthEndDate;
-                        }
-                        return true;
-                    })
-                    .reduce((sum, t) => sum + (t.cashAmount || 0), 0);
-
-                cashByCurrency[currencyCode] = {
-                    allocated,
-                    spent,
-                    remaining: allocated - spent
-                };
-            });
-
-            let totalBudget = digitalAllocated;
-            if (cashByCurrency) {
-                Object.values(cashByCurrency).forEach(cashData => {
-                    totalBudget += cashData?.allocated || 0;
-                });
-            }
-
-            let paidAmount = digitalSpent;
-            if (cashByCurrency) {
-                Object.values(cashByCurrency).forEach(cashData => {
-                    paidAmount += cashData?.spent || 0;
-                });
-            }
-
-            const expectedAmount = digitalUnpaid;
-            const totalSpent = paidAmount + expectedAmount;
-
+            const totalBudget = stats.totalAllocatedUnits;
+            const totalSpent = stats.totalSpentUnits + stats.totalUnpaidUnits;
             const maxHeight = Math.max(totalBudget, totalSpent);
             const isOverBudget = totalSpent > totalBudget;
             const overBudgetAmount = isOverBudget ? totalSpent - totalBudget : 0;
 
             return {
                 ...cb,
-                originalAllocatedAmount: cb.originalAllocatedAmount || cb.allocatedAmount,
-                stats: {
-                    paidAmount,
-                    totalBudget,
-                    digital: {
-                        allocated: digitalAllocated,
-                        spent: digitalSpent,
-                        unpaid: digitalUnpaid
-                    },
-                    cashByCurrency
-                },
+                stats,
                 targetAmount: totalBudget,
-                expectedAmount,
+                expectedAmount: stats.totalUnpaidUnits,
                 maxHeight,
                 isOverBudget,
                 overBudgetAmount
