@@ -11,7 +11,6 @@ import { useToast } from "@/components/ui/use-toast";
 import AmountInput from "../ui/AmountInput";
 import DatePicker from "../ui/DatePicker";
 import CategorySelect from "../ui/CategorySelect";
-import CategorySelect from "../ui/CategorySelect";
 import AnimatePresenceContainer from "../ui/AnimatePresenceContainer";
 import { useSettings } from "../utils/SettingsContext";
 import { useExchangeRates } from "../hooks/useExchangeRates";
