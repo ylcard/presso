@@ -102,7 +102,8 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget, 
 
     const currentStyle = sizeConfig[size] || sizeConfig.md;
     const radius = currentStyle.radius;
-    const circumference = 2 * Math.PI * radius;
+    const normalizedRadius = radius - currentStyle.stroke / 2;
+    const circumference = 2 * Math.PI * normalizedRadius;
 
 
     // Main progress (capped at 100% for the base ring)
@@ -176,7 +177,7 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget, 
                                 <circle
                                     cx="50%"
                                     cy="50%"
-                                    r={radius}
+                                    r={normalizedRadius}
                                     stroke="#F3F4F6"
                                     strokeWidth={currentStyle.stroke}
                                     fill="none"
@@ -184,7 +185,7 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget, 
 
                                 {/* Main Progress Ring */}
                                 <circle
-                                    cx="50%" cy="50%" r={radius}
+                                    cx="50%" cy="50%" r={normalizedRadius}
                                     stroke={theme.main}
                                     strokeWidth={currentStyle.stroke}
                                     fill="none"
@@ -197,7 +198,7 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget, 
                                 {/* Overlay Ring (if > 100%) */}
                                 {isOverBudget && (
                                     <circle
-                                        cx="50%" cy="50%" r={radius}
+                                        cx="50%" cy="50%" r={normalizedRadius}
                                         stroke={theme.overlay}
                                         strokeWidth={currentStyle.stroke}
                                         fill="none"
