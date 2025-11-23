@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
     Dialog,
     DialogContent,
@@ -31,21 +31,22 @@ export default function QuickAddTransaction({
     const { cashWallet } = useCashWallet(user);
     const { allBudgets } = useAllBudgets(user);
 
-    // Hybrid State Manager
-    // This ensures the modal opens even if 'open' prop is undefined
+    // We rely on internal state UNLESS the parent explicitly passes a boolean 'open' prop
     const [internalOpen, setInternalOpen] = useState(false);
-    const isControlled = open !== undefined;
+
+    // STRICT check: Only be controlled if open is truly a boolean (true/false)
+    // If 'open' is undefined/null, we default to internal state (like the old component)
+    const isControlled = typeof open === "boolean";
     const showDialog = isControlled ? open : internalOpen;
 
     const isEditMode = !!transaction;
 
-    const handleOpenChange = (isOpen) => {
-        if (!isControlled) setInternalOpen(isOpen);
-        // Safety check: only call prop if it exists
-        if (onOpenChange) onOpenChange(isOpen);
+    const handleOpenChange = (newOpenState) => {
+        setInternalOpen(newOpenState); // Always update internal backup
+        if (onOpenChange) {
+            onOpenChange(newOpenState);
+        }
     };
-
-
     const handleSubmit = (data) => {
         onSubmit(data);
         handleOpenChange(false);
@@ -75,7 +76,10 @@ export default function QuickAddTransaction({
         <Dialog open={showDialog} onOpenChange={handleOpenChange}>
             {renderTrigger && (
                 <DialogTrigger asChild>
-                    {trigger || defaultTrigger}
+                    {/* Wrap in span to guarantee event capture, mimicking simple DOM behavior */}
+                    <span className="inline-block cursor-pointer" tabIndex={-1}>
+                        {trigger || defaultTrigger}
+                    </span>
                 </DialogTrigger>
             )}
             <DialogContent className="sm:max-w-[500px] fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
