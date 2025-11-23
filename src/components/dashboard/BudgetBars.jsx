@@ -112,7 +112,7 @@ export default function BudgetBars({
                         <div className={containerClass}>
                             {systemBudgetsData.map((budget) => (
                                 viewMode === 'card' ? (
-                                    <div key={budget.id} className="h-full w-full sm:w-auto sm:min-w-[260px] sm:max-w-[320px] flex-1">
+                                    <div key={budget.id} className="h-full w-full md:w-[250px]">
                                         <BudgetCard budget={{ ...budget, budgetAmount: budget.allocated || budget.budgetAmount }} stats={getCardStats(budget)} settings={settings} size="md" />
                                     </div>
                                 ) : (
@@ -177,7 +177,7 @@ export default function BudgetBars({
                         <div className={containerClass}>
                             {visibleCustomBudgets.map((budget) => (
                                 viewMode === 'card' ? (
-                                    <div key={budget.id} className="h-full w-full sm:w-auto sm:min-w-[260px] sm:max-w-[320px] flex-1">
+                                    <div key={budget.id} className="h-full w-full md:w-[250px]">
                                         <BudgetCard budget={budget} stats={getCardStats(budget)} settings={settings} size="md" />
                                     </div>
                                 ) : (
