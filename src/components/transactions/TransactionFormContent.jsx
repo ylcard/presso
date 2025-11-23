@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { RefreshCw, AlertCircle, Clock, CheckCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
+import { useConfirm } from "../ui/ConfirmDialogProvider";
 import AmountInput from "../ui/AmountInput";
 import DatePicker from "../ui/DatePicker";
 import CategorySelect from "../ui/CategorySelect";
@@ -36,6 +37,7 @@ export default function TransactionFormContent({
 }) {
     const { settings, user } = useSettings();
     const { toast } = useToast();
+    const { confirmAction } = useConfirm();
     const { exchangeRates, refreshRates, isRefreshing, refetch, isLoading } = useExchangeRates();
     const { rules } = useCategoryRules(user);
 
@@ -272,19 +274,7 @@ export default function TransactionFormContent({
         return getCurrencyBalance(cashWallet, currency);
     })();
 
-    const handleRefreshRates = async () => {
-        // Check if rate already exists
-        const existingRateDetails = getRateDetailsForDate(exchangeRates, formData.originalCurrency, formData.date, settings?.baseCurrency);
-
-        let force = false;
-        if (existingRateDetails) {
-            const confirmRefresh = window.confirm(
-                `A rate for this date already exists (${existingRateDetails.rate} from ${formatDate(existingRateDetails.date)}). Do you want to fetch a new one?`
-            );
-            if (!confirmRefresh) return;
-            force = true;
-        }
-
+    const executeRefresh = async (force) => {
         const result = await refreshRates(
             formData.originalCurrency,
             settings?.baseCurrency || 'USD',
@@ -304,6 +294,22 @@ export default function TransactionFormContent({
                 description: result.message,
                 variant: "destructive",
             });
+        }
+    };
+
+    const handleRefreshRates = async () => {
+        // Check if rate already exists
+        const existingRateDetails = getRateDetailsForDate(exchangeRates, formData.originalCurrency, formData.date, settings?.baseCurrency);
+
+        if (existingRateDetails) {
+            confirmAction(
+                "Update Exchange Rate?",
+                `A rate for this date already exists (${existingRateDetails.rate} from ${formatDate(existingRateDetails.date)}). Do you want to fetch a new one?`,
+                () => executeRefresh(true),
+                { confirmText: "Update" }
+            );
+        } else {
+            await executeRefresh(false);
         }
     };
 
