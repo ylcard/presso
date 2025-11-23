@@ -40,6 +40,8 @@ const buttonVariants = cva(
                     "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg focus-visible:ring-blue-600",
                 glass:
                     "border border-white/30 bg-transparent text-white shadow-sm hover:bg-white/20 hover:border-white/50 hover:text-white",
+                seamless:
+                    "bg-transparent text-white shadow-sm hover:bg-white/20 hover:text-white",
             },
             size: {
                 default: "h-9 px-4 py-2",
