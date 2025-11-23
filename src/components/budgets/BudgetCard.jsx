@@ -198,7 +198,10 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget, 
                     {/* Circular Progress */}
                     <div className={`flex items-center justify-center flex-1 mt-1 ${currentStyle.mb}`}>
                         <div className="relative" style={{ width: radius * 2, height: radius * 2 }}>
-                            <svg className="w-full h-full transform -rotate-90">
+                            <svg
+                                className="w-full h-full transform -rotate-90"
+                                viewBox={`0 0 ${radius * 2} ${radius * 2}`}
+                            >
                                 {/* Track */}
                                 <circle
                                     cx="50%"
