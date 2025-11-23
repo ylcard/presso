@@ -66,7 +66,7 @@ export default function BudgetBars({
 
             {systemBudgetsData.length > 0 && (
                 <Card className="border-none shadow-lg">
-                    <CardHeader>
+                    <CardHeader className="flex flex-row items-center justify-between">
                         <CardTitle className="flex items-center gap-2">
                             <span className="px-3 py-1 rounded-lg text-sm bg-blue-50 text-blue-600">
                                 System Budgets
