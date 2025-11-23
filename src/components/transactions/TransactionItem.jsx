@@ -1,11 +1,11 @@
 import { CustomButton } from "@/components/ui/CustomButton";
-import { Pencil, Trash2, Circle, Check, Clock, Banknote } from "lucide-react";
+import { Trash2, Circle, Check, Clock, Banknote } from "lucide-react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import { useSettings } from "../utils/SettingsContext";
 import { formatCurrency } from "../utils/currencyUtils";
 import { getCategoryIcon } from "../utils/iconMapConfig";
-import TransactionForm from "./TransactionForm";
+import QuickAddTransaction from "./QuickAddTransaction";
 import { detectCrossPeriodSettlement } from "../utils/calculationEngine";
 
 export default function TransactionItem({
@@ -112,22 +112,16 @@ export default function TransactionItem({
                 </div>
 
                 <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <TransactionForm
+                    <QuickAddTransaction
+                        open={false}
+                        onOpenChange={() => { }}
                         transaction={transaction}
                         categories={categories}
+                        customBudgets={customBudgets}
                         onSubmit={(data) => onSubmit(data, transaction)}
-                        onCancel={() => { }}
                         isSubmitting={isSubmitting}
                         transactions={[]}
-                        trigger={
-                            <CustomButton
-                                variant="ghost"
-                                size="icon"
-                                className="hover:bg-blue-50 hover:text-blue-600"
-                            >
-                                <Pencil className="w-4 h-4" />
-                            </CustomButton>
-                        }
+                        renderTrigger={true}
                     />
                     <CustomButton
                         variant="ghost"
