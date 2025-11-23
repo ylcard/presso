@@ -84,7 +84,7 @@ export default function Dashboard() {
     const { systemBudgetsWithStats, customBudgetsData } = useBudgetsAggregates(
         transactions,
         categories,
-        allCustomBudgets,
+        allCustomBudgets || [],
         systemBudgets,
         selectedMonth,
         selectedYear
