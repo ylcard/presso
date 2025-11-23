@@ -1,15 +1,17 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Filter, Search, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { CustomButton } from "@/components/ui/CustomButton";
 import DateRangePicker from "../ui/DateRangePicker";
 import CategorySelect from "../ui/CategorySelect";
 import { useMemo } from "react";
-import { formatDate, isDateInRange } from "../utils/dateUtils";
+import { isDateInRange } from "../utils/dateUtils";
+import { usePeriod } from "../hooks/usePeriod";
 
 export default function TransactionFilters({ filters, setFilters, categories, allCustomBudgets = [] }) {
+    const { monthStart, monthEnd } = usePeriod();
 
     const handleCategoryChange = (newCategories) => {
         setFilters({ ...filters, category: newCategories });
@@ -28,7 +30,9 @@ export default function TransactionFilters({ filters, setFilters, categories, al
             paymentStatus: 'all',
             cashStatus: 'all',
             financialPriority: 'all',
-            customBudgetId: 'all'
+            customBudgetId: 'all',
+            startDate: monthStart,
+            endDate: monthEnd
         });
     };
 
@@ -43,6 +47,8 @@ export default function TransactionFilters({ filters, setFilters, categories, al
         });
     }, [allCustomBudgets, filters.startDate, filters.endDate]);
 
+    const isDateChanged = filters.startDate !== monthStart || filters.endDate !== monthEnd;
+
     const activeFilterCount = [
         filters.search,
         filters.type !== 'all',
@@ -50,7 +56,8 @@ export default function TransactionFilters({ filters, setFilters, categories, al
         filters.paymentStatus !== 'all',
         filters.cashStatus !== 'all',
         filters.financialPriority !== 'all',
-        filters.customBudgetId !== 'all'
+        filters.customBudgetId !== 'all',
+        isDateChanged
     ].filter(Boolean).length;
 
     return (
@@ -189,8 +196,8 @@ export default function TransactionFilters({ filters, setFilters, categories, al
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All</SelectItem>
-                                <SelectItem value="cash_only">Cash Only</SelectItem>
-                                <SelectItem value="exclude_cash">No Cash</SelectItem>
+                                <SelectItem value="cash_only">Cash</SelectItem>
+                                <SelectItem value="exclude_cash">Card</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
