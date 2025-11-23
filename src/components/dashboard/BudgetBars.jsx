@@ -113,7 +113,7 @@ export default function BudgetBars({
                             {systemBudgetsData.map((budget) => (
                                 viewMode === 'card' ? (
                                     <div key={budget.id} className="h-full">
-                                        <BudgetCard budget={{ ...budget, budgetAmount: budget.allocated || budget.budgetAmount }} stats={getCardStats(budget)} settings={settings} size="sm" />
+                                        <BudgetCard budget={{ ...budget, budgetAmount: budget.allocated || budget.budgetAmount }} stats={getCardStats(budget)} settings={settings} size="md" />
                                     </div>
                                 ) : (
                                     <div key={budget.id} className="h-full">
@@ -178,7 +178,7 @@ export default function BudgetBars({
                             {visibleCustomBudgets.map((budget) => (
                                 viewMode === 'card' ? (
                                     <div key={budget.id} className="h-full">
-                                        <BudgetCard budget={budget} stats={getCardStats(budget)} settings={settings} size="sm" />
+                                        <BudgetCard budget={budget} stats={getCardStats(budget)} settings={settings} size="md" />
                                     </div>
                                 ) : (
                                     <div key={budget.id} className="h-full">
