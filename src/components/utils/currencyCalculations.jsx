@@ -83,24 +83,23 @@ export function getRateDetailsForDate(exchangeRates, currencyCode, date) {
     const targetDateObj = startOfDay(parseISO(date));
     const windowDays = 14;
 
-    const freshRates = exchangeRates.filter(r => {
-        // 1. Check Currency Match
-        if (r.fromCurrency !== currencyCode || r.toCurrency !== 'USD') return false;
+    // Find all rates for this currency pair
+    const relevantRates = exchangeRates.filter(r =>
+        r.fromCurrency === currencyCode && r.toCurrency === 'USD'
+    );
 
-        // 2. Check Date Window (using date-fns for safety)
-        const rateDateObj = startOfDay(parseISO(r.date));
-        const diff = Math.abs(differenceInDays(targetDateObj, rateDateObj));
+    if (relevantRates.length === 0) return null;
 
-        return diff <= windowDays;
+    // Sort by date difference to find the closest one
+    relevantRates.sort((a, b) => {
+        const dateA = startOfDay(parseISO(a.date));
+        const dateB = startOfDay(parseISO(b.date));
+        const diffA = Math.abs(differenceInDays(targetDateObj, dateA));
+        const diffB = Math.abs(differenceInDays(targetDateObj, dateB));
+        return diffA - diffB;
     });
 
-    if (freshRates.length === 0) {
-        return null; // No fresh rates available
-    }
-
-    // Return the most recent fresh rate
-    freshRates.sort((a, b) => new Date(b.date) - new Date(a.date));
-    return freshRates[0];
+    return relevantRates[0];
 }
 
 /**
