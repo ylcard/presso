@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CustomButton } from "@/components/ui/CustomButton";
-import { Plus, ChevronLeft, ChevronRight, AlertTriangle, LayoutGrid, StretchHorizontal } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, AlertTriangle } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { formatCurrency } from "../utils/currencyUtils";
 import { useBudgetBarsData } from "../hooks/useDerivedData";
 import BudgetBar from "../custombudgets/BudgetBar";
@@ -72,21 +74,13 @@ export default function BudgetBars({
                                 System Budgets
                             </span>
                         </CardTitle>
-                        <div className="flex bg-gray-100 p-1 rounded-lg gap-1">
-                            <button
-                                onClick={() => setViewMode('bars')}
-                                className={`p-1.5 rounded-md transition-all ${viewMode === 'bars' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
-                                title="Bar View"
-                            >
-                                <StretchHorizontal className="w-4 h-4" />
-                            </button>
-                            <button
-                                onClick={() => setViewMode('cards')}
-                                className={`p-1.5 rounded-md transition-all ${viewMode === 'cards' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
-                                title="Card View"
-                            >
-                                <LayoutGrid className="w-4 h-4" />
-                            </button>
+                        <div className="flex items-center gap-2">
+                            <Label htmlFor="view-mode" className="text-sm text-gray-500 cursor-pointer">Card View</Label>
+                            <Switch
+                                id="view-mode"
+                                checked={viewMode === 'cards'}
+                                onCheckedChange={(checked) => setViewMode(checked ? 'cards' : 'bars')}
+                            />
                         </div>
                     </CardHeader>
                     <CardContent>
