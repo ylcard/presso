@@ -441,7 +441,6 @@ export default function TransactionFormContent({
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     placeholder="e.g., Salary, Groceries, Coffee"
                     required
-                    autoFocus
                     autoComplete="off"
                 />
             </div>
