@@ -7,18 +7,37 @@ import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { useSettings } from "../utils/SettingsContext";
 import { formatCurrency, unformatCurrency } from "../utils/currencyUtils";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { CustomButton } from "@/components/ui/CustomButton";
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+} from "@/components/ui/command";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
+import { SUPPORTED_CURRENCIES } from "../utils/constants";
 
 /**
  * Custom input component designed for monetary amounts.
  * It handles formatting and parsing based on user's defined separators and currency position.
+ * Can optionally act as a combined Amount + Currency selector.
+ * 
  * @param {object} props
  * @param {number|null|undefined} props.value - The external numeric amount (e.g., 1234.56).
  * @param {function(number|null)} props.onChange - Handler to update the external numeric value. Receives the rounded number or null.
  * @param {string} [props.placeholder="0.00"] - Placeholder text for the input.
  * @param {string} [props.className=""] - Additional class names for the Input component.
  * @param {string|null} [props.currencySymbol=null] - Optional symbol to override the user's base currency symbol.
+ * @param {string} [props.currency=null] - Optional currency code (e.g. "USD"). If provided along with onCurrencyChange, enables the selector.
+ * @param {function(string)} [props.onCurrencyChange=null] - Handler for currency change.
  * @param {object} props.... - Remaining props passed directly to the underlying Input component.
- * @returns {JSX.Element} The styled amount input with currency symbol.
+ * @returns {JSX.Element} The styled amount input with currency symbol or selector.
  */
 export default function AmountInput({
     value,
@@ -26,12 +45,18 @@ export default function AmountInput({
     placeholder = "0.00",
     className = "",
     currencySymbol = null,
+    currency = null,
+    onCurrencyChange = null,
     ...props
 }) {
     const { settings } = useSettings();
+    const [open, setOpen] = useState(false);
 
     // Use provided currencySymbol or fall back to user's base currency
     const displaySymbol = currencySymbol || settings.currencySymbol;
+
+    // Determine if we are in "Combined Mode"
+    const isCombined = currency && onCurrencyChange;
 
     /**
      * @type {[string, function(string)]} Internal state for the formatted string visible in the input field.
@@ -91,15 +116,70 @@ export default function AmountInput({
         }
     };
 
+    // Render the Currency Selector Trigger
+    const renderCurrencySelector = () => {
+        const selectedCurrency = SUPPORTED_CURRENCIES.find(c => c.code === currency);
+
+        return (
+            <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                    <CustomButton
+                        variant="ghost"
+                        role="combobox"
+                        aria-expanded={open}
+                        className="h-full rounded-r-none border-r border-gray-200 px-3 hover:bg-gray-50 text-gray-600 font-medium"
+                    >
+                        <span className="mr-1">{selectedCurrency?.symbol || displaySymbol}</span>
+                        <span className="mr-1">{currency}</span>
+                        <ChevronsUpDown className="h-3 w-3 opacity-50" />
+                    </CustomButton>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0" align="start">
+                    <Command>
+                        <CommandInput placeholder="Search currency..." />
+                        <CommandEmpty>No currency found.</CommandEmpty>
+                        <CommandGroup className="max-h-64 overflow-auto">
+                            {SUPPORTED_CURRENCIES.map((c) => (
+                                <CommandItem
+                                    key={c.code}
+                                    value={`${c.code} ${c.name}`}
+                                    onSelect={() => {
+                                        onCurrencyChange(c.code);
+                                        setOpen(false);
+                                    }}
+                                >
+                                    <Check
+                                        className={`mr-2 h-4 w-4 ${currency === c.code ? "opacity-100" : "opacity-0"}`}
+                                    />
+                                    <span className="w-6 text-center mr-2 text-gray-500">{c.symbol}</span>
+                                    <span>{c.code}</span>
+                                    <span className="ml-auto text-xs text-gray-400">{c.name}</span>
+                                </CommandItem>
+                            ))}
+                        </CommandGroup>
+                    </Command>
+                </PopoverContent>
+            </Popover>
+        );
+    };
+
     return (
-        <div className="relative">
-            {settings.currencyPosition === 'before' && (
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <span className="text-gray-500 sm:text-sm font-medium">
-                        {displaySymbol}
-                    </span>
+        <div className="relative flex items-center">
+            {/* Left Side: Currency Selector OR Static Symbol */}
+            {isCombined ? (
+                <div className="absolute inset-y-0 left-0 z-10">
+                    {renderCurrencySelector()}
                 </div>
+            ) : (
+                settings.currencyPosition === 'before' && (
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <span className="text-gray-500 sm:text-sm font-medium">
+                            {displaySymbol}
+                        </span>
+                    </div>
+                )
             )}
+
             <Input
                 type="text"
                 inputMode="decimal"
@@ -108,12 +188,17 @@ export default function AmountInput({
                 onChange={handleChange}
                 // Always show placeholder when input is empty
                 placeholder={placeholder}
-                className={`${settings.currencyPosition === 'before' ? 'pl-8' : 'pr-8'} ${className}`}
+                className={`
+                    ${isCombined ? 'pl-[6.5rem]' : (settings.currencyPosition === 'before' ? 'pl-8' : 'pr-8')} 
+                    ${className}
+                `}
                 // Disable browser autocomplete for amount fields
                 autoComplete="off"
                 {...props}
             />
-            {settings.currencyPosition === 'after' && (
+
+            {/* Right Side: Static Symbol (if position is after and not combined) */}
+            {!isCombined && settings.currencyPosition === 'after' && (
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                     <span className="text-gray-500 sm:text-sm font-medium">
                         {displaySymbol}
