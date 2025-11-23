@@ -688,7 +688,7 @@ export default function TransactionFormContent({
                     disabled={isSubmitting}
                     variant="primary"
                 >
-                    {isSubmitting ? 'Saving...' : initialTransaction ? 'Update' : 'Add'}
+                    {isSubmitting ? 'Saving...' : (initialTransaction && initialTransaction.id) ? 'Update' : 'Add'}
                 </CustomButton>
             </div>
         </form>
