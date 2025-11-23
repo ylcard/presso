@@ -75,9 +75,26 @@ export function getRateForDate(exchangeRates, currencyCode, date) {
  * @param {string} date - The target date in YYYY-MM-DD format
  * @returns {Object|null} The ExchangeRate entity or null
  */
-export function getRateDetailsForDate(exchangeRates, currencyCode, date) {
-    // Handle USD case
-    if (currencyCode === 'USD') return null;
+export function getRateDetailsForDate(exchangeRates, currencyCode, date, baseCurrency = 'EUR') {
+    // Handle USD case (Source is USD, Target is Base Currency)
+    if (currencyCode === 'USD') {
+        // We need to find the rate for Base -> USD (e.g. EUR -> USD)
+        // Then invert it to get USD -> Base (e.g. 1 USD = 0.95 EUR)
+
+        // If base is also USD, rate is 1
+        if (baseCurrency === 'USD') return { rate: 1.0, date: date };
+
+        const baseRateDetails = getRateDetailsForDate(exchangeRates, baseCurrency, date, 'USD');
+
+        if (baseRateDetails) {
+            return {
+                ...baseRateDetails,
+                rate: parseFloat((1 / baseRateDetails.rate).toFixed(6)),
+                isInverted: true
+            };
+        }
+        return null;
+    }
 
     // Find all rates within the freshness window (0 to 14 days)
     const targetDateObj = startOfDay(parseISO(date));
