@@ -17,13 +17,9 @@ import { useConfirm } from "../components/ui/ConfirmDialogProvider";
 import { formatCurrency, getCurrencySymbol } from "../components/utils/currencyUtils";
 import { formatDate, parseDate } from "../components/utils/dateUtils";
 import {
-    getPaidNeedsExpenses,
-    getUnpaidNeedsExpenses,
-    getDirectPaidWantsExpenses,
-    getDirectUnpaidWantsExpenses,
-    getPaidCustomBudgetExpenses,
-    getUnpaidCustomBudgetExpenses,
-    getPaidSavingsExpenses,
+    getCustomBudgetStats,
+    getSystemBudgetStats,
+    getCustomBudgetAllocationStats,
 } from "../components/utils/financialCalculations";
 import { useCashWallet } from "../components/hooks/useBase44Entities";
 import { useTransactionActions } from "../components/hooks/useActions";
@@ -39,7 +35,7 @@ import ExpensesCardContent from "../components/budgetdetail/ExpensesCardContent"
 import { QUERY_KEYS } from "../components/hooks/queryKeys";
 
 // Filters paid expenses by selected month
-const getCustomBudgetStats = (customBudget, transactions, monthStart, monthEnd) => {
+/* const getCustomBudgetStats = (customBudget, transactions, monthStart, monthEnd) => {
     const budgetTransactions = transactions.filter(t => t.customBudgetId === customBudget.id);
 
     // Parse month boundaries for filtering paid expenses
@@ -203,7 +199,7 @@ const getCustomBudgetAllocationStats = (customBudget, allocations, transactions)
         unallocatedRemaining: unallocated - unallocatedSpent,
         categorySpending
     };
-};
+}; */
 
 export default function BudgetDetail() {
     const { settings, user } = useSettings();
