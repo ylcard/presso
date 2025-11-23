@@ -37,6 +37,21 @@ export default function BudgetBars({
     // Adapter to transform flat list data into the shape BudgetCard expects.
     // We calculate 'spent' as total usage, and ensure 'paid' is derived if missing.
     const getCardStats = (item) => {
+        // 1. Priority: Use existing stats object if valid (This fixes Custom Budgets on Dashboard)
+        if (item.stats && item.stats.totalAllocatedUnits !== undefined) {
+            return item.stats;
+        }
+
+        // 2. Handle System Budgets with 'preCalculatedStats' or 'stats' from hooks
+        if (item.stats && item.stats.paidAmount !== undefined) {
+             return {
+                 totalAllocatedUnits: item.budgetAmount,
+                 paid: { totalBaseCurrencyAmount: item.stats.paidAmount },
+                 unpaid: { totalBaseCurrencyAmount: item.stats.unpaidAmount }
+             };
+        }
+
+        // 3. Fallback for legacy/flat objects
         const allocated = item.amount ?? item.budgetAmount ?? item.allocated ?? 0;
         const unpaid = item.unpaid ?? 0;
         // Try to get explicit 'paid', otherwise assume 'spent' is total used and subtract unpaid
