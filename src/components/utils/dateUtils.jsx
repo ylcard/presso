@@ -15,6 +15,8 @@ import { format } from "date-fns";
  */
 export const parseDate = (dateString) => {
     if (!dateString) return null;
+    if (dateString instanceof Date) return new Date(dateString);
+    if (typeof dateString !== 'string') return null;
     const [year, month, day] = dateString.split('-').map(Number);
     return new Date(year, month - 1, day);
 };
