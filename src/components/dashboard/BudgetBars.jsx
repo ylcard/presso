@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CustomButton } from "@/components/ui/CustomButton";
-import { Plus, ChevronLeft, ChevronRight, AlertTriangle } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, AlertTriangle, LayoutGrid, StretchHorizontal } from "lucide-react";
 import { formatCurrency } from "../utils/currencyUtils";
 import { useBudgetBarsData } from "../hooks/useDerivedData";
 import BudgetBar from "../custombudgets/BudgetBar";
+import BudgetCard from "../budgets/BudgetCard";
 
 export default function BudgetBars({
     systemBudgets,
@@ -18,6 +19,7 @@ export default function BudgetBars({
     baseCurrency,
     onCreateBudget
 }) {
+    const [viewMode, setViewMode] = useState('bars'); // 'bars' | 'cards'
     const [customStartIndex, setCustomStartIndex] = useState(0);
     const barsPerPage = 7;
 
@@ -58,18 +60,45 @@ export default function BudgetBars({
                                 System Budgets
                             </span>
                         </CardTitle>
+                        <div className="flex bg-gray-100 p-1 rounded-lg gap-1">
+                            <button
+                                onClick={() => setViewMode('bars')}
+                                className={`p-1.5 rounded-md transition-all ${viewMode === 'bars' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                                title="Bar View"
+                            >
+                                <StretchHorizontal className="w-4 h-4" />
+                            </button>
+                            <button
+                                onClick={() => setViewMode('cards')}
+                                className={`p-1.5 rounded-md transition-all ${viewMode === 'cards' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                                title="Card View"
+                            >
+                                <LayoutGrid className="w-4 h-4" />
+                            </button>
+                        </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="flex flex-wrap justify-center gap-4">
+                        <div className={`flex flex-wrap ${viewMode === 'cards' ? 'justify-start' : 'justify-center'} gap-4`}>
                             {systemBudgetsData.map((budget) => (
-                                <BudgetBar
-                                    key={budget.id}
-                                    budget={budget}
-                                    isCustom={false}
-                                    isSystemSavings={budget.systemBudgetType === 'savings'}
-                                    settings={settings}
-                                    hideActions={true}
-                                />
+                                viewMode === 'bars' ? (
+                                    <BudgetBar
+                                        key={budget.id}
+                                        budget={budget}
+                                        isCustom={false}
+                                        isSystemSavings={budget.systemBudgetType === 'savings'}
+                                        settings={settings}
+                                        hideActions={true}
+                                    />
+                                ) : (
+                                    <div key={budget.id} className="w-full sm:w-[280px]">
+                                        <BudgetCard
+                                            budget={{ ...budget, isSystemBudget: true }}
+                                            stats={budget.stats}
+                                            settings={settings}
+                                            size="sm"
+                                        />
+                                    </div>
+                                )
                             ))}
                         </div>
                     </CardContent>
@@ -117,15 +146,26 @@ export default function BudgetBars({
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="flex flex-wrap justify-center gap-4">
+                        <div className={`flex flex-wrap ${viewMode === 'cards' ? 'justify-start' : 'justify-center'} gap-4`}>
                             {visibleCustomBudgets.map((budget) => (
-                                <BudgetBar
-                                    key={budget.id}
-                                    budget={budget}
-                                    isCustom={true}
-                                    settings={settings}
-                                    hideActions={true}
-                                />
+                                viewMode === 'bars' ? (
+                                    <BudgetBar
+                                        key={budget.id}
+                                        budget={budget}
+                                        isCustom={true}
+                                        settings={settings}
+                                        hideActions={true}
+                                    />
+                                ) : (
+                                    <div key={budget.id} className="w-full sm:w-[280px]">
+                                        <BudgetCard
+                                            budget={budget}
+                                            stats={budget.stats}
+                                            settings={settings}
+                                            size="sm"
+                                        />
+                                    </div>
+                                )
                             ))}
                         </div>
 
