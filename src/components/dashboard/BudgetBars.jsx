@@ -1,15 +1,14 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CustomButton } from "@/components/ui/CustomButton";
-import { Plus, ChevronLeft, ChevronRight, AlertTriangle, LayoutGrid, AlignJustify } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, AlertTriangle } from "lucide-react";
 import { formatCurrency } from "../utils/currencyUtils";
 import { useBudgetBarsData } from "../hooks/useDerivedData";
 import BudgetBar from "../custombudgets/BudgetBar";
-import BudgetCard from "../budgets/BudgetCard";
 
 export default function BudgetBars({
     systemBudgets,
-    customBudgets = [],
+    customBudgets,
     allCustomBudgets = [],
     transactions,
     categories,
@@ -20,78 +19,15 @@ export default function BudgetBars({
     onCreateBudget
 }) {
     const [customStartIndex, setCustomStartIndex] = useState(0);
-    const [viewMode, setViewMode] = useState('card'); // 'card' | 'bar'
-
-    // Cards take more space, so we show fewer per page in card mode
-    const barsPerPage = viewMode === 'card' ? 4 : 6;
+    const barsPerPage = 7;
 
     // Use the extracted hook for all calculations
     const { systemBudgetsData, customBudgetsData, totalActualSavings, savingsTarget, savingsShortfall } =
-        useBudgetBarsData(systemBudgets, customBudgets, allCustomBudgets, transactions, categories, goals, monthlyIncome, baseCurrency);
+        useBudgetBarsData(systemBudgets, customBudgets, allCustomBudgets, transactions, categories, goals, monthlyIncome, baseCurrency); // Pass baseCurrency to hook
 
     const visibleCustomBudgets = customBudgetsData.slice(customStartIndex, customStartIndex + barsPerPage);
     const canScrollLeft = customStartIndex > 0;
     const canScrollRight = customStartIndex + barsPerPage < customBudgetsData.length;
-
-
-    // Adapter to transform flat list data into the shape BudgetCard expects.
-    // We calculate 'spent' as total usage, and ensure 'paid' is derived if missing.
-    const getCardStats = (item) => {
-        if (item.stats) {
-            // If it's a System Budget (has paidAmount but missing the complex object structure BudgetCard wants)
-            if (item.isSystemBudget || (item.stats.paidAmount !== undefined && item.stats.totalAllocatedUnits === undefined)) {
-                return {
-                    totalAllocatedUnits: item.budgetAmount || item.allocatedAmount,
-                    paid: { totalBaseCurrencyAmount: item.stats.paidAmount },
-                    unpaid: { totalBaseCurrencyAmount: item.stats.unpaidAmount },
-                    totalSpentUnits: item.stats.totalSpent,
-                    totalUnpaidUnits: item.stats.unpaidAmount
-                };
-            }
-            // For Custom Budgets, the structure from the hook is already correct
-            return item.stats;
-        }
-
-        if (item.preCalculatedStats) return item.preCalculatedStats;
-
-        const allocated = item.amount ?? item.budgetAmount ?? item.allocated ?? 0;
-        const unpaid = item.unpaid ?? 0;
-        const paid = item.paid ?? (item.spent ? item.spent - unpaid : 0);
-
-        return {
-            totalAllocatedUnits: allocated,
-            totalSpentUnits: paid + unpaid,
-            totalUnpaidUnits: unpaid,
-            paid: { totalBaseCurrencyAmount: paid },
-            unpaid: { totalBaseCurrencyAmount: unpaid }
-        };
-    };
-
-    // Reusable Toggle Component
-    const ViewToggle = () => (
-        <div className="flex items-center bg-gray-100 p-1 rounded-lg ml-4">
-            <button
-                onClick={() => setViewMode('card')}
-                className={`p-1.5 rounded-md transition-all ${viewMode === 'card' ? 'bg-white shadow text-purple-600' : 'text-gray-400 hover:text-gray-600'}`}
-                title="Card View"
-            >
-                <LayoutGrid size={16} />
-            </button>
-            <button
-                onClick={() => setViewMode('bar')}
-                className={`p-1.5 rounded-md transition-all ${viewMode === 'bar' ? 'bg-white shadow text-purple-600' : 'text-gray-400 hover:text-gray-600'}`}
-                title="List View"
-            >
-                <AlignJustify size={16} />
-            </button>
-        </div>
-    );
-
-    // Responsive Grid Layout
-    const containerClass = viewMode === 'card'
-        ? "flex flex-wrap justify-center gap-4"
-        : "grid grid-cols-1 md:grid-cols-2 gap-3";
-
 
     return (
         <div className="space-y-6">
@@ -121,33 +57,19 @@ export default function BudgetBars({
                             <span className="px-3 py-1 rounded-lg text-sm bg-blue-50 text-blue-600">
                                 System Budgets
                             </span>
-                            <ViewToggle />
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className={containerClass}>
+                        <div className="flex flex-wrap justify-center gap-4">
                             {systemBudgetsData.map((budget) => (
-                                viewMode === 'card' ? (
-                                    <div key={budget.id} className="h-full w-full md:w-[250px]">
-                                        <BudgetCard
-                                            budget={{ ...budget, budgetAmount: budget.allocated || budget.budgetAmount }}
-                                            stats={budget.preCalculatedStats || getCardStats(budget)}
-                                            settings={settings}
-                                            size="md"
-                                        />
-                                    </div>
-                                ) : (
-                                    <div key={budget.id} className="h-full">
-                                        <BudgetBar
-                                            key={budget.id}
-                                            budget={budget}
-                                            isCustom={false}
-                                            isSystemSavings={budget.systemBudgetType === 'savings'}
-                                            settings={settings}
-                                            hideActions={true}
-                                        />
-                                    </div>
-                                )
+                                <BudgetBar
+                                    key={budget.id}
+                                    budget={budget}
+                                    isCustom={false}
+                                    isSystemSavings={budget.systemBudgetType === 'savings'}
+                                    settings={settings}
+                                    hideActions={true}
+                                />
                             ))}
                         </div>
                     </CardContent>
@@ -161,7 +83,7 @@ export default function BudgetBars({
                             <span className="px-3 py-1 rounded-lg text-sm bg-purple-50 text-purple-600">
                                 Custom Budgets
                             </span>
-                            {/* <span className="text-gray-400">({customBudgetsData.length})</span> */}
+                            <span className="text-gray-400">({customBudgetsData.length})</span>
                         </div>
                         <div className="flex items-center gap-2">
                             {customBudgetsData.length > barsPerPage && (
@@ -195,28 +117,15 @@ export default function BudgetBars({
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className={containerClass}>
+                        <div className="flex flex-wrap justify-center gap-4">
                             {visibleCustomBudgets.map((budget) => (
-                                viewMode === 'card' ? (
-                                    <div key={budget.id} className="h-full w-full md:w-[250px]">
-                                        <BudgetCard
-                                            budget={budget}
-                                            stats={budget.stats || getCardStats(budget)}
-                                            settings={settings}
-                                            size="md"
-                                        />
-                                    </div>
-                                ) : (
-                                    <div key={budget.id} className="h-full">
-                                        <BudgetBar
-                                            key={budget.id}
-                                            budget={budget}
-                                            isCustom={true}
-                                            settings={settings}
-                                            hideActions={true}
-                                        />
-                                    </div>
-                                )
+                                <BudgetBar
+                                    key={budget.id}
+                                    budget={budget}
+                                    isCustom={true}
+                                    settings={settings}
+                                    hideActions={true}
+                                />
                             ))}
                         </div>
 
