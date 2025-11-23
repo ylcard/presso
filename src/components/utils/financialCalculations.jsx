@@ -5,7 +5,7 @@
  * @updated 15-Nov-2025 - Exported isCashExpense helper function for use in other modules
  */
 
-import { isDateInRange, parseDate } from "./dateUtils";
+import { isDateInRange } from "./dateUtils";
 
 /**
  * Helper function to identify cash expenses to be excluded from budget calculations.
@@ -333,86 +333,5 @@ export const getMonthlyFinancialSummary = (transactions, startDate, endDate) => 
         income: income,
         // Return absolute value for expense so it's ready for subtraction/comparison in the chart component
         expense: Math.abs(expenseSum),
-    };
-};
-
-
-/**
- * Calculates comprehensive statistics for a specific custom budget.
- * Centralizes logic for digital vs cash split and date filtering.
- * + * @param {object} customBudget - The custom budget object.
- * @param {Array<object>} transactions - List of all transactions.
- * @param {string} monthStart - Start date of the period.
- * @param {string} monthEnd - End date of the period.
- * @returns {object} Stats object including allocated, spent, paid, unpaid, and breakdown.
- */
-export const calculateCustomBudgetStats = (customBudget, transactions, monthStart, monthEnd) => {
-    const budgetTransactions = transactions.filter(t => t.customBudgetId === customBudget.id);
-    const monthStartDate = parseDate(monthStart);
-    const monthEndDate = parseDate(monthEnd);
-
-    // Separate digital and cash transactions
-    const digitalTransactions = budgetTransactions.filter(
-        t => !t.isCashTransaction || t.cashTransactionType !== 'expense_from_wallet'
-    );
-    const cashTransactions = budgetTransactions.filter(
-        t => t.isCashTransaction && t.cashTransactionType === 'expense_from_wallet'
-    );
-
-    // Calculate digital stats
-    const digitalAllocated = customBudget.allocatedAmount || 0;
-    const digitalSpent = digitalTransactions
-        .filter(t => {
-            if (t.type !== 'expense') return false;
-            if (!t.isPaid || !t.paidDate) return false;
-            const paidDate = parseDate(t.paidDate);
-            return paidDate >= monthStartDate && paidDate <= monthEndDate;
-        })
-        .reduce((sum, t) => sum + (t.originalAmount || t.amount), 0);
-
-    const digitalUnpaid = digitalTransactions
-        .filter(t => t.type === 'expense' && !t.isPaid)
-        .reduce((sum, t) => sum + (t.originalAmount || t.amount), 0);
-
-    // Calculate cash stats by currency
-    const cashByCurrency = {};
-    const cashAllocations = customBudget.cashAllocations || [];
-
-    cashAllocations.forEach(allocation => {
-        const currencyCode = allocation.currencyCode;
-        const allocated = allocation.amount || 0;
-        const spent = cashTransactions
-            .filter(t => {
-                if (t.type !== 'expense') return false;
-                if (t.cashCurrency !== currencyCode) return false;
-                if (!t.isPaid || !t.paidDate) return false;
-                const paidDate = parseDate(t.paidDate);
-                return paidDate >= monthStartDate && paidDate <= monthEndDate;
-            })
-            .reduce((sum, t) => sum + (t.cashAmount || 0), 0);
-
-        cashByCurrency[currencyCode] = { allocated, spent, remaining: allocated - spent };
-    });
-
-    const totalAllocatedUnits = digitalAllocated + cashAllocations.reduce((sum, alloc) => sum + alloc.amount, 0);
-    const totalSpentUnits = digitalSpent + Object.values(cashByCurrency).reduce((sum, cashData) => sum + cashData.spent, 0);
-    const totalUnpaidUnits = digitalUnpaid;
-
-    return {
-        digital: {
-            allocated: digitalAllocated,
-            spent: digitalSpent,
-            unpaid: digitalUnpaid,
-            remaining: digitalAllocated - digitalSpent
-        },
-        cashByCurrency,
-        totalAllocatedUnits,
-        totalSpentUnits,
-        totalUnpaidUnits,
-        totalTransactionCount: budgetTransactions.length,
-        // Flat properties for UI components
-        allocated: totalAllocatedUnits,
-        paid: totalSpentUnits,
-        unpaid: totalUnpaidUnits
     };
 };
