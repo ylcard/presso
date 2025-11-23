@@ -32,8 +32,6 @@ export default function TransactionCard({ transaction, category, onEdit, onDelet
                     {/* Action buttons */}
                     <div className="flex justify-end gap-1 mb-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <QuickAddTransaction
-                            open={false}
-                            onOpenChange={() => { }}
                             transaction={transaction}
                             categories={categories}
                             customBudgets={[]}
