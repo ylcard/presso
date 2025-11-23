@@ -110,7 +110,7 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget, 
     // Size Configuration
     const sizeConfig = {
         sm: {
-            radius: 28, stroke: 5, p: 'p-3', title: 'text-xs', mb: 'mb-2',
+            radius: 34, stroke: 5, p: 'p-3', title: 'text-xs', mb: 'mb-2',
             circleText: 'text-sm', overText: 'text-[8px] px-1 py-px mt-px',
             statLabel: 'text-[10px]', statVal: 'text-[11px]', gap: 'gap-x-2 gap-y-1'
         },
