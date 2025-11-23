@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Plus, ChevronLeft, ChevronRight, AlertTriangle, LayoutGrid, StretchHorizontal } from "lucide-react";
@@ -19,7 +19,13 @@ export default function BudgetBars({
     baseCurrency,
     onCreateBudget
 }) {
-    const [viewMode, setViewMode] = useState('bars'); // 'bars' | 'cards'
+    // const [viewMode, setViewMode] = useState('bars'); // 'bars' | 'cards'
+    // Initialize state from localStorage or default to 'bars'
+    const [viewMode, setViewMode] = useState(() => {
+        const savedMode = localStorage.getItem('budgetViewMode');
+        return savedMode === 'cards' ? 'cards' : 'bars';
+    });
+
     const [customStartIndex, setCustomStartIndex] = useState(0);
     // const barsPerPage = 7;
     const barsPerPage = viewMode === 'cards' ? 4 : 7;
@@ -31,6 +37,11 @@ export default function BudgetBars({
     const visibleCustomBudgets = customBudgetsData.slice(customStartIndex, customStartIndex + barsPerPage);
     const canScrollLeft = customStartIndex > 0;
     const canScrollRight = customStartIndex + barsPerPage < customBudgetsData.length;
+
+    // Persist view mode changes
+    useEffect(() => {
+        localStorage.setItem('budgetViewMode', viewMode);
+    }, [viewMode]);
 
     return (
         <div className="space-y-6">
