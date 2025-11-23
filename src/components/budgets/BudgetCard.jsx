@@ -8,7 +8,7 @@ import { parseDate } from "../utils/dateUtils";
 import { motion } from "framer-motion";
 import { CheckCircle, Clock, AlertTriangle, AlertCircle } from "lucide-react";
 
-export default function BudgetCard({ budget, stats, settings, onActivateBudget }) {
+export default function BudgetCard({ budget, stats, settings, onActivateBudget, size = 'md' }) {
     const baseCurrency = settings?.baseCurrency || 'USD';
     const isSystemBudget = budget.isSystemBudget || false;
 
@@ -32,9 +32,9 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget }
         let unpd = 0;
 
         if (isSystemBudget) {
-            alloc = budget.budgetAmount || 0;
-            pd = stats?.paid?.totalBaseCurrencyAmount || 0;
-            unpd = stats?.unpaid?.totalBaseCurrencyAmount || 0;
+            alloc = stats?.totalAllocatedUnits || budget.budgetAmount || 0;
+            pd = stats?.paid?.totalBaseCurrencyAmount || stats?.paid || 0;
+            unpd = stats?.unpaid?.totalBaseCurrencyAmount || stats?.unpaid || 0;
         } else {
             alloc = stats?.totalAllocatedUnits || 0;
             pd = stats?.totalSpentUnits || 0;
@@ -81,7 +81,27 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget }
     }, [budget.name, budget.color]);
 
     // SVG Calculations
-    const radius = 42;
+    // Size Configuration
+    const sizeConfig = {
+        sm: {
+            radius: 28, stroke: 5, p: 'p-3', title: 'text-xs', mb: 'mb-2',
+            circleText: 'text-sm', overText: 'text-[8px] px-1 py-px mt-px',
+            statLabel: 'text-[10px]', statVal: 'text-[11px]', gap: 'gap-x-2 gap-y-1'
+        },
+        md: {
+            radius: 42, stroke: 8, p: 'p-5', title: 'text-sm', mb: 'mb-4',
+            circleText: 'text-2xl', overText: 'text-[10px] px-1.5 py-0.5 mt-0.5',
+            statLabel: 'text-xs', statVal: 'text-sm', gap: 'gap-x-4 gap-y-3'
+        },
+        lg: {
+            radius: 56, stroke: 10, p: 'p-6', title: 'text-lg', mb: 'mb-6',
+            circleText: 'text-3xl', overText: 'text-xs px-2 py-1 mt-1',
+            statLabel: 'text-sm', statVal: 'text-base', gap: 'gap-x-6 gap-y-4'
+        }
+    };
+
+    const currentStyle = sizeConfig[size] || sizeConfig.md;
+    const radius = currentStyle.radius;
     const circumference = 2 * Math.PI * radius;
 
 
@@ -101,14 +121,14 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget }
             whileHover={{ scale: 1.02 }}
             className="h-full"
         >
-            <Card className="border shadow-sm hover:shadow-md transition-all overflow-hidden h-full flex flex-col">
-                <div className="h-1 w-full" style={{ backgroundColor: theme.main }} />
+            <Card className="border shadow-sm hover:shadow-md transition-all overflow-hidden h-full flex flex-col rounded-xl">
+                <div className={`${size === 'sm' ? 'h-1' : 'h-1.5'} w-full`} style={{ backgroundColor: theme.main }} />
 
-                <CardContent className="p-5 flex-1 flex flex-col">
+                <CardContent className={`${currentStyle.p} flex-1 flex flex-col`}>
                     {/* Header */}
                     <Link to={createPageUrl(`BudgetDetail?id=${budget.id}`)}>
-                        <div className="flex items-center gap-2 mb-4">
-                            <h3 className="font-bold text-gray-900 text-sm hover:text-blue-600 transition-colors truncate flex-1">
+                        <div className={`flex items-center gap-2 ${currentStyle.mb}`}>
+                            <h3 className={`font-bold text-gray-900 hover:text-blue-600 transition-colors truncate flex-1 ${currentStyle.title}`}>
                                 {budget.name}
                             </h3>
                             {/* Status Icons */}
@@ -149,8 +169,8 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget }
                     )}
 
                     {/* Circular Progress */}
-                    <div className="flex items-center justify-center mb-6 mt-2">
-                        <div className="relative w-32 h-32">
+                    <div className={`flex items-center justify-center flex-1 mt-1 ${currentStyle.mb}`}>
+                        <div className="relative" style={{ width: radius * 2, height: radius * 2 }}>
                             <svg className="w-full h-full transform -rotate-90">
                                 {/* Track */}
                                 <circle
@@ -158,7 +178,7 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget }
                                     cy="50%"
                                     r={radius}
                                     stroke="#F3F4F6"
-                                    strokeWidth="8"
+                                    strokeWidth={currentStyle.stroke}
                                     fill="none"
                                 />
 
@@ -166,7 +186,7 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget }
                                 <circle
                                     cx="50%" cy="50%" r={radius}
                                     stroke={theme.main}
-                                    strokeWidth="8"
+                                    strokeWidth={currentStyle.stroke}
                                     fill="none"
                                     strokeDasharray={circumference}
                                     strokeDashoffset={mainOffset}
@@ -179,7 +199,7 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget }
                                     <circle
                                         cx="50%" cy="50%" r={radius}
                                         stroke={theme.overlay}
-                                        strokeWidth="8"
+                                        strokeWidth={currentStyle.stroke}
                                         fill="none"
                                         strokeDasharray={circumference}
                                         strokeDashoffset={overlayOffset}
@@ -188,14 +208,14 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget }
                                     />
                                 )}
                             </svg>
-                            
+
                             {/* Center Content */}
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                <span className={`text-2xl font-bold ${theme.text}`}>
+                                <span className={`font-bold ${theme.text} ${currentStyle.circleText}`}>
                                     {Math.round(percentage)}%
                                 </span>
                                 {isOverBudget && (
-                                    <span className="text-[10px] font-bold text-white bg-red-500 px-1.5 py-0.5 rounded uppercase mt-0.5 shadow-sm">
+                                    <span className={`font-bold text-white bg-red-500 rounded uppercase shadow-sm ${currentStyle.overText}`}>
                                         Over
                                     </span>
                                 )}
@@ -204,19 +224,20 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget }
                     </div>
 
                     {/* Info Grid */}
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-xs mt-auto">
+                    <div className={`grid grid-cols-2 mt-auto ${currentStyle.gap}`}>
                         {/* Row 1: Budget & Remaining */}
                         <div>
-                            <p className="text-gray-400 mb-0.5">Budget</p>
-                            <p className="font-semibold text-gray-700 truncate">
+                            <p className={`text-gray-400 mb-px ${currentStyle.statLabel}`}>Budget</p>
+                            <p className={`font-semibold text-gray-700 truncate ${currentStyle.statVal}`}>
                                 {formatCurrency(allocated, settings)}
                             </p>
                         </div>
                         <div className="text-right">
-                            <p className="text-gray-400 mb-0.5">
+                            <p className={`text-gray-400 mb-px ${currentStyle.statLabel}`}>
                                 {isOverBudget ? 'Over by' : 'Remaining'}
                             </p>
-                            <p className={`font-semibold truncate ${isOverBudget ? 'text-red-500' : 'text-emerald-600'}`}>
+                            <p className={`font-semibold truncate ${isOverBudget ? 'text-red-500' : 'text-emerald-600'} ${currentStyle.statVal}`}>
+                                {isOverBudget ? '+' : ''}
                                 {isOverBudget ? '+' : ''}
                                 {formatCurrency(isOverBudget ? overAmount : remaining, settings)}
                             </p>
@@ -227,16 +248,16 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget }
 
                         {/* Row 2: Paid & Unpaid */}
                         <div>
-                            <p className="text-gray-400 mb-0.5">Paid</p>
-                            <p className="font-semibold text-gray-900 truncate">
+                            <p className={`text-gray-400 mb-px ${currentStyle.statLabel}`}>Paid</p>
+                            <p className={`font-semibold text-gray-900 truncate ${currentStyle.statVal}`}>
                                 {formatCurrency(paid, settings)}
                             </p>
                         </div>
                         <div className="text-right">
-                            <p className="text-gray-400 mb-0.5">Unpaid</p>
+                            <p className={`text-gray-400 mb-px ${currentStyle.statLabel}`}>Unpaid</p>
                             <div className="flex items-center justify-end gap-1">
                                 {unpaid > 0 && <AlertCircle className="w-3 h-3 text-amber-500" />}
-                                <p className={`font-semibold truncate ${unpaid > 0 ? 'text-amber-600' : 'text-gray-300'}`}>
+                                <p className={`font-semibold truncate ${unpaid > 0 ? 'text-amber-600' : 'text-gray-300'} ${currentStyle.statVal}`}>
                                     {formatCurrency(unpaid, settings)}
                                 </p>
                             </div>
