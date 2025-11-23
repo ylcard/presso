@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CustomButton } from "@/components/ui/CustomButton";
@@ -16,7 +16,7 @@ import { useSettings } from "../utils/SettingsContext";
 import { useExchangeRates } from "../hooks/useExchangeRates";
 import { getCurrencyBalance, getRemainingAllocatedCash } from "../utils/cashAllocationUtils";
 import { getCurrencySymbol } from "../utils/currencyUtils";
-import { calculateConvertedAmount, getRateForDate } from "../utils/currencyCalculations";
+import { calculateConvertedAmount, getRateForDate, getRateDetailsForDate } from "../utils/currencyCalculations";
 import { SUPPORTED_CURRENCIES, FINANCIAL_PRIORITIES } from "../utils/constants";
 import { formatDateString, isDateInRange, formatDate } from "../utils/dateUtils";
 import { normalizeAmount } from "../utils/generalUtils";
@@ -94,15 +94,9 @@ export default function TransactionFormContent({
     const isForeignCurrency = formData.originalCurrency !== (settings?.baseCurrency || 'USD');
 
     // Proactively refresh exchange rates for foreign currencies
-    useEffect(() => {
-        if (isForeignCurrency && formData.originalCurrency && formData.date && !formData.isCashExpense) {
-            refreshRates(
-                formData.originalCurrency,
-                settings?.baseCurrency || 'USD',
-                formData.date
-            );
-        }
-    }, [formData.originalCurrency, formData.date, isForeignCurrency, formData.isCashExpense]);
+    // REMOVED: Proactively refresh exchange rates for foreign currencies
+    // We now use a hybrid approach: Manual trigger + Fetch on Submit
+    // useEffect(() => { ... }, ...);
 
     // Get currency symbol for the selected currency
     const selectedCurrencySymbol = SUPPORTED_CURRENCIES.find(
@@ -119,17 +113,21 @@ export default function TransactionFormContent({
         }
     }, [formData.category_id, categories]);
 
-    // Auto-Categorize based on Title
+    // Auto-Categorize based on Title (Debounced)
     useEffect(() => {
         if (formData.title && !formData.category_id && !initialTransaction) {
-            const result = categorizeTransaction({ title: formData.title }, rules, categories);
-            if (result.categoryId) {
-                setFormData(prev => ({
-                    ...prev,
-                    category_id: result.categoryId
-                    // Priority will be set by the useEffect above when category_id changes
-                }));
-            }
+            const timer = setTimeout(() => {
+                const result = categorizeTransaction({ title: formData.title }, rules, categories);
+                if (result.categoryId) {
+                    setFormData(prev => ({
+                        ...prev,
+                        category_id: result.categoryId
+                        // Priority will be set by the useEffect above when category_id changes
+                    }));
+                }
+            }, 500); // 500ms debounce
+
+            return () => clearTimeout(timer);
         }
     }, [formData.title, rules, categories, initialTransaction, formData.category_id]);
 
@@ -159,7 +157,9 @@ export default function TransactionFormContent({
 
     // Filter budgets to show active + planned statuses + relevant completed budgets
     // This allows linking expenses to future/past budgets while keeping the list manageable
-    const filteredBudgets = (() => {
+    // Filter budgets to show active + planned statuses + relevant completed budgets
+    // This allows linking expenses to future/past budgets while keeping the list manageable
+    const filteredBudgets = useMemo(() => {
         // Determine the effective date for budget matching
         // If it's a paid expense, use the paid date. Otherwise, use the transaction date.
         const effectiveDateStr = (formData.isPaid && formData.paidDate) ? formData.paidDate : formData.date;
@@ -219,7 +219,7 @@ export default function TransactionFormContent({
             return a.name.localeCompare(b.name);
         });
         return sortedBudgets;
-    })();
+    }, [allBudgets, formData.isPaid, formData.paidDate, formData.date, initialTransaction]);
 
     // Calculate available cash balance dynamically
     const availableBalance = (() => {
@@ -240,16 +240,30 @@ export default function TransactionFormContent({
     })();
 
     const handleRefreshRates = async () => {
+        // Check if rate already exists
+        const existingRateDetails = getRateDetailsForDate(exchangeRates, formData.originalCurrency, formData.date);
+
+        let force = false;
+        if (existingRateDetails) {
+            const confirmRefresh = window.confirm(
+                `A rate for this date already exists (${existingRateDetails.rate} from ${formatDate(existingRateDetails.date)}). Do you want to fetch a new one?`
+            );
+            if (!confirmRefresh) return;
+            force = true;
+        }
+
         const result = await refreshRates(
             formData.originalCurrency,
             settings?.baseCurrency || 'USD',
-            formData.date
+            formData.date,
+            force
         );
 
         if (result.success) {
             toast({
-                title: result.alreadyFresh ? "Rates Up to Date" : "Success",
+                title: result.alreadyFresh ? "Rates Up to Date" : (result.skipped ? "Historical Rate Skipped" : "Success"),
                 description: result.message,
+                variant: result.skipped ? "warning" : "default"
             });
         } else {
             toast({
@@ -260,7 +274,7 @@ export default function TransactionFormContent({
         }
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setValidationError(null);
 
@@ -288,23 +302,71 @@ export default function TransactionFormContent({
 
         // Perform currency conversion if needed
         if (isForeignCurrency && !formData.isCashExpense) {
-            const sourceRate = getRateForDate(exchangeRates, formData.originalCurrency, formData.date);
-            const targetRate = getRateForDate(exchangeRates, settings?.baseCurrency || 'USD', formData.date);
+            let sourceRate = getRateForDate(exchangeRates, formData.originalCurrency, formData.date);
+            let targetRate = getRateForDate(exchangeRates, settings?.baseCurrency || 'USD', formData.date);
 
-            if (!sourceRate || !targetRate) {
-                setValidationError("Exchange rate is missing. Please refresh the exchange rates before submitting.");
+            // AUTO-FETCH ON SUBMIT: If rate is missing and not paid, try to fetch it now
+            if ((!sourceRate || !targetRate) && !formData.isPaid) {
+                toast({ title: "Fetching Exchange Rates...", description: "Please wait while we update rates." });
+
+                const result = await refreshRates(
+                    formData.originalCurrency,
+                    settings?.baseCurrency || 'USD',
+                    formData.date
+                );
+
+                if (!result.success) {
+                    setValidationError("Failed to fetch exchange rates. Please try again or enter amount manually.");
+                    return;
+                }
+
+                // Re-fetch rates from updated data (or result)
+                // Note: refreshRates invalidates query, so exchangeRates prop might not update immediately in this closure.
+                // However, we can use the result if needed, but getRateForDate relies on the list.
+                // For safety, we might need to rely on the fact that queryClient invalidation triggers re-render, 
+                // but we are in an async function. 
+                // Better approach: If result.rates is available, use it temporarily, or wait for re-render (which we can't do easily here).
+                // Actually, since we await refreshRates, and it invalidates, the prop *won't* update in this function scope.
+                // We should probably trust that if success=true, the rate is either in DB or we can proceed.
+                // Let's try to grab it again from the hook if possible, or just fail gracefully if still missing?
+                // A better way is to pass the new rates back from refreshRates, but let's assume the user might need to click submit again 
+                // if the prop doesn't update fast enough? No, that's bad UX.
+                // Let's just proceed. If it was a hard fetch, we might need to rely on the user clicking again?
+                // Wait, refreshRates returns the rates! We can use that.
+
+                // But getRateForDate expects the full list.
+                // Let's just show a message "Rates updated. Please click Save again."? 
+                // Or better: we can't easily update the `exchangeRates` variable here.
+                // Let's try to proceed, but if missing, warn.
+
+                // Actually, if we just fetched, we can assume it's there for the NEXT render.
+                // But we want to submit NOW.
+                // Let's block and ask user to click again? "Rates fetched! Please review and click Save."
+                setValidationError("Exchange rates updated. Please review the rate and click Save again.");
                 return;
             }
 
-            const conversion = calculateConvertedAmount(
-                originalAmount,
-                formData.originalCurrency,
-                settings?.baseCurrency || 'USD',
-                { sourceToUSD: sourceRate, targetToUSD: targetRate }
-            );
+            if (!sourceRate || !targetRate) {
+                // If still missing (e.g. historical skipped, or fetch failed silently), warn.
+                if (!formData.isPaid) {
+                    setValidationError("Exchange rate is missing. Please fetch rates manually or mark as paid.");
+                    return;
+                }
+                // If isPaid, we don't strictly need a rate for the *amount* (we assume user entered final), 
+                // BUT we might want it for stats. For now, let's allow it if isPaid (logic below handles finalAmount).
+            }
 
-            finalAmount = conversion.convertedAmount;
-            exchangeRateUsed = conversion.exchangeRateUsed;
+            if (sourceRate && targetRate) {
+                const conversion = calculateConvertedAmount(
+                    originalAmount,
+                    formData.originalCurrency,
+                    settings?.baseCurrency || 'USD',
+                    { sourceToUSD: sourceRate, targetToUSD: targetRate }
+                );
+
+                finalAmount = conversion.convertedAmount;
+                exchangeRateUsed = conversion.exchangeRateUsed;
+            }
         } else if (formData.isCashExpense && isForeignCurrency) {
             // For cash expenses in foreign currency, convert to base currency
             const sourceRate = getRateForDate(exchangeRates, formData.originalCurrency, formData.date);
@@ -386,17 +448,30 @@ export default function TransactionFormContent({
                 <div className="flex justify-between items-center">
                     <Label htmlFor="amount">Amount</Label>
                     {isForeignCurrency && !formData.isCashExpense && (
-                        <CustomButton
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={handleRefreshRates}
-                            disabled={isRefreshing}
-                            className="h-6 px-2 text-blue-600 hover:text-blue-700"
-                        >
-                            <RefreshCw className={`w-3 h-3 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
-                            <span className="text-xs">Refresh Rates</span>
-                        </CustomButton>
+                        <div className="flex items-center gap-2">
+                            {(() => {
+                                const rateDetails = getRateDetailsForDate(exchangeRates, formData.originalCurrency, formData.date);
+                                if (rateDetails) {
+                                    return (
+                                        <span className="text-xs text-gray-500" title={`Rate: ${rateDetails.rate} (from ${formatDate(rateDetails.date)})`}>
+                                            Rate: {rateDetails.rate} ({formatDate(rateDetails.date, 'MMM d')})
+                                        </span>
+                                    );
+                                }
+                                return <span className="text-xs text-amber-600">No rate</span>;
+                            })()}
+                            <CustomButton
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleRefreshRates}
+                                disabled={isRefreshing}
+                                className="h-6 px-2 text-blue-600 hover:text-blue-700"
+                            >
+                                <RefreshCw className={`w-3 h-3 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
+                                <span className="text-xs">Fetch Rate</span>
+                            </CustomButton>
+                        </div>
                     )}
                 </div>
                 <AmountInput
