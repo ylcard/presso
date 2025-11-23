@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Trash, Loader2, Plus, ArrowDown } from "lucide-react";
 import { useConfirm } from "../components/ui/ConfirmDialogProvider";
@@ -7,7 +7,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { showToast } from "@/components/ui/use-toast";
 import { QUERY_KEYS } from "../components/hooks/queryKeys";
 import { useTransactions, useCategories, useCashWallet, useCustomBudgetsAll } from "../components/hooks/useBase44Entities";
-import { useTransactionFiltering } from "../components/hooks/useDerivedData";
+import { useAdvancedTransactionFiltering } from "../components/hooks/useDerivedData";
 import { useTransactionActions } from "../components/hooks/useActions";
 import { useSettings } from "../components/utils/SettingsContext";
 import { usePeriod } from "../components/hooks/usePeriod";
@@ -25,7 +25,11 @@ export default function Transactions() {
     const [showAddIncome, setShowAddIncome] = useState(false);
     const [showAddExpense, setShowAddExpense] = useState(false);
 
-    // Fetch period for cross-period detection
+    // Pagination State
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+
+    // Fetch period for cross-period detection (still useful for defaults)
     const { monthStart, monthEnd } = usePeriod();
 
     // Data fetching
@@ -34,8 +38,22 @@ export default function Transactions() {
     const { cashWallet } = useCashWallet(user);
     const { allCustomBudgets } = useCustomBudgetsAll(user);
 
-    // Filtering logic
-    const { filters, setFilters, filteredTransactions } = useTransactionFiltering(transactions);
+    // Advanced Filtering logic
+    const { filters, setFilters, filteredTransactions } = useAdvancedTransactionFiltering(transactions);
+
+    // Pagination Logic
+    const paginatedTransactions = useMemo(() => {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        return filteredTransactions.slice(startIndex, endIndex);
+    }, [filteredTransactions, currentPage, itemsPerPage]);
+
+    const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
+
+    // Reset to page 1 when filters change
+    useMemo(() => {
+        setCurrentPage(1);
+    }, [filters]);
 
     const { handleSubmit, handleEdit, handleDelete, isSubmitting } = useTransactionActions(
         null,
@@ -141,10 +159,11 @@ export default function Transactions() {
                     filters={filters}
                     setFilters={setFilters}
                     categories={categories}
+                    allCustomBudgets={allCustomBudgets}
                 />
 
                 <TransactionList
-                    transactions={filteredTransactions}
+                    transactions={paginatedTransactions}
                     categories={categories}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
@@ -154,6 +173,12 @@ export default function Transactions() {
                     customBudgets={allCustomBudgets}
                     monthStart={monthStart}
                     monthEnd={monthEnd}
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                    itemsPerPage={itemsPerPage}
+                    onItemsPerPageChange={setItemsPerPage}
+                    totalItems={filteredTransactions.length}
                 />
             </div>
         </div>
