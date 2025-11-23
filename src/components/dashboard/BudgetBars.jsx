@@ -33,6 +33,18 @@ export default function BudgetBars({
     const canScrollLeft = customStartIndex > 0;
     const canScrollRight = customStartIndex + barsPerPage < customBudgetsData.length;
 
+    // Adapter to transform flat list data into the shape BudgetCard expects
+    const getCardStats = (item) => ({
+        totalAllocatedUnits: item.allocated || item.amount || item.budgetAmount || 0,
+        totalSpentUnits: (item.spent || item.paid || 0) + (item.unpaid || 0),
+        totalUnpaidUnits: item.unpaid || 0,
+        paid: {
+            totalBaseCurrencyAmount: item.spent || item.paid || 0
+        },
+        unpaid: { totalBaseCurrencyAmount: item.unpaid || 0 }
+    });
+
+
     // Reusable Toggle Component
     const ViewToggle = () => (
         <div className="flex items-center bg-gray-100 p-1 rounded-lg ml-4">
@@ -52,6 +64,9 @@ export default function BudgetBars({
             </button>
         </div>
     );
+
+    const containerClass = "flex flex-wrap justify-center gap-4";
+
 
     return (
         <div className="space-y-6">
@@ -85,24 +100,23 @@ export default function BudgetBars({
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className={viewMode === 'card'
-                            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
-                            : "grid grid-cols-1 gap-3"
-                        }>
+                        <div className={containerClass}>
                             {systemBudgetsData.map((budget) => (
                                 viewMode === 'card' ? (
-                                    <div key={budget.id} className="h-full">
-                                        <BudgetCard budget={budget} stats={budget} settings={settings} />
+                                    <div key={budget.id} className="w-full md:w-[300px]">
+                                        <BudgetCard budget={{ ...budget, budgetAmount: budget.allocated || budget.budgetAmount }} stats={getCardStats(budget)} settings={settings} />
                                     </div>
                                 ) : (
-                                    <BudgetBar
-                                        key={budget.id}
-                                        budget={budget}
-                                        isCustom={false}
-                                        isSystemSavings={budget.systemBudgetType === 'savings'}
-                                        settings={settings}
-                                        hideActions={true}
-                                    />
+                                    <div key={budget.id} className="w-full md:w-[300px]">
+                                        <BudgetBar
+                                            key={budget.id}
+                                            budget={budget}
+                                            isCustom={false}
+                                            isSystemSavings={budget.systemBudgetType === 'savings'}
+                                            settings={settings}
+                                            hideActions={true}
+                                        />
+                                    </div>
                                 )
                             ))}
                         </div>
@@ -118,7 +132,6 @@ export default function BudgetBars({
                                 Custom Budgets
                             </span>
                             <span className="text-gray-400">({customBudgetsData.length})</span>
-                            <ViewToggle />
                         </div>
                         <div className="flex items-center gap-2">
                             {customBudgetsData.length > barsPerPage && (
@@ -152,23 +165,22 @@ export default function BudgetBars({
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className={viewMode === 'card'
-                            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
-                            : "grid grid-cols-1 gap-3"
-                        }>
+                        <div className={containerClass}>
                             {visibleCustomBudgets.map((budget) => (
                                 viewMode === 'card' ? (
-                                    <div key={budget.id} className="h-full">
-                                        <BudgetCard budget={budget} stats={budget} settings={settings} />
+                                    <div key={budget.id} className="w-full md:w-[300px]">
+                                        <BudgetCard budget={budget} stats={getCardStats(budget)} settings={settings} />
                                     </div>
                                 ) : (
-                                    <BudgetBar
-                                        key={budget.id}
-                                        budget={budget}
-                                        isCustom={true}
-                                        settings={settings}
-                                        hideActions={true}
-                                    />
+                                    <div key={budget.id} className="w-full md:w-[300px]">
+                                        <BudgetBar
+                                            key={budget.id}
+                                            budget={budget}
+                                            isCustom={true}
+                                            settings={settings}
+                                            hideActions={true}
+                                        />
+                                    </div>
                                 )
                             ))}
                         </div>
