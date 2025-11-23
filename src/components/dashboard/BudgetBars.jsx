@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Plus, ChevronLeft, ChevronRight, AlertTriangle, LayoutGrid, AlignJustify } from "lucide-react";
 import { formatCurrency } from "../utils/currencyUtils";
-import { useBudgetBarsData } from "../components/hooks/useDerivedData";
+import { useBudgetBarsData } from "../hooks/useDerivedData";
 import BudgetBar from "../custombudgets/BudgetBar";
 import BudgetCard from "../budgets/BudgetCard";
 
