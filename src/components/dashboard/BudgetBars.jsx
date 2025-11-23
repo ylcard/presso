@@ -33,17 +33,23 @@ export default function BudgetBars({
     const canScrollLeft = customStartIndex > 0;
     const canScrollRight = customStartIndex + barsPerPage < customBudgetsData.length;
 
-    // Adapter to transform flat list data into the shape BudgetCard expects
-    const getCardStats = (item) => ({
-        totalAllocatedUnits: item.allocated || item.amount || item.budgetAmount || 0,
-        totalSpentUnits: (item.spent || item.paid || 0) + (item.unpaid || 0),
-        totalUnpaidUnits: item.unpaid || 0,
-        paid: {
-            totalBaseCurrencyAmount: item.spent || item.paid || 0
-        },
-        unpaid: { totalBaseCurrencyAmount: item.unpaid || 0 }
-    });
 
+    // Adapter to transform flat list data into the shape BudgetCard expects.
+    // We calculate 'spent' as total usage, and ensure 'paid' is derived if missing.
+    const getCardStats = (item) => {
+        const allocated = item.amount ?? item.budgetAmount ?? item.allocated ?? 0;
+        const unpaid = item.unpaid ?? 0;
+        // Try to get explicit 'paid', otherwise assume 'spent' is total used and subtract unpaid
+        const paid = item.paid ?? (item.spent ? item.spent - unpaid : 0);
+
+        return {
+            totalAllocatedUnits: allocated,
+            totalSpentUnits: paid + unpaid,
+            totalUnpaidUnits: unpaid,
+            paid: { totalBaseCurrencyAmount: paid },
+            unpaid: { totalBaseCurrencyAmount: unpaid }
+        };
+    };
 
     // Reusable Toggle Component
     const ViewToggle = () => (
@@ -65,7 +71,10 @@ export default function BudgetBars({
         </div>
     );
 
-    const containerClass = "flex flex-wrap justify-center gap-4";
+    // Responsive Grid Layout
+    const containerClass = viewMode === 'card'
+        ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3"
+        : "grid grid-cols-1 md:grid-cols-2 gap-3";
 
 
     return (
@@ -103,11 +112,11 @@ export default function BudgetBars({
                         <div className={containerClass}>
                             {systemBudgetsData.map((budget) => (
                                 viewMode === 'card' ? (
-                                    <div key={budget.id} className="w-full md:w-[300px]">
-                                        <BudgetCard budget={{ ...budget, budgetAmount: budget.allocated || budget.budgetAmount }} stats={getCardStats(budget)} settings={settings} />
+                                    <div key={budget.id} className="h-full">
+                                        <BudgetCard budget={{ ...budget, budgetAmount: budget.allocated || budget.budgetAmount }} stats={getCardStats(budget)} settings={settings} size="sm" />
                                     </div>
                                 ) : (
-                                    <div key={budget.id} className="w-full md:w-[300px]">
+                                    <div key={budget.id} className="h-full">
                                         <BudgetBar
                                             key={budget.id}
                                             budget={budget}
@@ -168,11 +177,11 @@ export default function BudgetBars({
                         <div className={containerClass}>
                             {visibleCustomBudgets.map((budget) => (
                                 viewMode === 'card' ? (
-                                    <div key={budget.id} className="w-full md:w-[300px]">
-                                        <BudgetCard budget={budget} stats={getCardStats(budget)} settings={settings} />
+                                    <div key={budget.id} className="h-full">
+                                        <BudgetCard budget={budget} stats={getCardStats(budget)} settings={settings} size="sm" />
                                     </div>
                                 ) : (
-                                    <div key={budget.id} className="w-full md:w-[300px]">
+                                    <div key={budget.id} className="h-full">
                                         <BudgetBar
                                             key={budget.id}
                                             budget={budget}
