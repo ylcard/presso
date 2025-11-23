@@ -16,6 +16,7 @@ import {
     useMonthlyIncome,
     useDashboardSummary,
     useActiveBudgets,
+    useBudgetsAggregates,
 } from "../components/hooks/useDerivedData";
 import {
     useTransactionActions,
@@ -75,6 +76,16 @@ export default function Dashboard() {
     const { activeCustomBudgets } = useActiveBudgets(
         allCustomBudgets,
         allSystemBudgets,
+        selectedMonth,
+        selectedYear
+    );
+
+    // Use useBudgetsAggregates to get data with stats calculated (via financialCalculations)
+    const { systemBudgetsWithStats, customBudgetsData } = useBudgetsAggregates(
+        transactions,
+        categories,
+        allCustomBudgets,
+        systemBudgets,
         selectedMonth,
         selectedYear
     );
@@ -167,8 +178,8 @@ export default function Dashboard() {
                 <div className="grid lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-2 flex flex-col">
                         <BudgetBars
-                            systemBudgets={systemBudgets}
-                            customBudgets={activeCustomBudgets}
+                            systemBudgets={systemBudgetsWithStats}
+                            customBudgets={customBudgetsData}
                             allCustomBudgets={allCustomBudgets}
                             transactions={transactions}
                             categories={categories}
@@ -225,4 +236,3 @@ export default function Dashboard() {
         </div>
     );
 }
-
