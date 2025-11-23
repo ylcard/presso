@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Plus, ChevronLeft, ChevronRight, AlertTriangle, LayoutGrid, AlignJustify } from "lucide-react";
 import { formatCurrency } from "../utils/currencyUtils";
+import { useBudgetBarsData } from "../components/hooks/useDerivedData";
 import BudgetBar from "../custombudgets/BudgetBar";
 import BudgetCard from "../budgets/BudgetCard";
 
@@ -25,8 +26,8 @@ export default function BudgetBars({
     const barsPerPage = viewMode === 'card' ? 4 : 6;
 
     // Use the extracted hook for all calculations
-    const systemBudgetsData = systemBudgets;
-    const customBudgetsData = customBudgets;
+    const { systemBudgetsData, customBudgetsData, totalActualSavings, savingsTarget, savingsShortfall } =
+        useBudgetBarsData(systemBudgets, customBudgets, allCustomBudgets, transactions, categories, goals, monthlyIncome, baseCurrency);
 
     const visibleCustomBudgets = customBudgetsData.slice(customStartIndex, customStartIndex + barsPerPage);
     const canScrollLeft = customStartIndex > 0;
@@ -36,7 +37,21 @@ export default function BudgetBars({
     // Adapter to transform flat list data into the shape BudgetCard expects.
     // We calculate 'spent' as total usage, and ensure 'paid' is derived if missing.
     const getCardStats = (item) => {
-        if (item.stats) return item.stats;
+        if (item.stats) {
+            // If it's a System Budget (has paidAmount but missing the complex object structure BudgetCard wants)
+            if (item.isSystemBudget || (item.stats.paidAmount !== undefined && item.stats.totalAllocatedUnits === undefined)) {
+                return {
+                    totalAllocatedUnits: item.budgetAmount || item.allocatedAmount,
+                    paid: { totalBaseCurrencyAmount: item.stats.paidAmount },
+                    unpaid: { totalBaseCurrencyAmount: item.stats.unpaidAmount },
+                    totalSpentUnits: item.stats.totalSpent,
+                    totalUnpaidUnits: item.stats.unpaidAmount
+                };
+            }
+            // For Custom Budgets, the structure from the hook is already correct
+            return item.stats;
+        }
+
         if (item.preCalculatedStats) return item.preCalculatedStats;
 
         const allocated = item.amount ?? item.budgetAmount ?? item.allocated ?? 0;
