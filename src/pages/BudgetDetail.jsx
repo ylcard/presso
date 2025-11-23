@@ -25,7 +25,7 @@ import { useCashWallet } from "../components/hooks/useBase44Entities";
 import { useTransactionActions } from "../components/hooks/useActions";
 import { calculateRemainingCashAllocations, returnCashToWallet } from "../components/utils/cashAllocationUtils";
 import { useCustomBudgetActions } from "../components/hooks/useActions";
-import { usePeriod } from "../components/hooks/usePeriod";
+import { usePeriod, useMonthlyIncome } from "../components/hooks/useDerivedData";
 import QuickAddTransaction from "../components/transactions/QuickAddTransaction";
 import TransactionCard from "../components/transactions/TransactionCard";
 import AllocationManager from "../components/custombudgets/AllocationManager";
@@ -210,7 +210,8 @@ export default function BudgetDetail() {
 
     const { monthStart, monthEnd } = usePeriod();
 
-    const urlParams = new URLSearchParams(window.location.search);
+    // const urlParams = new URLSearchParams(window.location.search);
+    const urlParams = new URLSearchParams(location.search);
     const budgetId = urlParams.get('id');
 
     const { cashWallet } = useCashWallet(user);
@@ -255,6 +256,9 @@ export default function BudgetDetail() {
         queryFn: () => base44.entities.Transaction.list('date', 1000),
         initialData: [],
     });
+
+    // Fetch income for savings calculation
+    const monthlyIncome = useMonthlyIncome(transactions, new Date(monthStart).getMonth(), new Date(monthStart).getFullYear());
 
     const { data: categories = [] } = useQuery({
         queryKey: ['categories'],
@@ -463,11 +467,13 @@ export default function BudgetDetail() {
         if (!budget) return null;
 
         if (budget.isSystemBudget) {
-            return getSystemBudgetStats(budget, transactions, categories, allCustomBudgets, budget.startDate, budget.endDate);
+            // return getSystemBudgetStats(budget, transactions, categories, allCustomBudgets, budget.startDate, budget.endDate);
+            return getSystemBudgetStats(budget, transactions, categories, allCustomBudgets, budget.startDate, budget.endDate, monthlyIncome)
         } else {
             return getCustomBudgetStats(budget, transactions, monthStart, monthEnd);
         }
-    }, [budget, transactions, categories, allCustomBudgets, monthStart, monthEnd]);
+        // }, [budget, transactions, categories, allCustomBudgets, monthStart, monthEnd]);
+    }, [budget, transactions, categories, allCustomBudgets, monthStart, monthEnd, monthlyIncome]);
 
     const allocationStats = useMemo(() => {
         if (!budget || budget.isSystemBudget) return null;
