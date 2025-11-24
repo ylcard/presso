@@ -346,18 +346,21 @@ export default function BudgetDetail() {
             }
 
             // Calculate the TOTAL original budget (Digital + All Cash Allocations) before we wipe them
-            const currentDigitalAllocation = budgetToComplete.allocatedAmount || 0;
-            const currentCashAllocation = (budgetToComplete.cashAllocations || []).reduce((sum, a) => sum + (a.amount || 0), 0);
-            const totalOriginalBudget = currentDigitalAllocation + currentCashAllocation;
+            // const currentDigitalAllocation = budgetToComplete.allocatedAmount || 0;
+            // const currentCashAllocation = (budgetToComplete.cashAllocations || []).reduce((sum, a) => sum + (a.amount || 0), 0);
+            // const totalOriginalBudget = currentDigitalAllocation + currentCashAllocation;
 
-            const actualSpent = getCustomBudgetStats(budgetToComplete, transactions, monthStart, monthEnd).totalSpentUnits;
+            // const actualSpent = getCustomBudgetStats(budgetToComplete, transactions, monthStart, monthEnd).totalSpentUnits;
 
             await base44.entities.CustomBudget.update(id, {
-                status: 'completed',
-                allocatedAmount: actualSpent,
+                // status: 'completed',
+                // allocatedAmount: actualSpent,
                 // originalAllocatedAmount: budgetToComplete.originalAllocatedAmount || budgetToComplete.allocatedAmount,
-                originalAllocatedAmount: budgetToComplete.originalAllocatedAmount || totalOriginalBudget,
-                cashAllocations: []
+                // originalAllocatedAmount: budgetToComplete.originalAllocatedAmount || totalOriginalBudget,
+                // cashAllocations: []
+                status: 'completed'
+                // We DO NOT wipe allocations anymore. 
+                // This preserves the "Budget vs Actual" comparison for historical viewing.
             });
         },
         onSuccess: () => {
@@ -373,11 +376,12 @@ export default function BudgetDetail() {
             const budgetToReactivate = budget;
             if (!budgetToReactivate) return;
 
+            // Simply set back to active
             await base44.entities.CustomBudget.update(id, {
                 status: 'active',
-                allocatedAmount: budgetToReactivate.originalAllocatedAmount || budgetToReactivate.allocatedAmount,
-                originalAllocatedAmount: null,
-                cashAllocations: []
+                // allocatedAmount: budgetToReactivate.originalAllocatedAmount || budgetToReactivate.allocatedAmount,
+                // originalAllocatedAmount: null,
+                // cashAllocations: []
             });
         },
         onSuccess: () => {
