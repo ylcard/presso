@@ -3,7 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CustomButton } from "@/components/ui/CustomButton";
-import { Trash2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Trash2, ArrowUpDown, ArrowUp, ArrowDown, Star, Clock, CheckCircle } from "lucide-react";
 import { formatCurrency } from "@/components/utils/currencyUtils";
 import { useSettings } from "@/components/utils/SettingsContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
@@ -217,12 +217,24 @@ export default function CategorizeReview({ data, categories, customBudgets = [],
                                                     <SelectValue placeholder="Select Budget" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="system">System Budget</SelectItem>
+                                                    <SelectItem value="system">
+                                                        <div className="flex items-center">
+                                                            <Star className="w-3 h-3 text-blue-600 mr-2" />
+                                                            <span>{row.financial_priority ? row.financial_priority.charAt(0).toUpperCase() + row.financial_priority.slice(1) : 'System Budget'}</span>
+                                                        </div>
+                                                    </SelectItem>
                                                     {activeCustomBudgets.length > 0 && (
                                                         <SelectGroup>
                                                             <SelectLabel>Custom Budgets</SelectLabel>
                                                             {activeCustomBudgets.map(cb => (
-                                                                <SelectItem key={cb.id} value={cb.id}>{cb.name}</SelectItem>
+                                                                <SelectItem key={cb.id} value={cb.id}>
+                                                                    <div className="flex items-center">
+                                                                        {cb.status === 'active' && <Clock className="w-3 h-3 text-orange-500 mr-2" />}
+                                                                        {cb.status === 'planned' && <Clock className="w-3 h-3 text-blue-500 mr-2" />}
+                                                                        {cb.status === 'completed' && <CheckCircle className="w-3 h-3 text-green-500 mr-2" />}
+                                                                        <span className="truncate max-w-[140px]" title={cb.name}>{cb.name}</span>
+                                                                    </div>
+                                                                </SelectItem>
                                                             ))}
                                                         </SelectGroup>
                                                     )}
