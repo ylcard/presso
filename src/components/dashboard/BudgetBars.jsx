@@ -21,12 +21,10 @@ export default function BudgetBars({
     baseCurrency,
     onCreateBudget
 }) {
-    // const [viewMode, setViewMode] = useState('bars'); // 'bars' | 'cards'
-    // Initialize state from localStorage or default to 'bars'
-    const [viewMode, setViewMode] = useState(() => {
-        const savedMode = localStorage.getItem('budgetViewMode');
-        return savedMode === 'cards' ? 'cards' : 'bars';
-    });
+
+    // Initialize state from global settings, defaulting to 'bars'
+    // This acts as a temporary override that resets on page reload
+    const [viewMode, setViewMode] = useState(settings.budgetViewMode || 'bars');
 
     const [customStartIndex, setCustomStartIndex] = useState(0);
     // const barsPerPage = 7;
@@ -40,10 +38,10 @@ export default function BudgetBars({
     const canScrollLeft = customStartIndex > 0;
     const canScrollRight = customStartIndex + barsPerPage < customBudgetsData.length;
 
-    // Persist view mode changes
-    useEffect(() => {
-        localStorage.setItem('budgetViewMode', viewMode);
-    }, [viewMode]);
+    // DEPRECATED: Persist view mode changes
+    // useEffect(() => {
+    //     localStorage.setItem('budgetViewMode', viewMode);
+    // }, [viewMode]);
 
     return (
         <div className="space-y-6">
