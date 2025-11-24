@@ -216,10 +216,7 @@ export default function ImportWizard({ onSuccess }) {
         try {
             const transactionsToCreate = processedData.map(item => {
                 const isExpense = item.type === 'expense';
-
-                // FINAL CALCULATED AMOUNT FOR DB
-                // If expense, ensure it is negative. If income, positive.
-                const finalAmount = isExpense ? -Math.abs(item.amount) : Math.abs(item.amount);
+                const finalAmount = Math.abs(item.amount);
 
                 return {
                     title: item.title,
