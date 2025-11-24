@@ -26,13 +26,24 @@ export const isCashExpense = (transaction) => {
  * @returns {boolean} True if the transaction falls within the range.
  */
 export const isTransactionInDateRange = (transaction, startDate, endDate) => {
-    if (transaction.isPaid && transaction.paidDate) {
-        return isDateInRange(transaction.paidDate, startDate, endDate);
-    } else if (!transaction.isPaid) {
+    // if (transaction.isPaid && transaction.paidDate) {
+    //     return isDateInRange(transaction.paidDate, startDate, endDate);
+    // } else if (!transaction.isPaid) {
+    //     return isDateInRange(transaction.date, startDate, endDate);
+    // Income always uses the transaction date
+    if (transaction.type === 'income') {
         return isDateInRange(transaction.date, startDate, endDate);
     }
 
-    return false;
+    // Paid transactions use paidDate, fallback to transaction date if missing
+    if (transaction.isPaid) {
+        return isDateInRange(transaction.paidDate || transaction.date, startDate, endDate);
+    } else {
+        // Unpaid transactions use transaction date
+        return isDateInRange(transaction.date, startDate, endDate);
+    }
+
+    // return false;
 };
 
 /**
@@ -73,7 +84,9 @@ const filterExpenses = (transaction, categories, startDate, endDate, allCustomBu
 
     // Filter by payment status
     if (isPaid !== undefined) {
-        if (isPaid && (!transaction.isPaid || !transaction.paidDate)) return false;
+        // if (isPaid && (!transaction.isPaid || !transaction.paidDate)) return false;
+        // Relaxed check: Just check isPaid status. Date range check will handle the date fallback.
+        if (isPaid && !transaction.isPaid) return false;
         if (!isPaid && transaction.isPaid) return false;
     }
 
