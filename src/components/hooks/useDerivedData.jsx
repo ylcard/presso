@@ -623,7 +623,8 @@ export const useBudgetBarsData = (
             const expectedAmount = digitalUnpaid;
             const totalSpent = paidAmount + expectedAmount; */
             // Use centralized calculation
-            const stats = getCustomBudgetStats(cb, transactions, monthStartDate, monthEndDate);
+            // const stats = getCustomBudgetStats(cb, transactions, monthStartDate, monthEndDate);
+            const stats = getCustomBudgetStats(cb, transactions, monthStartDate, monthEndDate, baseCurrency);
 
             // Calculate totals for BudgetBars
             let totalBudget = stats.digital.allocated;
