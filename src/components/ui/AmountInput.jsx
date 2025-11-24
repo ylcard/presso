@@ -63,7 +63,7 @@ export default function AmountInput({
     const [displayValue, setDisplayValue] = useState(
         // Use empty string instead of formatted "0" for zero/null values
         value !== null && value !== undefined && !isNaN(value) && value !== 0
-            ? formatCurrency(value, settings)
+            ? formatCurrency(Math.abs(value), settings).replace(displaySymbol, '').trim()
             : ''
     );
 
@@ -79,8 +79,8 @@ export default function AmountInput({
         if (value === null || value === undefined || isNaN(value) || value === 0) {
             // Set to empty string to show placeholder instead of "0"
             if (displayValue !== '') setDisplayValue('');
-        } else if (value !== currentNumericValue) {
-            setDisplayValue(formatCurrency(value, settings));
+        } else if (Math.abs(value) !== Math.abs(currentNumericValue)) {
+            setDisplayValue(formatCurrency(Math.abs(value), settings).replace(displaySymbol, '').trim());
         }
     }, [value, settings, displayValue]);
 
@@ -184,7 +184,7 @@ export default function AmountInput({
                 // Always show placeholder when input is empty
                 placeholder={placeholder}
                 className={`
-                    ${isCombined ? 'pl-[6.5rem]' : (settings.currencyPosition === 'before' ? 'pl-8' : 'pr-8')} 
+                    ${isCombined ? 'pl-[5.3rem]' : (settings.currencyPosition === 'before' ? 'pl-8' : 'pr-8')}
                     ${className}
                 `}
                 // Disable browser autocomplete for amount fields
@@ -203,3 +203,4 @@ export default function AmountInput({
         </div>
     );
 }
+
