@@ -222,8 +222,12 @@ export default function ImportWizard({ onSuccess }) {
         }
     };
 
-    const handleDeleteRow = (index) => {
-        setProcessedData(prev => prev.filter((_, i) => i !== index));
+    // const handleDeleteRow = (index) => {
+    //     setProcessedData(prev => prev.filter((_, i) => i !== index));
+    const handleDeleteRows = (indicesToDelete) => {
+        // Convert array to Set for O(1) lookup
+        const indicesSet = new Set(indicesToDelete);
+        setProcessedData(prev => prev.filter((_, i) => !indicesSet.has(i)));
     };
 
     const handleUpdateRow = (index, updates) => {
@@ -304,7 +308,8 @@ export default function ImportWizard({ onSuccess }) {
                             categories={categories}
                             customBudgets={allCustomBudgets}
                             onUpdateRow={handleUpdateRow}
-                            onDeleteRow={handleDeleteRow}
+                            // onDeleteRow={handleDeleteRow}
+                            onDeleteRows={handleDeleteRows}
                         />
                         <div className="flex justify-end gap-4">
                             <CustomButton variant="outline" onClick={() => {
