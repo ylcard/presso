@@ -3,7 +3,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Keep for Priority
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RefreshCw, AlertCircle, Clock, CheckCircle, Check, ChevronsUpDown } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -63,6 +65,8 @@ export default function TransactionFormContent({
         notes: ''
     });
 
+    const [isBudgetOpen, setIsBudgetOpen] = useState(false);
+    const [budgetSearchTerm, setBudgetSearchTerm] = useState("");
     const [validationError, setValidationError] = useState(null);
 
     // Initialize form data from initialTransaction (for editing)
@@ -199,69 +203,61 @@ export default function TransactionFormContent({
 
     // Filter budgets to show active + planned statuses + relevant completed budgets
     // This allows linking expenses to future/past budgets while keeping the list manageable
-    // Filter budgets to show active + planned statuses + relevant completed budgets
-    // This allows linking expenses to future/past budgets while keeping the list manageable
-    const filteredBudgets = useMemo(() => {
-        // Determine the effective date for budget matching
-        // If it's a paid expense, use the paid date. Otherwise, use the transaction date.
-        const effectiveDateStr = (formData.isPaid && formData.paidDate) ? formData.paidDate : formData.date;
+    const smartSortedBudgets = useMemo(() => {
+        const userRealNow = startOfDay(new Date()); // User's actual current life date
+        const currentPriority = (formData.financial_priority || '').toLowerCase();
 
-        // Filter logic
-        let statusFiltered = allBudgets.filter(b => {
-            // 1. SYSTEM BUDGETS: DATE RANGE MATCH
-            // Check if the effective date falls within the system budget's period
+        // 1. Intelligent Filtering
+        const relevantBudgets = allBudgets.filter(b => {
             if (b.isSystemBudget) {
-                return isDateInRange(effectiveDateStr, b.startDate, b.endDate);
+                // RULE: Never show Savings System Budgets (user preference)
+                if (b.systemBudgetType === 'savings' || b.name.toLowerCase().includes('savings')) return false;
+
+                // RULE: If priority is NOT 'needs', don't show Needs System Budget
+                if (currentPriority !== 'needs' && b.systemBudgetType === 'needs') return false;
+
+                // Only show system budgets relevant to the Transaction Date (otherwise list is huge)
+                return isDateInRange(formData.date, b.startDate, b.endDate);
             }
 
-            // 2. CUSTOM BUDGETS: INTELLIGENT FILTERING
-
-            // A. Date Range Match: Always show if the expense falls within the budget's dates
-            // This covers "Completed" budgets (e.g., adding a late expense to a past trip)
-            if (isDateInRange(effectiveDateStr, b.startDate, b.endDate)) {
-                return true;
-            }
-
-            // B. Status Based: Show Active and Planned budgets
-            // This allows flexibility (e.g., pre-booking a hotel for a trip that hasn't started yet)
-            return b.status === 'active' || b.status === 'planned';
+            // Custom Budgets: Keep them all available for search, 
+            // but we will prioritize them in the sort.
+            return true;
         });
 
-        // If editing and the transaction has a budget, ensure it's always in the list
-        if (initialTransaction?.customBudgetId) {
-            const preSelectedBudget = allBudgets.find(b => b.id === initialTransaction.customBudgetId);
-            if (preSelectedBudget && !statusFiltered.find(b => b.id === preSelectedBudget.id)) {
-                // Add the pre-selected budget at the beginning
-                return [preSelectedBudget, ...statusFiltered];
-            }
-        }
+        // 2. Proximity Scoring & Sorting
+        return relevantBudgets.map(b => {
+            // Calculate distance from Real Life Today to Budget Start
+            // This helps surface the budget that is happening NOW or SOON
+            const startDate = parseISO(b.startDate);
+            const distanceToNow = Math.abs(differenceInDays(userRealNow, startDate));
+            
+            return { ...b, distanceToNow };
+        }).sort((a, b) => {
+            // Always float the currently selected budget to the top if editing
+            if (a.id === formData.customBudgetId) return -1;
+            if (b.id === formData.customBudgetId) return 1;
 
-        const sortedBudgets = [...statusFiltered].sort((a, b) => {
-            // 1. System Budgets First
+            // System budgets for the current priority usually go first
             if (a.isSystemBudget && !b.isSystemBudget) return -1;
             if (!a.isSystemBudget && b.isSystemBudget) return 1;
 
-            // 2. Sort System Budgets by Priority Order (Needs > Wants > Savings)
-            if (a.isSystemBudget && b.isSystemBudget) {
-                const orderA = FINANCIAL_PRIORITIES[a.systemBudgetType]?.order ?? 99;
-                const orderB = FINANCIAL_PRIORITIES[b.systemBudgetType]?.order ?? 99;
-                return orderA - orderB;
-            }
-
-            // 3. Sort Custom Budgets by Status (Active > Planned > Completed)
-            const statusOrder = { active: 0, planned: 1, completed: 2 };
-            const statusA = statusOrder[a.status] ?? 99;
-            const statusB = statusOrder[b.status] ?? 99;
-
-            if (statusA !== statusB) {
-                return statusA - statusB;
-            }
-
-            // 4. Sort by Name within same status
-            return a.name.localeCompare(b.name);
+            // Sort by proximity to user's real today
+            return a.distanceToNow - b.distanceToNow;
         });
-        return sortedBudgets;
-    }, [allBudgets, formData.isPaid, formData.paidDate, formData.date, initialTransaction]);
+    }, [allBudgets, formData.date, formData.financial_priority, formData.customBudgetId]);
+
+    // 3. View Limiter
+    // If searching, show ALL matches. If not searching, show only top 5 recommended.
+    const visibleOptions = useMemo(() => {
+        if (budgetSearchTerm && budgetSearchTerm.length > 0) {
+            return smartSortedBudgets.filter(b => 
+                b.name.toLowerCase().includes(budgetSearchTerm.toLowerCase())
+            );
+        }
+        return smartSortedBudgets.slice(0, 5);
+    }, [smartSortedBudgets, budgetSearchTerm]);
+
 
     // Calculate available cash balance dynamically
     const availableBalance = (() => {
@@ -641,40 +637,57 @@ export default function TransactionFormContent({
                     {/* Budget (REQUIRED for expenses) */}
                     <div className="space-y-2">
                         <Label htmlFor="customBudget">Budget Allocation</Label>
-                        <Select
-                            value={formData.customBudgetId || ''}
-                            onValueChange={(value) => setFormData({ ...formData, customBudgetId: value || '' })}
-                            required
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select a budget" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {filteredBudgets.map((budget) => (
-                                    <SelectItem key={budget.id} value={budget.id}>
-                                        <div className="flex items-center">
-                                            {/* Icons on the left */}
-                                            {budget.isSystemBudget && <span className="text-blue-600 mr-2">★</span>}
-                                            {!budget.isSystemBudget && (
-                                                <>
-                                                    {budget.status === 'active' && <Clock className="w-3 h-3 text-orange-500 mr-2" />}
-                                                    {budget.status === 'planned' && <Clock className="w-3 h-3 text-blue-500 mr-2" />}
-                                                    {budget.status === 'completed' && <CheckCircle className="w-3 h-3 text-green-500 mr-2" />}
-                                                </>
-                                            )}
-
-                                            <span>{budget.name}</span>
-
-                                            {budget.isSystemBudget && (
-                                                <span className="text-gray-500 ml-2 text-xs">
-                                                    ({formatDate(budget.startDate, 'MMM yyyy')})
-                                                </span>
-                                            )}
-                                        </div>
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <Popover open={isBudgetOpen} onOpenChange={setIsBudgetOpen}>
+                           <PopoverTrigger asChild>
+                                <CustomButton
+                                    variant="outline"
+                                    role="combobox"
+                                    aria-expanded={isBudgetOpen}
+                                    className="w-full justify-between font-normal"
+                                >
+                                    {formData.customBudgetId
+                                        ? allBudgets.find((b) => b.id === formData.customBudgetId)?.name
+                                        : "Select budget..."}
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </CustomButton>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[300px] p-0" align="start">
+                                <Command shouldFilter={false}>
+                                    <CommandInput 
+                                        placeholder="Search budgets..." 
+                                        onValueChange={setBudgetSearchTerm}
+                                    />
+                                    <CommandList>
+                                        <CommandEmpty>No relevant budget found.</CommandEmpty>
+                                        <CommandGroup heading={budgetSearchTerm ? "Search Results" : undefined}>
+                                            {visibleOptions.map((budget) => (
+                                                <CommandItem
+                                                    key={budget.id}
+                                                    value={budget.name}
+                                                    onSelect={() => {
+                                                        setFormData({ ...formData, customBudgetId: budget.id });
+                                                        setIsBudgetOpen(false);
+                                                    }}
+                                                >
+                                                    <Check
+                                                        className={`mr-2 h-4 w-4 ${formData.customBudgetId === budget.id ? "opacity-100" : "opacity-0"}`}
+                                                    />
+                                                    <div className="flex items-center text-sm">
+                                                        {budget.isSystemBudget ? (
+                                                            <span className="text-blue-600 mr-2">★</span>
+                                                        ) : (
+                                                            <span className={`w-2 h-2 rounded-full mr-2 ${budget.status === 'active' ? 'bg-green-500' : 'bg-gray-300'}`} />
+                                                        )}
+                                                        {budget.name}
+                                                        {budget.isSystemBudget && <span className="ml-1 text-xs text-gray-400">({formatDate(budget.startDate, 'MMM')})</span>}
+                                                    </div>
+                                                </CommandItem>
+                                            ))}
+                                        </CommandGroup>
+                                    </CommandList>
+                                </Command>
+                            </PopoverContent>
+                        </Popover>
                     </div>
                 </div>
             )}
@@ -707,3 +720,4 @@ export default function TransactionFormContent({
         </form>
     );
 }
+
