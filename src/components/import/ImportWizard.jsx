@@ -9,7 +9,7 @@ import { base44 } from "@/api/base44Client";
 import { useSettings } from "@/components/utils/SettingsContext";
 import { showToast } from "@/components/ui/use-toast";
 import { ArrowRight, Loader2, Upload } from "lucide-react";
-import { useCategories, useCategoryRules } from "@/components/hooks/useBase44Entities";
+import { useCategories, useCategoryRules, useCustomBudgetsAll } from "@/components/hooks/useBase44Entities";
 import { categorizeTransaction } from "@/components/utils/transactionCategorization";
 import { createPageUrl } from "@/utils";
 import { useNavigate } from "react-router-dom";
@@ -20,6 +20,16 @@ const STEPS = [
     { id: 2, label: "Review" },
     { id: 3, label: "Finish" }
 ];
+
+// Helper: parses any string into a clean absolute float
+// Removes currency symbols, handles "50.00-" or "(50.00)" accounting formats
+const parseCleanRawAmount = (value) => {
+    if (!value) return 0;
+    const str = value.toString();
+    // Remove everything that isn't a digit or a dot
+    const cleanStr = str.replace(/[^0-9.]/g, "");
+    return parseFloat(cleanStr) || 0;
+};
 
 export default function ImportWizard({ onSuccess }) {
     const [step, setStep] = useState(1);
@@ -33,6 +43,7 @@ export default function ImportWizard({ onSuccess }) {
     const { user, settings } = useSettings();
     const { categories } = useCategories();
     const { rules } = useCategoryRules(user);
+    const { allCustomBudgets } = useCustomBudgetsAll(user);
     const navigate = useNavigate();
     const [isLoadingPdf, setIsLoadingPdf] = useState(false);
 
@@ -87,8 +98,14 @@ export default function ImportWizard({ onSuccess }) {
             const extractedData = result.output?.transactions || [];
 
             const processed = extractedData.map(item => {
-                const amountClean = parseFloat(item.amount);
-                const type = amountClean >= 0 ? 'income' : 'expense';
+                // const amountClean = parseFloat(item.amount);
+                // const type = amountClean >= 0 ? 'income' : 'expense';
+                // 1. Get raw magnitude (absolute value)
+                const rawMagnitude = parseCleanRawAmount(item.amount);
+
+                // 2. Determine type based on original string indicators
+                const isNegative = item.amount.toString().includes('-') || item.amount.toString().includes('(');
+                const type = isNegative ? 'expense' : 'income';
 
                 // Enhanced categorization using rules and patterns
                 const catResult = categorizeTransaction(
@@ -100,8 +117,10 @@ export default function ImportWizard({ onSuccess }) {
                 return {
                     date: item.date,
                     title: item.reason || 'Untitled Transaction',
-                    amount: Math.abs(amountClean),
-                    originalAmount: amountClean,
+                    // amount: Math.abs(amountClean),
+                    // originalAmount: amountClean,
+                    amount: rawMagnitude, // UI always sees positive
+                    originalAmount: isNegative ? -rawMagnitude : rawMagnitude, // Keep record of original sign
                     originalCurrency: settings?.baseCurrency || 'USD',
                     type,
                     category: catResult.categoryName || 'Uncategorized',
@@ -109,6 +128,7 @@ export default function ImportWizard({ onSuccess }) {
                     financial_priority: catResult.priority || 'wants',
                     isPaid: !!item.valueDate,
                     paidDate: item.valueDate || null,
+                    customBudgetId: null,
                     originalData: item
                 };
             }).filter(item => item.amount !== 0 && item.date);
@@ -133,13 +153,18 @@ export default function ImportWizard({ onSuccess }) {
         const processed = csvData.data.map(row => {
             const amountRaw = row[mappings.amount];
             // Basic cleaning of amount (remove currency symbols, commas)
-            const amountClean = amountRaw ? parseFloat(amountRaw.replace(/[^0-9.-]+/g, "")) : 0;
+            // const amountClean = amountRaw ? parseFloat(amountRaw.replace(/[^0-9.-]+/g, "")) : 0;
+            // 1. Clean data to pure number
+            const rawMagnitude = parseCleanRawAmount(amountRaw);
 
             let type = 'expense';
             if (mappings.type && row[mappings.type]) {
                 type = row[mappings.type].toLowerCase().includes('income') ? 'income' : 'expense';
             } else {
-                type = amountClean >= 0 ? 'income' : 'expense';
+                // type = amountClean >= 0 ? 'income' : 'expense';
+                // Auto-detect if no type column: check for minus sign or parens in amount
+                const isNegative = amountRaw && (amountRaw.includes('-') || amountRaw.includes('('));
+                type = isNegative ? 'expense' : 'income';
             }
 
             // Enhanced categorization
@@ -166,8 +191,10 @@ export default function ImportWizard({ onSuccess }) {
             return {
                 date: row[mappings.date],
                 title: row[mappings.title] || 'Untitled Transaction',
-                amount: Math.abs(amountClean),
-                originalAmount: amountClean,
+                // amount: Math.abs(amountClean),
+                // originalAmount: amountClean,
+                amount: rawMagnitude, // Store as positive for Review UI
+                originalAmount: type === 'expense' ? -rawMagnitude : rawMagnitude,
                 originalCurrency: settings?.baseCurrency || 'USD',
                 type,
                 category: catResult.categoryName || 'Uncategorized',
@@ -175,6 +202,7 @@ export default function ImportWizard({ onSuccess }) {
                 financial_priority: catResult.priority || 'wants',
                 isPaid: false, // CSV usually doesn't imply paid status unless specified, default false
                 paidDate: null,
+                customBudgetId: null,
                 originalData: row
             };
         }).filter(item => item.amount !== 0 && item.date);
@@ -188,13 +216,17 @@ export default function ImportWizard({ onSuccess }) {
         try {
             const transactionsToCreate = processedData.map(item => {
                 const isExpense = item.type === 'expense';
+                const finalAmount = Math.abs(item.amount);
+
                 return {
                     title: item.title,
-                    amount: item.amount,
+                    // amount: item.amount,
+                    amount: finalAmount, // Save as Signed Number (-50.00)
                     type: item.type,
                     date: new Date(item.date).toISOString().split('T')[0],
                     category_id: isExpense ? (item.categoryId || categories.find(c => c.name === 'Uncategorized')?.id) : null,
                     financial_priority: isExpense ? item.financial_priority : null,
+                    customBudgetId: isExpense ? item.customBudgetId : null,
                     originalAmount: item.originalAmount,
                     originalCurrency: item.originalCurrency,
                     isPaid: isExpense ? (item.isPaid || false) : null,
@@ -218,8 +250,12 @@ export default function ImportWizard({ onSuccess }) {
         }
     };
 
-    const handleDeleteRow = (index) => {
-        setProcessedData(prev => prev.filter((_, i) => i !== index));
+    // const handleDeleteRow = (index) => {
+    //     setProcessedData(prev => prev.filter((_, i) => i !== index));
+    const handleDeleteRows = (indicesToDelete) => {
+        // Convert array to Set for O(1) lookup
+        const indicesSet = new Set(indicesToDelete);
+        setProcessedData(prev => prev.filter((_, i) => !indicesSet.has(i)));
     };
 
     const handleUpdateRow = (index, updates) => {
@@ -298,8 +334,10 @@ export default function ImportWizard({ onSuccess }) {
                         <CategorizeReview
                             data={processedData}
                             categories={categories}
+                            customBudgets={allCustomBudgets}
                             onUpdateRow={handleUpdateRow}
-                            onDeleteRow={handleDeleteRow}
+                            // onDeleteRow={handleDeleteRow}
+                            onDeleteRows={handleDeleteRows}
                         />
                         <div className="flex justify-end gap-4">
                             <CustomButton variant="outline" onClick={() => {

@@ -13,6 +13,8 @@ import {
     getMonthlyPaidExpenses,
     getPaidSavingsExpenses,
     isCashExpense,
+    getSystemBudgetStats,
+    getCustomBudgetStats,
 } from "../utils/financialCalculations";
 import { FINANCIAL_PRIORITIES } from "../utils/constants";
 import { getCategoryIcon } from "../utils/iconMapConfig";
@@ -315,14 +317,17 @@ export const useBudgetsAggregates = (
         });
     }, [allCustomBudgets, selectedMonth, selectedYear]);
 
+    // Get monthly income for savings calculation
+    const monthlyIncome = useMonthlyIncome(transactions, selectedMonth, selectedYear);
+
     const systemBudgetsWithStats = useMemo(() => {
         const monthStart = getFirstDayOfMonth(selectedMonth, selectedYear);
         const monthEnd = getLastDayOfMonth(selectedMonth, selectedYear);
 
         return systemBudgets.map(sb => {
-            let paidAmount = 0;
+            /* let paidAmount = 0;
             let unpaidAmount = 0;
-
+      
             // Calculate paid and unpaid amounts using granular financialCalculations functions
             if (sb.systemBudgetType === 'needs') {
                 paidAmount = getPaidNeedsExpenses(transactions, categories, monthStart, monthEnd, allCustomBudgets);
@@ -331,20 +336,23 @@ export const useBudgetsAggregates = (
                 const directPaid = getDirectPaidWantsExpenses(transactions, categories, monthStart, monthEnd, allCustomBudgets);
                 const customPaid = getPaidCustomBudgetExpenses(transactions, allCustomBudgets, monthStart, monthEnd);
                 paidAmount = directPaid + customPaid;
-
+      
                 const directUnpaid = getDirectUnpaidWantsExpenses(transactions, categories, monthStart, monthEnd, allCustomBudgets);
                 const customUnpaid = getUnpaidCustomBudgetExpenses(transactions, allCustomBudgets, monthStart, monthEnd);
                 unpaidAmount = directUnpaid + customUnpaid;
             } else if (sb.systemBudgetType === 'savings') {
                 paidAmount = getPaidSavingsExpenses(transactions, categories, monthStart, monthEnd, allCustomBudgets);
                 unpaidAmount = 0; // Savings typically doesn't have unpaid expenses
-            }
+            }*/
+            // Use centralized calculation
+            // const stats = getSystemBudgetStats(sb, transactions, categories, allCustomBudgets, monthStart, monthEnd);
+            const stats = getSystemBudgetStats(sb, transactions, categories, allCustomBudgets, monthStart, monthEnd, monthlyIncome);
 
-            const totalSpent = paidAmount + unpaidAmount;
+            /* const totalSpent = paidAmount + unpaidAmount;
             const totalBudget = sb.budgetAmount;
             const remaining = totalBudget - totalSpent;
             const percentageUsed = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
-
+      
             const preCalculatedStats = {
                 paidAmount,
                 unpaidAmount,
@@ -359,15 +367,19 @@ export const useBudgetsAggregates = (
                     totalBaseCurrencyAmount: unpaidAmount,
                     foreignCurrencyDetails: []
                 }
-            };
+            }; */
+            // Extract values for backward compatibility if needed, or just pass the whole stats object
+            const { paidAmount, unpaidAmount, totalSpent, remaining, percentageUsed } = stats;
 
             return {
                 ...sb,
                 allocatedAmount: sb.budgetAmount,
-                preCalculatedStats
+                // preCalculatedStats
+                preCalculatedStats: stats
             };
         });
-    }, [systemBudgets, transactions, categories, allCustomBudgets, selectedMonth, selectedYear]);
+        // }, [systemBudgets, transactions, categories, allCustomBudgets, selectedMonth, selectedYear]);
+    }, [systemBudgets, transactions, categories, allCustomBudgets, selectedMonth, selectedYear, monthlyIncome]);
 
     // Group custom budgets by status
     const groupedCustomBudgets = useMemo(() => {
@@ -474,15 +486,19 @@ export const useBudgetBarsData = (
             const targetPercentage = goalMap[sb.systemBudgetType] || 0;
             const targetAmount = sb.budgetAmount;
 
-            let paidAmount = 0;
-            let expectedAmount = 0;
+            // Use centralized calculation
+            // const stats = getSystemBudgetStats(sb, transactions, categories, allCustomBudgets, startDate, endDate);
+            const stats = getSystemBudgetStats(sb, transactions, categories, allCustomBudgets, startDate, endDate, monthlyIncome);
 
+            /* let paidAmount = 0;
+            let expectedAmount = 0;
+      
             // Calculate using granular financialCalculations functions
             if (sb.systemBudgetType === 'wants') {
                 const directPaid = getDirectPaidWantsExpenses(transactions, categories, startDate, endDate, allCustomBudgets);
                 const customPaid = getPaidCustomBudgetExpenses(transactions, allCustomBudgets, startDate, endDate);
                 paidAmount = directPaid + customPaid;
-
+      
                 const directUnpaid = getDirectUnpaidWantsExpenses(transactions, categories, startDate, endDate, allCustomBudgets);
                 const customUnpaid = getUnpaidCustomBudgetExpenses(transactions, allCustomBudgets, startDate, endDate);
                 expectedAmount = directUnpaid + customUnpaid;
@@ -493,25 +509,34 @@ export const useBudgetBarsData = (
                 paidAmount = getPaidSavingsExpenses(transactions, categories, startDate, endDate, allCustomBudgets);
                 expectedAmount = 0;
             }
-
+      
             const actualTotal = expectedAmount + paidAmount;
             const maxHeight = Math.max(targetAmount, actualTotal);
             const isOverBudget = actualTotal > targetAmount;
             const overBudgetAmount = isOverBudget ? actualTotal - targetAmount : 0;
-
+      
             const stats = {
                 paidAmount,
                 unpaidAmount: expectedAmount,
                 totalSpent: actualTotal,
                 remaining: targetAmount - actualTotal
-            };
+            }; */
+            const maxHeight = Math.max(targetAmount, stats.totalSpent);
+            const isOverBudget = stats.totalSpent > targetAmount;
+            const overBudgetAmount = isOverBudget ? stats.totalSpent - targetAmount : 0;
 
             return {
                 ...sb,
-                stats,
+                // stats,
+                stats: {
+                    ...stats,
+                    // Map keys to match BudgetBar expectations if different
+                    unpaidAmount: stats.unpaidAmount
+                },
                 targetAmount,
                 targetPercentage,
-                expectedAmount,
+                // expectedAmount,
+                expectedAmount: stats.unpaidAmount,
                 expectedSeparateCash: [],
                 maxHeight,
                 isOverBudget,
@@ -521,23 +546,23 @@ export const useBudgetBarsData = (
 
         // Custom budgets calculation - UPDATED to filter expenses by selected month's paidDate
         const customBudgetsData = custom.map(cb => {
-            const budgetTransactions = transactions.filter(t => t.customBudgetId === cb.id);
-
+            /* const budgetTransactions = transactions.filter(t => t.customBudgetId === cb.id);
+      
             const digitalTransactions = budgetTransactions.filter(
                 t => !t.isCashTransaction || t.cashTransactionType !== 'expense_from_wallet'
             );
             const cashTransactions = budgetTransactions.filter(
                 t => t.isCashTransaction && t.cashTransactionType === 'expense_from_wallet'
             );
-
+      
             const digitalAllocated = cb.allocatedAmount || 0;
-
+      
             // Filter by paidDate within selected month for paid expenses
             const digitalSpent = digitalTransactions
                 .filter(t => {
                     if (t.type !== 'expense') return false;
                     if (!t.isPaid || !t.paidDate) return false;
-
+      
                     // Filter by paidDate within selected month
                     if (monthStartDate && monthEndDate) {
                         const paidDate = parseDate(t.paidDate);
@@ -546,25 +571,25 @@ export const useBudgetBarsData = (
                     return true;
                 })
                 .reduce((sum, t) => sum + (t.originalAmount || t.amount), 0);
-
+      
             const digitalUnpaid = digitalTransactions
                 .filter(t => t.type === 'expense' && !t.isPaid)
                 .reduce((sum, t) => sum + (t.originalAmount || t.amount), 0);
-
+      
             const cashByCurrency = {};
             const cashAllocations = cb.cashAllocations || [];
-
+      
             cashAllocations.forEach(allocation => {
                 const currencyCode = allocation.currencyCode;
                 const allocated = allocation.amount || 0;
-
+      
                 // Filter by paidDate within selected month for paid expenses
                 const spent = cashTransactions
                     .filter(t => {
                         if (t.type !== 'expense') return false;
                         if (t.cashCurrency !== currencyCode) return false;
                         if (!t.isPaid || !t.paidDate) return false;
-
+      
                         // Filter by paidDate within selected month
                         if (monthStartDate && monthEndDate) {
                             const paidDate = parseDate(t.paidDate);
@@ -573,29 +598,50 @@ export const useBudgetBarsData = (
                         return true;
                     })
                     .reduce((sum, t) => sum + (t.cashAmount || 0), 0);
-
+      
                 cashByCurrency[currencyCode] = {
                     allocated,
                     spent,
                     remaining: allocated - spent
                 };
             });
-
+      
             let totalBudget = digitalAllocated;
             if (cashByCurrency) {
                 Object.values(cashByCurrency).forEach(cashData => {
                     totalBudget += cashData?.allocated || 0;
                 });
             }
-
+      
             let paidAmount = digitalSpent;
             if (cashByCurrency) {
                 Object.values(cashByCurrency).forEach(cashData => {
                     paidAmount += cashData?.spent || 0;
                 });
             }
-
+      
             const expectedAmount = digitalUnpaid;
+            const totalSpent = paidAmount + expectedAmount; */
+            // Use centralized calculation
+            // const stats = getCustomBudgetStats(cb, transactions, monthStartDate, monthEndDate);
+            const stats = getCustomBudgetStats(cb, transactions, monthStartDate, monthEndDate, baseCurrency);
+
+            // Calculate totals for BudgetBars
+            let totalBudget = stats.digital.allocated;
+            if (stats.cashByCurrency) {
+                Object.values(stats.cashByCurrency).forEach(cashData => {
+                    totalBudget += cashData?.allocated || 0;
+                });
+            }
+
+            let paidAmount = stats.digital.spent;
+            if (stats.cashByCurrency) {
+                Object.values(stats.cashByCurrency).forEach(cashData => {
+                    paidAmount += cashData?.spent || 0;
+                });
+            }
+
+            const expectedAmount = stats.digital.unpaid;
             const totalSpent = paidAmount + expectedAmount;
 
             const maxHeight = Math.max(totalBudget, totalSpent);
@@ -608,12 +654,17 @@ export const useBudgetBarsData = (
                 stats: {
                     paidAmount,
                     totalBudget,
-                    digital: {
+                    /* digital: {
                         allocated: digitalAllocated,
                         spent: digitalSpent,
                         unpaid: digitalUnpaid
                     },
-                    cashByCurrency
+                    cashByCurrency */
+                    totalAllocatedUnits: stats.totalAllocatedUnits,
+                    totalSpentUnits: stats.totalSpentUnits,
+                    totalUnpaidUnits: stats.totalUnpaidUnits,
+                    digital: stats.digital,
+                    cashByCurrency: stats.cashByCurrency
                 },
                 targetAmount: totalBudget,
                 expectedAmount,

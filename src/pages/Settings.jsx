@@ -90,6 +90,22 @@ export default function Settings() {
                                 </Select>
                             </div>
 
+                            <div className="space-y-2">
+                                <Label htmlFor="viewMode">Default Budget View</Label>
+                                <Select
+                                    value={formData.budgetViewMode || 'bars'}
+                                    onValueChange={(value) => handleFormChange('budgetViewMode', value)}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="bars">Bar View (Compact)</SelectItem>
+                                        <SelectItem value="cards">Card View (Detailed)</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
                             <div className="grid md:grid-cols-2 gap-6">
                                 <div className="space-y-2">
                                     <Label htmlFor="thousand">Thousand Separator</Label>

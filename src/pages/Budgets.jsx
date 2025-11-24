@@ -13,15 +13,16 @@ import {
 } from "../components/hooks/useBase44Entities";
 import { useBudgetsAggregates } from "../components/hooks/useDerivedData";
 import { useCustomBudgetActions } from "../components/hooks/useActions";
-import { parseDate } from "../components/utils/dateUtils";
+import { getCustomBudgetStats } from "../components/utils/financialCalculations";
 import BudgetCard from "../components/budgets/BudgetCard";
 import MonthNavigator from "../components/ui/MonthNavigator";
 import QuickAddBudget from "../components/dashboard/QuickAddBudget";
 
+
 /**
  * Calculates statistics for a custom budget, filtering expenses based on the selected month.
  */
-const getCustomBudgetStats = (customBudget, transactions, monthStart, monthEnd) => {
+/* const getCustomBudgetStats = (customBudget, transactions, monthStart, monthEnd) => {
     const budgetTransactions = transactions.filter(t => t.customBudgetId === customBudget.id);
 
     // Parse month boundaries for filtering paid expenses
@@ -98,7 +99,7 @@ const getCustomBudgetStats = (customBudget, transactions, monthStart, monthEnd) 
         totalUnpaidUnits,
         totalTransactionCount: budgetTransactions.length
     };
-};
+}; */
 
 export default function Budgets() {
     const { user, settings } = useSettings();

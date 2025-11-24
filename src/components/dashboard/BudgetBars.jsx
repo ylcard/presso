@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Plus, ChevronLeft, ChevronRight, AlertTriangle } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { formatCurrency } from "../utils/currencyUtils";
 import { useBudgetBarsData } from "../hooks/useDerivedData";
 import BudgetBar from "../custombudgets/BudgetBar";
+import BudgetCard from "../budgets/BudgetCard";
 
 export default function BudgetBars({
     systemBudgets,
@@ -18,8 +21,14 @@ export default function BudgetBars({
     baseCurrency,
     onCreateBudget
 }) {
+
+    // Initialize state from global settings, defaulting to 'bars'
+    // This acts as a temporary override that resets on page reload
+    const [viewMode, setViewMode] = useState(settings.budgetViewMode || 'bars');
+
     const [customStartIndex, setCustomStartIndex] = useState(0);
-    const barsPerPage = 7;
+    // const barsPerPage = 7;
+    const barsPerPage = viewMode === 'cards' ? 4 : 7;
 
     // Use the extracted hook for all calculations
     const { systemBudgetsData, customBudgetsData, totalActualSavings, savingsTarget, savingsShortfall } =
@@ -28,6 +37,11 @@ export default function BudgetBars({
     const visibleCustomBudgets = customBudgetsData.slice(customStartIndex, customStartIndex + barsPerPage);
     const canScrollLeft = customStartIndex > 0;
     const canScrollRight = customStartIndex + barsPerPage < customBudgetsData.length;
+
+    // DEPRECATED: Persist view mode changes
+    // useEffect(() => {
+    //     localStorage.setItem('budgetViewMode', viewMode);
+    // }, [viewMode]);
 
     return (
         <div className="space-y-6">
@@ -52,24 +66,45 @@ export default function BudgetBars({
 
             {systemBudgetsData.length > 0 && (
                 <Card className="border-none shadow-lg">
-                    <CardHeader>
+                    <CardHeader className="flex flex-row items-center justify-between">
                         <CardTitle className="flex items-center gap-2">
                             <span className="px-3 py-1 rounded-lg text-sm bg-blue-50 text-blue-600">
                                 System Budgets
                             </span>
                         </CardTitle>
+                        <div className="flex items-center gap-2">
+                            <Label htmlFor="view-mode" className="text-sm text-gray-500 cursor-pointer min-w-[65px] text-right">
+                                {viewMode === 'cards' ? 'Card View' : 'Bar View'}
+                            </Label>
+                            <Switch
+                                id="view-mode"
+                                checked={viewMode === 'cards'}
+                                onCheckedChange={(checked) => setViewMode(checked ? 'cards' : 'bars')}
+                            />
+                        </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="flex flex-wrap justify-center gap-4">
+                        <div className={`flex ${viewMode === 'cards' ? 'w-full gap-4' : 'flex-wrap justify-center gap-4'}`}>
                             {systemBudgetsData.map((budget) => (
-                                <BudgetBar
-                                    key={budget.id}
-                                    budget={budget}
-                                    isCustom={false}
-                                    isSystemSavings={budget.systemBudgetType === 'savings'}
-                                    settings={settings}
-                                    hideActions={true}
-                                />
+                                viewMode === 'bars' ? (
+                                    <BudgetBar
+                                        key={budget.id}
+                                        budget={budget}
+                                        isCustom={false}
+                                        isSystemSavings={budget.systemBudgetType === 'savings'}
+                                        settings={settings}
+                                        hideActions={true}
+                                    />
+                                ) : (
+                                    <div key={budget.id} className="flex-1 min-w-0">
+                                        <BudgetCard
+                                            budget={{ ...budget, isSystemBudget: true }}
+                                            stats={budget.stats}
+                                            settings={settings}
+                                            size="sm"
+                                        />
+                                    </div>
+                                )
                             ))}
                         </div>
                     </CardContent>
@@ -117,15 +152,26 @@ export default function BudgetBars({
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="flex flex-wrap justify-center gap-4">
+                        <div className={`flex ${viewMode === 'cards' ? 'w-full gap-4' : 'flex-wrap justify-center gap-4'}`}>
                             {visibleCustomBudgets.map((budget) => (
-                                <BudgetBar
-                                    key={budget.id}
-                                    budget={budget}
-                                    isCustom={true}
-                                    settings={settings}
-                                    hideActions={true}
-                                />
+                                viewMode === 'bars' ? (
+                                    <BudgetBar
+                                        key={budget.id}
+                                        budget={budget}
+                                        isCustom={true}
+                                        settings={settings}
+                                        hideActions={true}
+                                    />
+                                ) : (
+                                    <div key={budget.id} className="flex-1 min-w-0">
+                                        <BudgetCard
+                                            budget={budget}
+                                            stats={budget.stats}
+                                            settings={settings}
+                                            size="sm"
+                                        />
+                                    </div>
+                                )
                             ))}
                         </div>
 

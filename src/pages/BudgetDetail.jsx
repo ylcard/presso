@@ -17,19 +17,16 @@ import { useConfirm } from "../components/ui/ConfirmDialogProvider";
 import { formatCurrency, getCurrencySymbol } from "../components/utils/currencyUtils";
 import { formatDate, parseDate } from "../components/utils/dateUtils";
 import {
-    getPaidNeedsExpenses,
-    getUnpaidNeedsExpenses,
-    getDirectPaidWantsExpenses,
-    getDirectUnpaidWantsExpenses,
-    getPaidCustomBudgetExpenses,
-    getUnpaidCustomBudgetExpenses,
-    getPaidSavingsExpenses,
+    getCustomBudgetStats,
+    getSystemBudgetStats,
+    getCustomBudgetAllocationStats,
 } from "../components/utils/financialCalculations";
 import { useCashWallet } from "../components/hooks/useBase44Entities";
 import { useTransactionActions } from "../components/hooks/useActions";
 import { calculateRemainingCashAllocations, returnCashToWallet } from "../components/utils/cashAllocationUtils";
 import { useCustomBudgetActions } from "../components/hooks/useActions";
 import { usePeriod } from "../components/hooks/usePeriod";
+import { useMonthlyIncome } from "../components/hooks/useDerivedData";
 import QuickAddTransaction from "../components/transactions/QuickAddTransaction";
 import TransactionCard from "../components/transactions/TransactionCard";
 import AllocationManager from "../components/custombudgets/AllocationManager";
@@ -39,7 +36,7 @@ import ExpensesCardContent from "../components/budgetdetail/ExpensesCardContent"
 import { QUERY_KEYS } from "../components/hooks/queryKeys";
 
 // Filters paid expenses by selected month
-const getCustomBudgetStats = (customBudget, transactions, monthStart, monthEnd) => {
+/* const getCustomBudgetStats = (customBudget, transactions, monthStart, monthEnd) => {
     const budgetTransactions = transactions.filter(t => t.customBudgetId === customBudget.id);
 
     // Parse month boundaries for filtering paid expenses
@@ -203,7 +200,7 @@ const getCustomBudgetAllocationStats = (customBudget, allocations, transactions)
         unallocatedRemaining: unallocated - unallocatedSpent,
         categorySpending
     };
-};
+}; */
 
 export default function BudgetDetail() {
     const { settings, user } = useSettings();
@@ -214,7 +211,8 @@ export default function BudgetDetail() {
 
     const { monthStart, monthEnd } = usePeriod();
 
-    const urlParams = new URLSearchParams(window.location.search);
+    // const urlParams = new URLSearchParams(window.location.search);
+    const urlParams = new URLSearchParams(location.search);
     const budgetId = urlParams.get('id');
 
     const { cashWallet } = useCashWallet(user);
@@ -259,6 +257,9 @@ export default function BudgetDetail() {
         queryFn: () => base44.entities.Transaction.list('date', 1000),
         initialData: [],
     });
+
+    // Fetch income for savings calculation
+    const monthlyIncome = useMonthlyIncome(transactions, new Date(monthStart).getMonth(), new Date(monthStart).getFullYear());
 
     const { data: categories = [] } = useQuery({
         queryKey: ['categories'],
@@ -344,13 +345,22 @@ export default function BudgetDetail() {
                 }
             }
 
-            const actualSpent = getCustomBudgetStats(budgetToComplete, transactions, monthStart, monthEnd).totalSpentUnits;
+            // Calculate the TOTAL original budget (Digital + All Cash Allocations) before we wipe them
+            // const currentDigitalAllocation = budgetToComplete.allocatedAmount || 0;
+            // const currentCashAllocation = (budgetToComplete.cashAllocations || []).reduce((sum, a) => sum + (a.amount || 0), 0);
+            // const totalOriginalBudget = currentDigitalAllocation + currentCashAllocation;
+
+            // const actualSpent = getCustomBudgetStats(budgetToComplete, transactions, monthStart, monthEnd).totalSpentUnits;
 
             await base44.entities.CustomBudget.update(id, {
-                status: 'completed',
-                allocatedAmount: actualSpent,
-                originalAllocatedAmount: budgetToComplete.originalAllocatedAmount || budgetToComplete.allocatedAmount,
-                cashAllocations: []
+                // status: 'completed',
+                // allocatedAmount: actualSpent,
+                // originalAllocatedAmount: budgetToComplete.originalAllocatedAmount || budgetToComplete.allocatedAmount,
+                // originalAllocatedAmount: budgetToComplete.originalAllocatedAmount || totalOriginalBudget,
+                // cashAllocations: []
+                status: 'completed'
+                // We DO NOT wipe allocations anymore. 
+                // This preserves the "Budget vs Actual" comparison for historical viewing.
             });
         },
         onSuccess: () => {
@@ -366,11 +376,12 @@ export default function BudgetDetail() {
             const budgetToReactivate = budget;
             if (!budgetToReactivate) return;
 
+            // Simply set back to active
             await base44.entities.CustomBudget.update(id, {
                 status: 'active',
-                allocatedAmount: budgetToReactivate.originalAllocatedAmount || budgetToReactivate.allocatedAmount,
-                originalAllocatedAmount: null,
-                cashAllocations: []
+                // allocatedAmount: budgetToReactivate.originalAllocatedAmount || budgetToReactivate.allocatedAmount,
+                // originalAllocatedAmount: null,
+                // cashAllocations: []
             });
         },
         onSuccess: () => {
@@ -467,11 +478,16 @@ export default function BudgetDetail() {
         if (!budget) return null;
 
         if (budget.isSystemBudget) {
-            return getSystemBudgetStats(budget, transactions, categories, allCustomBudgets, budget.startDate, budget.endDate);
+            // return getSystemBudgetStats(budget, transactions, categories, allCustomBudgets, budget.startDate, budget.endDate);
+            return getSystemBudgetStats(budget, transactions, categories, allCustomBudgets, budget.startDate, budget.endDate, monthlyIncome)
         } else {
-            return getCustomBudgetStats(budget, transactions, monthStart, monthEnd);
+            // return getCustomBudgetStats(budget, transactions, monthStart, monthEnd);
+            // return getCustomBudgetStats(budget, transactions, null, null);
+            return getCustomBudgetStats(budget, transactions, null, null, settings.baseCurrency);
         }
-    }, [budget, transactions, categories, allCustomBudgets, monthStart, monthEnd]);
+        // }, [budget, transactions, categories, allCustomBudgets, monthStart, monthEnd]);
+        // }, [budget, transactions, categories, allCustomBudgets, monthStart, monthEnd, monthlyIncome]);
+    }, [budget, transactions, categories, allCustomBudgets, monthStart, monthEnd, monthlyIncome, settings.baseCurrency]);
 
     const allocationStats = useMemo(() => {
         if (!budget || budget.isSystemBudget) return null;
@@ -579,12 +595,13 @@ export default function BudgetDetail() {
     } else {
         totalBudget = stats?.totalAllocatedUnits || 0;
 
-        totalRemaining = stats?.digital?.remaining || 0;
-        if (stats?.cashByCurrency) {
-            Object.values(stats.cashByCurrency).forEach(cashData => {
-                totalRemaining += cashData?.remaining || 0;
-            });
-        }
+        // totalRemaining = stats?.digital?.remaining || 0;
+        // if (stats?.cashByCurrency) {
+        //     Object.values(stats.cashByCurrency).forEach(cashData => {
+        //         totalRemaining += cashData?.remaining || 0;
+        //     });
+        // }
+        totalRemaining = totalBudget - (stats?.totalSpentUnits || 0);
     }
 
     const hasBothDigitalAndCash = !budget.isSystemBudget &&
