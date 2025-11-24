@@ -9,7 +9,7 @@ import { base44 } from "@/api/base44Client";
 import { useSettings } from "@/components/utils/SettingsContext";
 import { showToast } from "@/components/ui/use-toast";
 import { ArrowRight, Loader2, Upload } from "lucide-react";
-import { useCategories, useCategoryRules } from "@/components/hooks/useBase44Entities";
+import { useCategories, useCategoryRules, useCustomBudgetsAll } from "@/components/hooks/useBase44Entities";
 import { categorizeTransaction } from "@/components/utils/transactionCategorization";
 import { createPageUrl } from "@/utils";
 import { useNavigate } from "react-router-dom";
@@ -33,6 +33,7 @@ export default function ImportWizard({ onSuccess }) {
     const { user, settings } = useSettings();
     const { categories } = useCategories();
     const { rules } = useCategoryRules(user);
+    const { allCustomBudgets } = useCustomBudgetsAll(user);
     const navigate = useNavigate();
     const [isLoadingPdf, setIsLoadingPdf] = useState(false);
 
@@ -109,6 +110,7 @@ export default function ImportWizard({ onSuccess }) {
                     financial_priority: catResult.priority || 'wants',
                     isPaid: !!item.valueDate,
                     paidDate: item.valueDate || null,
+                    customBudgetId: null,
                     originalData: item
                 };
             }).filter(item => item.amount !== 0 && item.date);
@@ -175,6 +177,7 @@ export default function ImportWizard({ onSuccess }) {
                 financial_priority: catResult.priority || 'wants',
                 isPaid: false, // CSV usually doesn't imply paid status unless specified, default false
                 paidDate: null,
+                customBudgetId: null,
                 originalData: row
             };
         }).filter(item => item.amount !== 0 && item.date);
@@ -195,6 +198,7 @@ export default function ImportWizard({ onSuccess }) {
                     date: new Date(item.date).toISOString().split('T')[0],
                     category_id: isExpense ? (item.categoryId || categories.find(c => c.name === 'Uncategorized')?.id) : null,
                     financial_priority: isExpense ? item.financial_priority : null,
+                    customBudgetId: isExpense ? item.customBudgetId : null,
                     originalAmount: item.originalAmount,
                     originalCurrency: item.originalCurrency,
                     isPaid: isExpense ? (item.isPaid || false) : null,
@@ -298,6 +302,7 @@ export default function ImportWizard({ onSuccess }) {
                         <CategorizeReview
                             data={processedData}
                             categories={categories}
+                            customBudgets={allCustomBudgets}
                             onUpdateRow={handleUpdateRow}
                             onDeleteRow={handleDeleteRow}
                         />
