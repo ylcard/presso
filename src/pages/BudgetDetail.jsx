@@ -478,10 +478,12 @@ export default function BudgetDetail() {
             return getSystemBudgetStats(budget, transactions, categories, allCustomBudgets, budget.startDate, budget.endDate, monthlyIncome)
         } else {
             // return getCustomBudgetStats(budget, transactions, monthStart, monthEnd);
-            return getCustomBudgetStats(budget, transactions, null, null);
+            // return getCustomBudgetStats(budget, transactions, null, null);
+            return getCustomBudgetStats(budget, transactions, null, null, settings.baseCurrency);
         }
         // }, [budget, transactions, categories, allCustomBudgets, monthStart, monthEnd]);
-    }, [budget, transactions, categories, allCustomBudgets, monthStart, monthEnd, monthlyIncome]);
+        // }, [budget, transactions, categories, allCustomBudgets, monthStart, monthEnd, monthlyIncome]);
+    }, [budget, transactions, categories, allCustomBudgets, monthStart, monthEnd, monthlyIncome, settings.baseCurrency]);
 
     const allocationStats = useMemo(() => {
         if (!budget || budget.isSystemBudget) return null;
