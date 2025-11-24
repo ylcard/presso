@@ -60,23 +60,44 @@ export default function Dashboard() {
             // Fetch all transactions to scan for bad data
             const allTransactions = await base44.entities.Transaction.list({ limit: 5000 });
             
-            // Find records where 'amount' is negative (it should be absolute/positive)
-            const badRecords = allTransactions.filter(t => t.amount < 0 || (t.originalAmount && t.originalAmount < 0));
+            // DEBUG: Log first record to ensure we are targeting the right field names
+            if (allTransactions.length > 0) {
+                console.log("DEBUG: Transaction Structure:", allTransactions[0]);
+            }
 
-            if (badRecords.length === 0) {
-                showToast({ title: "Data Clean", description: "No negative numbers found in DB." });
-            } else {
-                const chunks = chunkArray(badRecords, 20); // Process in batches
-                for (const chunk of chunks) {
-                    await Promise.all(chunk.map(t => 
-                        base44.entities.Transaction.update(t.id, { 
-                            amount: Math.abs(t.amount),
-                            originalAmount: t.originalAmount ? Math.abs(t.originalAmount) : null
-                        })
-                    ));
-                }
-                showToast({ title: "Fix Complete", description: `Normalized ${badRecords.length} records to positive numbers.` });
-                queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TRANSACTIONS] });
+            // Helper: Detect negativity via string to catch currency formats (e.g. "$-50")
+            const isDirty = (val) => val && val.toString().includes('-');
+            // Helper: Strip everything except digits and dots
+            const cleanVal = (val) => {
+                if (!val) return 0;
+                return parseFloat(val.toString().replace(/[^0-9.]/g, ""));
+            };
+
+            // Find records where amount OR originalAmount (any casing) has a negative sign
+            const badRecords = allTransactions.filter(t => {
+                const oa = t.originalAmount !== undefined ? t.originalAmount : t.original_amount;
+                return isDirty(t.amount) || isDirty(oa);
+            });
+ 
+             if (badRecords.length === 0) {
+                showToast({ title: "Data Clean", description: "No negative signs found in any fields." });
+             } else {
+                 const chunks = chunkArray(badRecords, 20); // Process in batches
+                 for (const chunk of chunks) {
+                    await Promise.all(chunk.map(t => {
+                        // Determine which key holds the original amount
+                        const oaKey = t.originalAmount !== undefined ? 'originalAmount' : 'original_amount';
+                        const currentOA = t[oaKey];
+
+                        return base44.entities.Transaction.update(t.id, { 
+                            amount: cleanVal(t.amount),
+                            // Only update OA if it exists, using the correct key
+                            ...(currentOA !== undefined ? { [oaKey]: cleanVal(currentOA) } : {})
+                        });
+                    }));
+                 }
+                 showToast({ title: "Fix Complete", description: `Normalized ${badRecords.length} records to positive numbers.` });
+                 queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TRANSACTIONS] });
             }
         } catch (error) {
             console.error("Fix failed", error);
