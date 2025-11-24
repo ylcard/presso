@@ -430,13 +430,14 @@ export const getCustomBudgetStats = (customBudget, transactions, monthStart, mon
 
     // Calculate Paid/Unpaid Aggregates for UI Consistency
     // Digital is assumed to be in Base Currency (or the primary budget currency)
-    let paidBase = digitalSpent; // Total Digital Spent (including paid & unpaid? No, digitalSpent includes unpaid in current logic?)
+    // let paidBase = digitalSpent; // Total Digital Spent (including paid & unpaid? No, digitalSpent includes unpaid in current logic?)
 
     // WAIT: digitalSpent above was calculating `sum + (t.originalAmount || t.amount)`.
     // digitalUnpaid was also calculating that sum for unpaid items.
     // So digitalSpent is TOTAL INCURRED.
 
-    paidBase = digitalSpent - digitalUnpaid; // Now it is strictly Digital PAID.
+    // paidBase = digitalSpent - digitalUnpaid; // Now it is strictly Digital PAID.
+    let paidBase = digitalSpent - digitalUnpaid;
     const unpaidBase = digitalUnpaid;
     const paidForeign = [];
     const unpaidForeign = [];
@@ -444,11 +445,13 @@ export const getCustomBudgetStats = (customBudget, transactions, monthStart, mon
     // Add Cash to Aggregates
     Object.entries(cashByCurrency).forEach(([code, data]) => {
         if (code === baseCurrency) {
+            // paidBase += data.spent;
+            // Add cash spent to the base currency paid total
             paidBase += data.spent;
         } else if (data.spent > 0) {
+            // Add foreign cash as a separate entry
             paidForeign.push({ currencyCode: code, amount: data.spent });
         }
-        // Cash is considered immediately paid
     });
 
     return {
