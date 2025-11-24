@@ -102,16 +102,6 @@ export default function Dashboard() {
                         <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Dashboard</h1>
                         <p className="text-gray-500 mt-1">Welcome back, {user?.full_name || 'User'}!</p>
                     </div>
-                    {/* ADHOC FIX BUTTON */}
-                    <CustomButton 
-                        variant="outline" 
-                        onClick={handleFixNegativeAmounts} 
-                        disabled={isFixing}
-                        className="border-yellow-400 bg-yellow-50 text-yellow-700 hover:bg-yellow-100"
-                    >
-                        <Wrench className={`w-4 h-4 mr-2 ${isFixing ? 'animate-spin' : ''}`} />
-                        {isFixing ? 'Fixing DB...' : 'Fix Negative Amounts'}
-                    </CustomButton>
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-6">
