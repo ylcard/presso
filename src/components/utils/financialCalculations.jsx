@@ -345,7 +345,8 @@ export const getMonthlyFinancialSummary = (transactions, startDate, endDate) => 
  * @param {string|Date} monthEnd - End of the month (YYYY-MM-DD or Date).
  * @returns {object} Detailed statistics including allocated, spent, unpaid, and currency breakdown.
  */
-export const getCustomBudgetStats = (customBudget, transactions, monthStart, monthEnd) => {
+// export const getCustomBudgetStats = (customBudget, transactions, monthStart, monthEnd) => {
+export const getCustomBudgetStats = (customBudget, transactions, monthStart, monthEnd, baseCurrency = 'USD') => {
     const budgetTransactions = transactions.filter(t => t.customBudgetId === customBudget.id);
 
     // Parse month boundaries for filtering paid expenses
@@ -421,12 +422,38 @@ export const getCustomBudgetStats = (customBudget, transactions, monthStart, mon
     const totalSpentUnits = digitalSpent + Object.values(cashByCurrency).reduce((sum, cashData) => sum + cashData.spent, 0);
     const totalUnpaidUnits = digitalUnpaid;
 
+    // Calculate Paid/Unpaid Aggregates for UI Consistency
+    // Digital is assumed to be in Base Currency (or the primary budget currency)
+    let paidBase = digitalSpent - digitalUnpaid; // Digital Paid
+    const unpaidBase = digitalUnpaid; // Digital Unpaid
+    const paidForeign = [];
+    const unpaidForeign = [];
+
+    // Add Cash to Aggregates
+    Object.entries(cashByCurrency).forEach(([code, data]) => {
+        if (code === baseCurrency) {
+            paidBase += data.spent;
+        } else if (data.spent > 0) {
+            paidForeign.push({ currencyCode: code, amount: data.spent });
+        }
+        // Cash is considered immediately paid, so no unpaid foreign cash added here
+    });
+
+
     return {
         digital: {
             allocated: digitalAllocated,
             spent: digitalSpent,
             unpaid: digitalUnpaid,
             remaining: digitalRemaining
+        },
+        paid: {
+            totalBaseCurrencyAmount: paidBase,
+            foreignCurrencyDetails: paidForeign
+        },
+        unpaid: {
+            totalBaseCurrencyAmount: unpaidBase,
+            foreignCurrencyDetails: unpaidForeign
         },
         cashByCurrency,
         totalAllocatedUnits,
