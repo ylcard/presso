@@ -61,15 +61,18 @@ export default function Dashboard() {
             const allTransactions = await base44.entities.Transaction.list({ limit: 5000 });
             
             // Find records where 'amount' is negative (it should be absolute/positive)
-            const badRecords = allTransactions.filter(t => t.amount < 0);
+            const badRecords = allTransactions.filter(t => t.amount < 0 || (t.originalAmount && t.originalAmount < 0));
 
             if (badRecords.length === 0) {
-                showToast({ title: "Data Clean", description: "No negative amounts found in 'amount' field." });
+                showToast({ title: "Data Clean", description: "No negative numbers found in DB." });
             } else {
                 const chunks = chunkArray(badRecords, 20); // Process in batches
                 for (const chunk of chunks) {
                     await Promise.all(chunk.map(t => 
-                        base44.entities.Transaction.update(t.id, { amount: Math.abs(t.amount) })
+                        base44.entities.Transaction.update(t.id, { 
+                            amount: Math.abs(t.amount),
+                            originalAmount: t.originalAmount ? Math.abs(t.originalAmount) : null
+                        })
                     ));
                 }
                 showToast({ title: "Fix Complete", description: `Normalized ${badRecords.length} records to positive numbers.` });
