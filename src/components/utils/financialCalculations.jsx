@@ -455,7 +455,10 @@ export const getCustomBudgetStats = (customBudget, transactions, monthStart, mon
     // So digitalSpent is TOTAL INCURRED.
 
     // paidBase = digitalSpent - digitalUnpaid; // Now it is strictly Digital PAID.
-    let paidBase = digitalSpent - digitalUnpaid;
+    // let paidBase = digitalSpent - digitalUnpaid;
+    // Digital is assumed to be in Base Currency
+    // digitalSpent is ALREADY filtered to only include paid transactions (see filter above)
+    let paidBase = digitalSpent;
     const unpaidBase = digitalUnpaid;
     const paidForeign = [];
     const unpaidForeign = [];
