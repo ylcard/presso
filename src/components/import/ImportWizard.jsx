@@ -107,6 +107,24 @@ export default function ImportWizard({ onSuccess }) {
                 const isNegative = item.amount.toString().includes('-') || item.amount.toString().includes('(');
                 const type = isNegative ? 'expense' : 'income';
 
+                // 3. Date Logic Correction: Ensure Transaction Date <= Paid Date
+                // Banks sometimes flip these or the AI extracts them swapped.
+                // Logic: The earlier date is ALWAYS the transaction date.
+                let txDate = item.date;
+                let pdDate = item.valueDate;
+
+                if (txDate && pdDate) {
+                    const d1 = new Date(txDate);
+                    const d2 = new Date(pdDate);
+
+                    // If transaction date is later than paid date, swap them
+                    if (!isNaN(d1) && !isNaN(d2) && d1 > d2) {
+                        txDate = item.valueDate;
+                        pdDate = item.date;
+                    }
+                }
+
+
                 // Enhanced categorization using rules and patterns
                 const catResult = categorizeTransaction(
                     { title: item.reason },
@@ -115,7 +133,8 @@ export default function ImportWizard({ onSuccess }) {
                 );
 
                 return {
-                    date: item.date,
+                    // date: item.date,
+                    date: txDate,
                     title: item.reason || 'Untitled Transaction',
                     // amount: Math.abs(amountClean),
                     // originalAmount: amountClean,
@@ -126,8 +145,10 @@ export default function ImportWizard({ onSuccess }) {
                     category: catResult.categoryName || 'Uncategorized',
                     categoryId: catResult.categoryId || null,
                     financial_priority: catResult.priority || 'wants',
-                    isPaid: !!item.valueDate,
-                    paidDate: item.valueDate || null,
+                    // isPaid: !!item.valueDate,
+                    // paidDate: item.valueDate || null,
+                    isPaid: !!pdDate,
+                    paidDate: pdDate || null,
                     customBudgetId: null,
                     originalData: item
                 };
