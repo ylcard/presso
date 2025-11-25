@@ -4,6 +4,7 @@ import { CustomButton } from "@/components/ui/CustomButton";
 import {
     Command,
     CommandEmpty,
+    CommandGroup,
     CommandInput,
     CommandItem,
     CommandList,
@@ -97,35 +98,37 @@ export default function CategorySelect({ value, onValueChange, categories, place
                 </CustomButton>
             </PopoverTrigger>
             <PopoverContent className="w-[200px] p-0" align="start">
-                <Command className="h-auto">
+                <Command className="h-auto w-full overflow-visible">
                     <CommandInput placeholder="Search category..." />
-                    <CommandList className="max-h-64 overflow-y-auto">
+                    <CommandList className="max-h-64 overflow-y-auto overflow-x-hidden">
                         <CommandEmpty>No category found.</CommandEmpty>
-                        {sortedCategories.map((category) => {
-                            const Icon = category.icon && iconMap[category.icon] ? iconMap[category.icon] : Circle;
-                            const isSelected = multiple
-                                ? (Array.isArray(value) && value.includes(category.id))
-                                : value === category.id;
+                        <CommandGroup>
+                            {sortedCategories.map((category) => {
+                                const Icon = category.icon && iconMap[category.icon] ? iconMap[category.icon] : Circle;
+                                const isSelected = multiple
+                                    ? (Array.isArray(value) && value.includes(category.id))
+                                    : value === category.id;
 
-                            return (
-                                <CommandItem
-                                    key={category.id}
-                                    value={category.name}
-                                    onSelect={() => handleSelect(category.id)}
-                                >
-                                    <Check
-                                        className={`mr-2 h-4 w-4 ${isSelected ? "opacity-100" : "opacity-0"}`}
-                                    />
-                                    <div
-                                        className="w-5 h-5 rounded flex items-center justify-center mr-2"
-                                        style={{ backgroundColor: `${category.color}20` }}
+                                return (
+                                    <CommandItem
+                                        key={category.id}
+                                        value={category.name}
+                                        onSelect={() => handleSelect(category.id)}
                                     >
-                                        <Icon className="w-3 h-3" style={{ color: category.color }} />
-                                    </div>
-                                    {category.name}
-                                </CommandItem>
-                            );
-                        })}
+                                        <Check
+                                            className={`mr-2 h-4 w-4 ${isSelected ? "opacity-100" : "opacity-0"}`}
+                                        />
+                                        <div
+                                            className="w-5 h-5 rounded flex items-center justify-center mr-2"
+                                            style={{ backgroundColor: `${category.color}20` }}
+                                        >
+                                            <Icon className="w-3 h-3" style={{ color: category.color }} />
+                                        </div>
+                                        {category.name}
+                                    </CommandItem>
+                                );
+                            })}
+                        </CommandGroup>
                     </CommandList>
                 </Command>
             </PopoverContent>
