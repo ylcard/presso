@@ -101,13 +101,19 @@ export default function BudgetBar({
                     />
 
                     {/* Unpaid Bar (Stacked) */}
-                    {unpaidAmount > 0 && (
+                    {/* CHANGED: Added distinct border and striped background pattern for better visibility */}
+                    {unpaidAmount > 0 && !isSystemSavings && (
                         <div
                             className="absolute w-full transition-all duration-300"
                             style={{
                                 bottom: `${paidHeightPct}%`,
                                 height: `${expectedHeightPct}%`,
-                                backgroundColor: `${barColor}40`
+                                // backgroundColor: `${barColor}40`
+                                backgroundColor: barColor,
+                                opacity: 0.6,
+                                backgroundImage: `linear-gradient(45deg,rgba(255,255,255,.3) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.3) 50%,rgba(255,255,255,.3) 75%,transparent 75%,transparent)`,
+                                backgroundSize: '8px 8px',
+                                borderTop: `1px solid ${barColor}`
                             }}
                         />
                     )}
