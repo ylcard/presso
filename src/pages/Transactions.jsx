@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { CustomButton } from "@/components/ui/CustomButton";
-import { Trash, Loader2, Plus, ArrowDown } from "lucide-react";
+import { Trash, Loader2, Plus, ArrowDown, X } from "lucide-react";
 import { useConfirm } from "../components/ui/ConfirmDialogProvider";
 import { base44 } from "@/api/base44Client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -24,6 +24,7 @@ export default function Transactions() {
     const [isBulkDeleting, setIsBulkDeleting] = useState(false);
     const [showAddIncome, setShowAddIncome] = useState(false);
     const [showAddExpense, setShowAddExpense] = useState(false);
+    const [selectedIds, setSelectedIds] = useState(new Set());
 
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
@@ -53,6 +54,7 @@ export default function Transactions() {
     // Reset to page 1 when filters change
     useMemo(() => {
         setCurrentPage(1);
+        setSelectedIds(new Set()); // Clear selection on filter change
     }, [filters]);
 
     const { handleSubmit, handleEdit, handleDelete, isSubmitting } = useTransactionActions(
@@ -67,25 +69,59 @@ export default function Transactions() {
         }
     );
 
-    const handleBulkDelete = async () => {
-        if (filteredTransactions.length === 0) return;
+    // const handleBulkDelete = async () => {
+    //     if (filteredTransactions.length === 0) return;
+    // Selection Handlers
+    const handleToggleSelection = (id, isSelected) => {
+        const newSelected = new Set(selectedIds);
+        if (isSelected) {
+            newSelected.add(id);
+        } else {
+            newSelected.delete(id);
+        }
+        setSelectedIds(newSelected);
+    };
+
+    const handleClearSelection = () => {
+        setSelectedIds(new Set());
+    };
+
+    const handleSelectAllPage = (ids, isSelected) => {
+        const newSelected = new Set(selectedIds);
+        ids.forEach(id => {
+            if (isSelected) newSelected.add(id);
+            else newSelected.delete(id);
+        });
+        setSelectedIds(newSelected);
+    };
+
+    const handleDeleteSelected = async () => {
+        if (selectedIds.size === 0) return;
 
         confirmAction(
             "Delete Transactions",
-            `Are you sure you want to delete all ${filteredTransactions.length} currently filtered transactions? This action cannot be undone.`,
+            `Are you sure you want to delete ${selectedIds.size} selected transactions? This action cannot be undone.`,
             async () => {
                 setIsBulkDeleting(true);
                 try {
-                    // Batch deletions to avoid API limits, proccesses 50 at a time
-                    const chunks = chunkArray(filteredTransactions, 50);
+                    // DEPRECATED: Batch deletions to avoid API limits, proccesses 50 at a time
+                    // const chunks = chunkArray(filteredTransactions, 50);
+
+                    // Convert Set to Array
+                    const idsToDelete = Array.from(selectedIds);
+                    // Batch deletions to avoid API limits, processes 50 at a time
+                    const chunks = chunkArray(idsToDelete, 50);
+
 
                     for (const chunk of chunks) {
-                        const deletePromises = chunk.map(t => base44.entities.Transaction.delete(t.id));
+                        // const deletePromises = chunk.map(t => base44.entities.Transaction.delete(t.id));
+                        const deletePromises = chunk.map(id => base44.entities.Transaction.delete(id));
                         await Promise.all(deletePromises);
                     }
 
                     queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TRANSACTIONS] });
-                    showToast({ title: "Success", description: `Deleted ${filteredTransactions.length} transactions.` });
+                    showToast({ title: "Success", description: `Deleted ${selectedIds.size} transactions.` });
+                    setSelectedIds(new Set()); // Clear selection
                 } catch (error) {
                     console.error("Bulk delete error:", error);
                     showToast({ title: "Error", description: "Failed to delete some transactions.", variant: "destructive" });
@@ -142,16 +178,6 @@ export default function Transactions() {
                             transactions={transactions}
                             renderTrigger={false}
                         />
-                        {filteredTransactions.length > 0 && (
-                            <CustomButton
-                                variant="destructive"
-                                onClick={handleBulkDelete}
-                                disabled={isBulkDeleting}
-                            >
-                                {isBulkDeleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash className="w-4 h-4 mr-2" />}
-                                Delete All ({filteredTransactions.length})
-                            </CustomButton>
-                        )}
                     </div>
                 </div>
 
@@ -179,6 +205,12 @@ export default function Transactions() {
                     itemsPerPage={itemsPerPage}
                     onItemsPerPageChange={setItemsPerPage}
                     totalItems={filteredTransactions.length}
+                    selectedIds={selectedIds}
+                    onToggleSelection={handleToggleSelection}
+                    onSelectAll={handleSelectAllPage}
+                    onClearSelection={handleClearSelection}
+                    onDeleteSelected={handleDeleteSelected}
+                    isBulkDeleting={isBulkDeleting}
                 />
             </div>
         </div>

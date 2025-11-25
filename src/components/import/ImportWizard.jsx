@@ -106,6 +106,27 @@ export default function ImportWizard({ onSuccess }) {
                 // 2. Determine type based on original string indicators
                 const isNegative = item.amount.toString().includes('-') || item.amount.toString().includes('(');
                 const type = isNegative ? 'expense' : 'income';
+<<<<<<< HEAD
+=======
+
+                // 3. Date Logic Correction: Ensure Transaction Date <= Paid Date
+                // Banks sometimes flip these or the AI extracts them swapped.
+                // Logic: The earlier date is ALWAYS the transaction date.
+                let txDate = item.date;
+                let pdDate = item.valueDate;
+
+                if (txDate && pdDate) {
+                    const d1 = new Date(txDate);
+                    const d2 = new Date(pdDate);
+
+                    // If transaction date is later than paid date, swap them
+                    if (!isNaN(d1) && !isNaN(d2) && d1 > d2) {
+                        txDate = item.valueDate;
+                        pdDate = item.date;
+                    }
+                }
+
+>>>>>>> upstream/main
 
                 // Enhanced categorization using rules and patterns
                 const catResult = categorizeTransaction(
@@ -115,7 +136,8 @@ export default function ImportWizard({ onSuccess }) {
                 );
 
                 return {
-                    date: item.date,
+                    // date: item.date,
+                    date: txDate,
                     title: item.reason || 'Untitled Transaction',
                     // amount: Math.abs(amountClean),
                     // originalAmount: amountClean,
@@ -126,8 +148,15 @@ export default function ImportWizard({ onSuccess }) {
                     category: catResult.categoryName || 'Uncategorized',
                     categoryId: catResult.categoryId || null,
                     financial_priority: catResult.priority || 'wants',
+<<<<<<< HEAD
                     isPaid: !!item.valueDate,
                     paidDate: item.valueDate || null,
+=======
+                    // isPaid: !!item.valueDate,
+                    // paidDate: item.valueDate || null,
+                    isPaid: !!pdDate,
+                    paidDate: pdDate || null,
+>>>>>>> upstream/main
                     customBudgetId: null,
                     originalData: item
                 };
