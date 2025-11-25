@@ -5,6 +5,7 @@ import { CustomButton } from "@/components/ui/CustomButton";
 import { ChevronLeft, ChevronRight, X, Trash, Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function TransactionList({
     transactions,
@@ -139,33 +140,42 @@ export default function TransactionList({
                             />
                             <label htmlFor="select-all" className="text-sm font-medium text-gray-600 cursor-pointer select-none">Select All on Page</label>
                         </div>
-                        {selectedIds.size > 0 && (
-                            <div className="flex items-center gap-2">
-                                <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                                    {selectedIds.size} Selected Total
-                                </span>
-                                <CustomButton
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={onClearSelection}
-                                    className="h-6 w-6 p-0 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full"
-                                    title="Clear Selection"
+                        <AnimatePresence>
+                            {selectedIds.size > 0 && (
+                                <motion.div
+                                    key="selection-actions"
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    transition={{ duration: 0.2, ease: "easeOut" }}
+                                    className="flex items-center gap-2"
                                 >
-                                    <X className="w-3 h-3" />
-                                </CustomButton>
-                                <div className="h-4 w-px bg-gray-300 mx-1" /> {/* Divider */}
-                                <CustomButton
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={onDeleteSelected}
-                                    disabled={isBulkDeleting}
-                                    className="h-7 text-xs px-3"
-                                >
-                                    {isBulkDeleting ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Trash className="w-3 h-3 mr-1" />}
-                                    Delete
-                                </CustomButton>
-                            </div>
-                        )}
+                                    <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                                        {selectedIds.size} Selected Total
+                                    </span>
+                                    <CustomButton
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={onClearSelection}
+                                        className="h-6 w-6 p-0 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full"
+                                        title="Clear Selection"
+                                    >
+                                        <X className="w-3 h-3" />
+                                    </CustomButton>
+                                    <div className="h-4 w-px bg-gray-300 mx-1" /> {/* Divider */}
+                                    <CustomButton
+                                        variant="destructive"
+                                        size="sm"
+                                        onClick={onDeleteSelected}
+                                        disabled={isBulkDeleting}
+                                        className="h-7 text-xs px-3"
+                                    >
+                                        {isBulkDeleting ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Trash className="w-3 h-3 mr-1" />}
+                                        Delete
+                                    </CustomButton>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                 )}
                 <div className="space-y-2 mb-6">
