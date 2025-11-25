@@ -13,13 +13,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useSettings } from "../utils/SettingsContext";
 import { parseDate, formatDateString, formatDate, getMonthName } from "../utils/dateUtils";
 import { useNavigation } from "react-day-picker";
@@ -27,60 +21,91 @@ import { setMonth, setYear, startOfMonth } from "date-fns";
 
 /**
  * Custom Caption Label component for the Calendar.
- * Replaces the default caption with interactive Month and Year selectors
- * that look like plain text but open dropdowns on click.
+ * Replaces the default caption with interactive Month and Year popovers
+ * that display grids for quicker selection.
  */
 function CalendarCaptionLabel({ displayMonth }) {
     const { goToMonth } = useNavigation();
+    const [monthOpen, setMonthOpen] = useState(false);
+    const [yearOpen, setYearOpen] = useState(false);
 
     // Generate a range of years (e.g., 2000 - 2050)
-    const startYear = 2000;
-    const endYear = 2050;
-    const years = Array.from({ length: endYear - startYear + 1 }, (_, i) => startYear + i);
+    // const startYear = 2000;
+    // const endYear = 2050;
+    // const years = Array.from({ length: endYear - startYear + 1 }, (_, i) => startYear + i);
+    // Generate ranges
+    const months = Array.from({ length: 12 }, (_, i) => getMonthName(i));
+    const currentYear = new Date().getFullYear();
+    // Range: Current Year - 50 to + 50
+    const years = Array.from({ length: 101 }, (_, i) => currentYear - 50 + i);
 
-    const handleMonthChange = (value) => {
-        const newMonth = parseInt(value);
-        goToMonth(setMonth(startOfMonth(displayMonth), newMonth));
+    // const handleMonthChange = (value) => {
+    //     const newMonth = parseInt(value);
+    //     goToMonth(setMonth(startOfMonth(displayMonth), newMonth));
+    const handleMonthSelect = (index) => {
+        goToMonth(setMonth(displayMonth, index));
+        setMonthOpen(false);
     };
 
-    const handleYearChange = (value) => {
-        const newYear = parseInt(value);
-        goToMonth(setYear(startOfMonth(displayMonth), newYear));
+    // const handleYearChange = (value) => {
+    //     const newYear = parseInt(value);
+    //     goToMonth(setYear(startOfMonth(displayMonth), newYear));
+    const handleYearSelect = (year) => {
+        goToMonth(setYear(displayMonth, year));
+        setYearOpen(false);
     };
 
     return (
         <div className="flex items-center gap-1">
-            <Select
-                value={displayMonth.getMonth().toString()}
-                onValueChange={handleMonthChange}
-            >
-                <SelectTrigger className="h-auto p-0 border-none shadow-none font-medium hover:bg-transparent hover:text-primary focus:ring-0 [&>svg]:hidden bg-transparent">
-                    <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                    {Array.from({ length: 12 }).map((_, index) => (
-                        <SelectItem key={index} value={index.toString()}>
-                            {getMonthName(index)}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
+            {/* Month Picker */}
+            <Popover open={monthOpen} onOpenChange={setMonthOpen}>
+                <PopoverTrigger asChild>
+                    <CustomButton variant="ghost" size="sm" className="h-7 text-sm font-medium hover:bg-gray-100">
+                        {getMonthName(displayMonth.getMonth())}
+                    </CustomButton>
+                </PopoverTrigger>
+                <PopoverContent className="w-[260px] p-2" align="center">
+                    <div className="grid grid-cols-3 gap-2">
+                        {months.map((m, i) => (
+                            <CustomButton
+                                key={m}
+                                variant={displayMonth.getMonth() === i ? "default" : "ghost"}
+                                size="sm"
+                                onClick={() => handleMonthSelect(i)}
+                                className="h-8 text-xs"
+                            >
+                                {m.slice(0, 3)}
+                            </CustomButton>
+                        ))}
+                    </div>
+                </PopoverContent>
+            </Popover>
 
-            <Select
-                value={displayMonth.getFullYear().toString()}
-                onValueChange={handleYearChange}
-            >
-                <SelectTrigger className="h-auto p-0 border-none shadow-none font-medium hover:bg-transparent hover:text-primary focus:ring-0 [&>svg]:hidden bg-transparent">
-                    <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                    {years.map((year) => (
-                        <SelectItem key={year} value={year.toString()}>
-                            {year}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
+            {/* Year Picker */}
+            <Popover open={yearOpen} onOpenChange={setYearOpen}>
+                <PopoverTrigger asChild>
+                    <CustomButton variant="ghost" size="sm" className="h-7 text-sm font-medium hover:bg-gray-100">
+                        {displayMonth.getFullYear()}
+                    </CustomButton>
+                </PopoverTrigger>
+                <PopoverContent className="w-[240px] p-0" align="center">
+                    <ScrollArea className="h-[280px]">
+                        <div className="grid grid-cols-4 gap-2 p-2">
+                            {years.map((year) => (
+                                <CustomButton
+                                    key={year}
+                                    variant={displayMonth.getFullYear() === year ? "default" : "ghost"}
+                                    size="sm"
+                                    onClick={() => handleYearSelect(year)}
+                                    className="h-8 text-xs"
+                                >
+                                    {year}
+                                </CustomButton>
+                            ))}
+                        </div>
+                    </ScrollArea>
+                </PopoverContent>
+            </Popover>
         </div>
     );
 }
@@ -141,6 +166,7 @@ export default function DatePicker({ value, onChange, placeholder = "Pick a date
                     onSelect={handleSelect}
                     initialFocus
                     className="w-fit rounded-md border"
+                    weekStartsOn={1}
                     fixedWeeks
                     components={{
                         CaptionLabel: CalendarCaptionLabel
