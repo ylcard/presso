@@ -1,8 +1,11 @@
-import { useState, useMemo } from "react";
+import React, { useState, useMemo, createContext, useContext } from "react";
 import { getFirstDayOfMonth, getLastDayOfMonth } from "../utils/dateUtils";
 
 // Unified hook for managing month/year selection and derived date values
-export const usePeriod = () => {
+// export const usePeriod = () => {
+const PeriodContext = createContext(null);
+
+export const PeriodProvider = ({ children }) => {
     const now = new Date();
     const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
     const [selectedYear, setSelectedYear] = useState(now.getFullYear());
@@ -23,7 +26,7 @@ export const usePeriod = () => {
         return now.getFullYear();
     }, []);
 
-    return {
+    const value = {
         selectedMonth,
         setSelectedMonth,
         selectedYear,
@@ -33,4 +36,14 @@ export const usePeriod = () => {
         monthEnd,
         currentYear,
     };
+
+    return <PeriodContext.Provider value={value}>{children}</PeriodContext.Provider>;
+};
+
+export const usePeriod = () => {
+    const context = useContext(PeriodContext);
+    if (!context) {
+        throw new Error("usePeriod must be used within a PeriodProvider");
+    }
+    return context;
 };

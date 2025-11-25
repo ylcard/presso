@@ -10,7 +10,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import { ArrowLeft, DollarSign, TrendingDown, CheckCircle, Trash2, AlertCircle } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useSettings } from "../components/utils/SettingsContext";
 import { useConfirm } from "../components/ui/ConfirmDialogProvider";
@@ -206,6 +206,7 @@ export default function BudgetDetail() {
     const { settings, user } = useSettings();
     const queryClient = useQueryClient();
     const location = useLocation();
+    const navigate = useNavigate();
     const [showQuickAdd, setShowQuickAdd] = useState(false);
     const { confirmAction } = useConfirm();
 
@@ -614,11 +615,14 @@ export default function BudgetDetail() {
         <div className="min-h-screen p-4 md:p-8">
             <div className="max-w-7xl mx-auto space-y-6">
                 <div className="flex items-center gap-4">
-                    <Link to={createPageUrl("Budgets")}>
-                        <CustomButton variant="ghost" size="icon">
-                            <ArrowLeft className="w-5 h-5" />
-                        </CustomButton>
-                    </Link>
+                    {/* SMART BACK BUTTON: Uses state if available, otherwise safe fallback */}
+                    <CustomButton
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => navigate(location.state?.from || '/Budgets')}
+                    >
+                        <ArrowLeft className="w-5 h-5" />
+                    </CustomButton>
                     <div className="flex-1">
                         <div className="flex items-center gap-2">
                             <h1 className="text-3xl md:text-4xl font-bold text-gray-900">{budget.name}</h1>
