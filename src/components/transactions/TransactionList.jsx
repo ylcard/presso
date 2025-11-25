@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import TransactionItem from "./TransactionItem";
 import { CustomButton } from "@/components/ui/CustomButton";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Trash, Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -26,7 +26,9 @@ export default function TransactionList({
     selectedIds = new Set(),
     onToggleSelection,
     onSelectAll,
-    onClearSelection
+    onClearSelection,
+    onDeleteSelected,
+    isBulkDeleting
 }) {
     const categoryMap = categories.reduce((acc, cat) => {
         acc[cat.id] = cat;
@@ -150,6 +152,17 @@ export default function TransactionList({
                                     title="Clear Selection"
                                 >
                                     <X className="w-3 h-3" />
+                                </CustomButton>
+                                <div className="h-4 w-px bg-gray-300 mx-1" /> {/* Divider */}
+                                <CustomButton
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={onDeleteSelected}
+                                    disabled={isBulkDeleting}
+                                    className="h-7 text-xs px-3"
+                                >
+                                    {isBulkDeleting ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Trash className="w-3 h-3 mr-1" />}
+                                    Delete
                                 </CustomButton>
                             </div>
                         )}
