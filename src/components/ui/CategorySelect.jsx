@@ -66,7 +66,7 @@ export default function CategorySelect({ value, onValueChange, categories, place
         : Circle;
 
     return (
-        <Popover open={open} onOpenChange={setOpen}>
+        <Popover open={open} onOpenChange={setOpen} modal={true}>
             <PopoverTrigger asChild>
                 <CustomButton
                     variant="outline"
