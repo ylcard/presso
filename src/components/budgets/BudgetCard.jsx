@@ -153,7 +153,8 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget, 
 
                 <CardContent className={`${currentStyle.p} flex-1 flex flex-col`}>
                     {/* Header */}
-                    <Link to={createPageUrl(`BudgetDetail?id=${budget.id}`)}>
+                    {/* <Link to={createPageUrl(`BudgetDetail?id=${budget.id}`)}> */}
+                    <Link to={`/BudgetDetail?id=${budget.id}`} state={{ from: '/Budgets' }}>
                         <div className={`flex items-center gap-2 ${currentStyle.mb}`}>
                             <h3 className={`font-bold text-gray-900 hover:text-blue-600 transition-colors truncate flex-1 ${currentStyle.title}`}>
                                 {budget.name}
