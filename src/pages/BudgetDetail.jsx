@@ -615,7 +615,12 @@ export default function BudgetDetail() {
         <div className="min-h-screen p-4 md:p-8">
             <div className="max-w-7xl mx-auto space-y-6">
                 <div className="flex items-center gap-4">
-                    <CustomButton variant="ghost" size="icon" onClick={() => navigate(-1)}>
+                    {/* SMART BACK BUTTON: Uses state if available, otherwise safe fallback */}
+                    <CustomButton
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => navigate(location.state?.from || '/Budgets')}
+                    >
                         <ArrowLeft className="w-5 h-5" />
                     </CustomButton>
                     <div className="flex-1">
