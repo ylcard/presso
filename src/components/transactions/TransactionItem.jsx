@@ -7,6 +7,7 @@ import { formatCurrency } from "../utils/currencyUtils";
 import { getCategoryIcon } from "../utils/iconMapConfig";
 import QuickAddTransaction from "./QuickAddTransaction";
 import { detectCrossPeriodSettlement } from "../utils/calculationEngine";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function TransactionItem({
     transaction,
@@ -17,7 +18,9 @@ export default function TransactionItem({
     categories,
     customBudgets = [],
     monthStart = null,
-    monthEnd = null
+    monthEnd = null,
+    isSelected = false,
+    onSelect
 }) {
     const { settings } = useSettings();
 
@@ -41,6 +44,12 @@ export default function TransactionItem({
             className={`flex items-center justify-between p-4 rounded-lg hover:bg-gray-50 transition-all border border-gray-100 group ${!isIncome && !isPaid ? 'opacity-60' : ''
                 }`}
         >
+            <div className="mr-4">
+                <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={(checked) => onSelect(transaction.id, checked)}
+                />
+            </div>
             <div className="flex items-center gap-4 flex-1">
                 {isIncome ? (
                     <div
