@@ -165,7 +165,7 @@ export default function BudgetBar({
                     )}
                 </div>
 
-                {/* Data Grid */}
+                {/* Data/Text Grid */}
                 <div className="w-40 px-1">
                     <p className="font-bold text-gray-900 text-xs truncate mb-2 text-center" title={budget.name}>{budget.name}</p>
 
