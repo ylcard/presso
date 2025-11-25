@@ -95,6 +95,10 @@ export default function Transactions() {
         setSelectedIds(newSelected);
     };
 
+    const handleClearSelection = () => {
+        setSelectedIds(new Set());
+    };
+
     const handleDeleteSelected = async () => {
         if (selectedIds.size === 0) return;
 
@@ -228,6 +232,7 @@ export default function Transactions() {
                     selectedIds={selectedIds}
                     onToggleSelection={handleToggleSelection}
                     onSelectAll={handleSelectAllPage}
+                    onClearSelection={handleClearSelection}
                 />
             </div>
         </div>
