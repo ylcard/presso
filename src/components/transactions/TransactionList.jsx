@@ -4,6 +4,7 @@ import TransactionItem from "./TransactionItem";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function TransactionList({
     transactions,
@@ -21,7 +22,10 @@ export default function TransactionList({
     onPageChange,
     itemsPerPage = 10,
     onItemsPerPageChange,
-    totalItems = 0
+    totalItems = 0,
+    selectedIds = new Set(),
+    onToggleSelection,
+    onSelectAll
 }) {
     const categoryMap = categories.reduce((acc, cat) => {
         acc[cat.id] = cat;
@@ -60,6 +64,14 @@ export default function TransactionList({
         );
     }
 
+    // Check if all items on current page are selected
+    const isAllSelected = transactions.length > 0 && transactions.every(t => selectedIds.has(t.id));
+
+    const handleSelectAll = (checked) => {
+        const ids = transactions.map(t => t.id);
+        onSelectAll(ids, checked);
+    };
+
     return (
         <Card className="border-none shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between">
@@ -84,6 +96,16 @@ export default function TransactionList({
                 </div>
             </CardHeader>
             <CardContent>
+                {transactions.length > 0 && (
+                    <div className="flex items-center gap-2 mb-4 px-4 pb-2 border-b border-gray-100">
+                        <Checkbox
+                            checked={isAllSelected}
+                            onCheckedChange={handleSelectAll}
+                            id="select-all"
+                        />
+                        <label htmlFor="select-all" className="text-sm font-medium text-gray-600 cursor-pointer select-none">Select All on Page</label>
+                    </div>
+                )}
                 <div className="space-y-2 mb-6">
                     {transactions.length > 0 ? (
                         transactions.map((transaction) => (
@@ -99,6 +121,8 @@ export default function TransactionList({
                                 customBudgets={customBudgets}
                                 monthStart={monthStart}
                                 monthEnd={monthEnd}
+                                isSelected={selectedIds.has(transaction.id)}
+                                onSelect={onToggleSelection}
                             />
                         ))
                     ) : (
