@@ -1,4 +1,7 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> upstream/main
 import { CustomButton } from "@/components/ui/CustomButton";
 import { CheckCircle, Trash2, AlertTriangle } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -87,11 +90,19 @@ export default function BudgetBar({
     return (
         <Link
             to={createPageUrl(`BudgetDetail?id=${budget.id}`)}
+<<<<<<< HEAD
             className="flex-shrink-0 w-40"
         >
             <div className="flex flex-col items-center gap-2 group cursor-pointer">
                 {/* Bar Graph */}
                 <div className={`relative w-full bg-gray-100 rounded-xl h-48 overflow-hidden hover:shadow-lg transition-all ${isOver && !isSystemSavings ? 'border-2 border-red-500' : ''}`}>
+=======
+            className="flex-shrink-0"
+        >
+            <div className="flex flex-col items-center gap-2 group cursor-pointer">
+                {/* Bar Graph */}
+                <div className={`relative w-16 bg-gray-100 rounded-xl h-48 overflow-hidden hover:shadow-lg transition-all ${isOver && !isSystemSavings ? 'border-2 border-red-500' : ''}`}>
+>>>>>>> upstream/main
                     {/* Paid Bar */}
                     <div
                         className="absolute bottom-0 w-full rounded-b-xl transition-all duration-300"
@@ -166,8 +177,13 @@ export default function BudgetBar({
                     )}
                 </div>
 
+<<<<<<< HEAD
                 {/* Data Grid */}
                 <div className="w-full px-1">
+=======
+                {/* Data/Text Grid */}
+                <div className="w-40 px-1">
+>>>>>>> upstream/main
                     <p className="font-bold text-gray-900 text-xs truncate mb-2 text-center" title={budget.name}>{budget.name}</p>
 
                     <div className="grid grid-cols-2 gap-y-1 gap-x-1 text-[10px] leading-tight">
@@ -212,6 +228,7 @@ export default function BudgetBar({
         </Link>
     );
 }
+<<<<<<< HEAD
 =======
 import { CustomButton } from "@/components/ui/CustomButton";
 import { CheckCircle, Trash2, AlertTriangle } from "lucide-react";
@@ -426,4 +443,6 @@ export default function BudgetBar({
         </Link>
     );
 }
+>>>>>>> upstream/main
+=======
 >>>>>>> upstream/main
