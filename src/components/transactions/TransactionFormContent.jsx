@@ -637,7 +637,7 @@ export default function TransactionFormContent({
                     {/* Budget (REQUIRED for expenses) */}
                     <div className="space-y-2">
                         <Label htmlFor="customBudget">Budget Allocation</Label>
-                        <Popover open={isBudgetOpen} onOpenChange={setIsBudgetOpen}>
+                        <Popover open={isBudgetOpen} onOpenChange={setIsBudgetOpen} modal={true}>
                            <PopoverTrigger asChild>
                                 <CustomButton
                                     variant="outline"
