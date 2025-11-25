@@ -98,11 +98,11 @@ export default function CategorySelect({ value, onValueChange, categories, place
                 </CustomButton>
             </PopoverTrigger>
             <PopoverContent className="w-[200px] p-0" align="start">
-                <Command className="h-auto">
+                <Command className="h-auto overflow-visible">
                     <CommandInput placeholder="Search category..." />
                     <CommandList className="max-h-64 overflow-y-auto">
                         <CommandEmpty>No category found.</CommandEmpty>
-                        <CommandGroup>
+                        <CommandGroup className="overflow-visible">
                             {sortedCategories.map((category) => {
                                 const Icon = category.icon && iconMap[category.icon] ? iconMap[category.icon] : Circle;
                                 const isSelected = multiple
