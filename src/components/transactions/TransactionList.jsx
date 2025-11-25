@@ -72,38 +72,75 @@ export default function TransactionList({
         onSelectAll(ids, checked);
     };
 
+    const PaginationControls = () => (
+        <div className="flex items-center gap-2">
+            <div className="text-sm text-gray-500 mr-2">
+                Page {currentPage} of {totalPages}
+            </div>
+            <CustomButton
+                variant="outline"
+                size="sm"
+                onClick={() => onPageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+            >
+                <ChevronLeft className="w-4 h-4" />
+            </CustomButton>
+            <CustomButton
+                variant="outline"
+                size="sm"
+                onClick={() => onPageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+            >
+                <ChevronRight className="w-4 h-4" />
+            </CustomButton>
+        </div>
+    );
+
+
     return (
         <Card className="border-none shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>All Transactions ({totalItems})</CardTitle>
-                {/* Items Per Page Selector */}
-                <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-500">Show:</span>
-                    <Select
-                        value={String(itemsPerPage)}
-                        onValueChange={(value) => onItemsPerPageChange(Number(value))}
-                    >
-                        <SelectTrigger className="w-[70px] h-8">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="10">10</SelectItem>
-                            <SelectItem value="20">20</SelectItem>
-                            <SelectItem value="50">50</SelectItem>
-                            <SelectItem value="100">100</SelectItem>
-                        </SelectContent>
-                    </Select>
+                <div className="flex items-center gap-4">
+                    {/* Top Pagination */}
+                    {totalPages > 1 && <PaginationControls />}
+
+                    {/* Items Per Page Selector */}
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-500">Show:</span>
+                        <Select
+                            value={String(itemsPerPage)}
+                            onValueChange={(value) => onItemsPerPageChange(Number(value))}
+                        >
+                            <SelectTrigger className="w-[70px] h-8">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="10">10</SelectItem>
+                                <SelectItem value="20">20</SelectItem>
+                                <SelectItem value="50">50</SelectItem>
+                                <SelectItem value="100">100</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
             </CardHeader>
             <CardContent>
                 {transactions.length > 0 && (
-                    <div className="flex items-center gap-2 mb-4 px-4 pb-2 border-b border-gray-100">
-                        <Checkbox
-                            checked={isAllSelected}
-                            onCheckedChange={handleSelectAll}
-                            id="select-all"
-                        />
-                        <label htmlFor="select-all" className="text-sm font-medium text-gray-600 cursor-pointer select-none">Select All on Page</label>
+                    <div className="flex items-center justify-between gap-2 mb-4 px-4 pb-2 border-b border-gray-100">
+                        <div className="flex items-center gap-2">
+                            <Checkbox
+                                checked={isAllSelected}
+                                onCheckedChange={handleSelectAll}
+                                id="select-all"
+                            />
+                            <label htmlFor="select-all" className="text-sm font-medium text-gray-600 cursor-pointer select-none">Select All on Page</label>
+                        </div>
+                        {selectedIds.size > 0 && (
+                            <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                                {selectedIds.size} Selected Total
+                            </span>
+                        )}
                     </div>
                 )}
                 <div className="space-y-2 mb-6">
@@ -134,30 +171,8 @@ export default function TransactionList({
 
                 {/* Pagination Controls */}
                 {totalPages > 1 && (
-                    <div className="flex items-center justify-between border-t pt-4">
-                        <div className="text-sm text-gray-500">
-                            Page {currentPage} of {totalPages}
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <CustomButton
-                                variant="outline"
-                                size="sm"
-                                onClick={() => onPageChange(currentPage - 1)}
-                                disabled={currentPage === 1}
-                            >
-                                <ChevronLeft className="w-4 h-4 mr-1" />
-                                Previous
-                            </CustomButton>
-                            <CustomButton
-                                variant="outline"
-                                size="sm"
-                                onClick={() => onPageChange(currentPage + 1)}
-                                disabled={currentPage === totalPages}
-                            >
-                                Next
-                                <ChevronRight className="w-4 h-4 ml-1" />
-                            </CustomButton>
-                        </div>
+                    <div className="flex items-center justify-end border-t pt-4">
+                        <PaginationControls />
                     </div>
                 )}
             </CardContent>
