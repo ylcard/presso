@@ -97,10 +97,10 @@ export default function CategorySelect({ value, onValueChange, categories, place
                     )}
                 </CustomButton>
             </PopoverTrigger>
-            <PopoverContent className="w-full p-0" align="start">
-                <Command>
+            <PopoverContent className="w-[200px] p-0" align="start">
+                <Command className="h-auto">
                     <CommandInput placeholder="Search category..." />
-                    <CommandList className="max-h-64">
+                    <CommandList className="max-h-64 overflow-y-auto">
                         <CommandEmpty>No category found.</CommandEmpty>
                         <CommandGroup>
                             {sortedCategories.map((category) => {
