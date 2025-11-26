@@ -246,7 +246,6 @@ export const useCustomBudgetActions = (config = {}) => {
 
             // Delete all associated transactions
             const budgetTransactions = transactions.filter(t => t.customBudgetId === budgetId);
-            console.log(`Deleting ${budgetTransactions.length} transactions for budget ${budgetId}`);
 
             for (const transaction of budgetTransactions) {
                 await base44.entities.Transaction.delete(transaction.id);
