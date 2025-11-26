@@ -4,6 +4,7 @@ import { formatCurrency } from "../utils/currencyUtils";
 
 export default function RemainingBudgetCard({
     remainingBudget,
+    bonusSavingsPotential,
     currentMonthIncome,
     currentMonthExpenses,
     settings,
@@ -45,6 +46,14 @@ export default function RemainingBudgetCard({
                     <h2 className={`text-4xl md:text-5xl font-bold ${amountColor}`}>
                         {formatCurrency(displayAmount, settings)}
                     </h2>
+                    {/* New Efficiency Bonus Display */}
+                    {bonusSavingsPotential > 0 && !isOverspent && (
+                        <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 backdrop-blur-sm">
+                            <span className="text-xs font-medium text-emerald-100">
+                                Includes <span className="text-white font-bold">{formatCurrency(bonusSavingsPotential, settings)}</span> efficiency bonus
+                            </span>
+                        </div>
+                    )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 max-w-3xl mx-auto w-full">
