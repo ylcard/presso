@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CustomButton } from "@/components/ui/CustomButton";
-import { Target, Save, GripVertical } from "lucide-react";
+import { Target, Save, GripVertical, Lock } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { showToast } from "@/components/ui/use-toast";
+import { Switch } from "@/components/ui/switch";
+import { useSettings } from "../utils/SettingsContext";
 
 const priorityConfig = {
     needs: { label: "Needs", color: "#EF4444", description: "Essential expenses" },
@@ -12,6 +14,7 @@ const priorityConfig = {
 };
 
 export default function GoalSettings({ goals, onGoalUpdate, isLoading, isSaving }) {
+    const { settings, updateSettings } = useSettings();
     // We track two split points (0-100).
     // Split 1: Boundary between Needs/Wants
     // Split 2: Boundary between Wants/Savings
@@ -173,6 +176,23 @@ export default function GoalSettings({ goals, onGoalUpdate, isLoading, isSaving 
                             <GripVertical className="w-3 h-3 text-gray-400" />
                         </div>
                     </div>
+                </div>
+
+                {/* Lifestyle Creep Protection Toggle */}
+                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-100">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-100 rounded-full text-blue-600">
+                            <Lock className="w-4 h-4" />
+                        </div>
+                        <div>
+                            <p className="text-sm font-bold text-gray-900">Fixed Lifestyle Mode</p>
+                            <p className="text-[10px] text-gray-500">If income rises, keep Needs budget fixed and save the rest.</p>
+                        </div>
+                    </div>
+                    <Switch 
+                        checked={settings.fixedLifestyleMode}
+                        onCheckedChange={(checked) => updateSettings({ fixedLifestyleMode: checked })}
+                    />
                 </div>
 
                 {/* Legend & Values */}
