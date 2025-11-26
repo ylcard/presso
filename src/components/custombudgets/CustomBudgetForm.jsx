@@ -6,12 +6,12 @@ import { Label } from "@/components/ui/label";
 import { AlertCircle, Trash2, Plus } from "lucide-react";
 import AmountInput from "../ui/AmountInput";
 import DateRangePicker from "../ui/DateRangePicker";
-import CurrencySelect from "../ui/CurrencySelect";
+// import CurrencySelect from "../ui/CurrencySelect";
 import { PRESET_COLORS } from "../utils/constants";
 import { normalizeAmount } from "../utils/generalUtils";
-import { getCurrencyBalance, validateCashAllocations } from "../utils/cashAllocationUtils";
+// import { getCurrencyBalance, validateCashAllocations } from "../utils/cashAllocationUtils";
 import { formatCurrency } from "../utils/currencyUtils";
-import { getCurrencySymbol } from "../utils/currencyUtils";
+// import { getCurrencySymbol } from "../utils/currencyUtils";
 import { usePeriod } from "../hooks/usePeriod";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { showToast } from "@/components/ui/use-toast";
@@ -21,7 +21,7 @@ export default function CustomBudgetForm({
     onSubmit,
     onCancel,
     isSubmitting,
-    cashWallet,
+    // cashWallet,
     baseCurrency,
     settings
 }) {
@@ -30,7 +30,7 @@ export default function CustomBudgetForm({
     const [formData, setFormData] = useState({
         name: '',
         allocatedAmount: null,
-        cashAllocations: [],
+        // cashAllocations: [],
         startDate: monthStart,
         endDate: monthEnd,
         description: '',
@@ -39,17 +39,17 @@ export default function CustomBudgetForm({
 
     const [validationError, setValidationError] = useState(null);
 
-    // Get available currencies from wallet
-    const availableCurrencies = cashWallet?.balances
-        ?.filter(b => b.amount > 0)
-        .map(b => b.currencyCode) || [];
+    // // Get available currencies from wallet
+    // const availableCurrencies = cashWallet?.balances
+    //     ?.filter(b => b.amount > 0)
+    //     .map(b => b.currencyCode) || [];
 
     useEffect(() => {
         if (budget) {
             setFormData({
                 name: budget.name || '',
                 allocatedAmount: budget.allocatedAmount?.toString() || null,
-                cashAllocations: budget.cashAllocations || [],
+                // cashAllocations: budget.cashAllocations || [],
                 startDate: budget.startDate || monthStart,
                 endDate: budget.endDate || monthEnd,
                 description: budget.description || '',
@@ -59,48 +59,48 @@ export default function CustomBudgetForm({
             setFormData(prev => ({
                 ...prev,
                 startDate: monthStart,
-                endDate: monthEnd,
-                cashAllocations: []
+                endDate: monthEnd
+                // cashAllocations: []
             }));
         }
     }, [budget, monthStart, monthEnd]);
 
-    const handleAddCashAllocation = () => {
-        // Check if there's cash available
-        if (availableCurrencies.length === 0) {
-            showToast({
-                title: "No cash available",
-                description: "There's no cash in your wallet to allocate.",
-                variant: "destructive"
-            });
-            return;
-        }
+    // const handleAddCashAllocation = () => {
+    //     // Check if there's cash available
+    //     if (availableCurrencies.length === 0) {
+    //         showToast({
+    //             title: "No cash available",
+    //             description: "There's no cash in your wallet to allocate.",
+    //             variant: "destructive"
+    //         });
+    //         return;
+    //     }
 
-        const defaultCurrency = availableCurrencies[0] || baseCurrency || 'USD';
-        setFormData(prev => ({
-            ...prev,
-            cashAllocations: [
-                ...prev.cashAllocations,
-                { currencyCode: defaultCurrency, amount: null }
-            ]
-        }));
-    };
+    //     const defaultCurrency = availableCurrencies[0] || baseCurrency || 'USD';
+    //     setFormData(prev => ({
+    //         ...prev,
+    //         cashAllocations: [
+    //             ...prev.cashAllocations,
+    //             { currencyCode: defaultCurrency, amount: null }
+    //         ]
+    //     }));
+    // };
 
-    const handleRemoveCashAllocation = (index) => {
-        setFormData(prev => ({
-            ...prev,
-            cashAllocations: prev.cashAllocations.filter((_, i) => i !== index)
-        }));
-    };
+    // const handleRemoveCashAllocation = (index) => {
+    //     setFormData(prev => ({
+    //         ...prev,
+    //         cashAllocations: prev.cashAllocations.filter((_, i) => i !== index)
+    //     }));
+    // };
 
-    const handleCashAllocationChange = (index, field, value) => {
-        setFormData(prev => ({
-            ...prev,
-            cashAllocations: prev.cashAllocations.map((alloc, i) =>
-                i === index ? { ...alloc, [field]: value } : alloc
-            )
-        }));
-    };
+    // const handleCashAllocationChange = (index, field, value) => {
+    //     setFormData(prev => ({
+    //         ...prev,
+    //         cashAllocations: prev.cashAllocations.map((alloc, i) =>
+    //             i === index ? { ...alloc, [field]: value } : alloc
+    //         )
+    //     }));
+    // };
 
     const handleDateRangeChange = (start, end) => {
         setFormData(prev => ({
@@ -171,7 +171,7 @@ export default function CustomBudgetForm({
         return onSubmit({
             ...formData,
             allocatedAmount: parseFloat(normalizedAmount),
-            cashAllocations: processedCashAllocations,
+            // cashAllocations: processedCashAllocations,
             status: budget?.status || 'active'
         });
     };
@@ -209,9 +209,11 @@ export default function CustomBudgetForm({
                 </div>
             </div>
 
-            <div className="grid grid-cols-[200px_1fr] gap-3 items-end">
+            {/* <div className="grid grid-cols-[200px_1fr] gap-3 items-end"> */}
+            <div className="grid grid-cols-1 gap-3 items-end">
                 <div className="space-y-2">
-                    <Label htmlFor="allocatedAmount">Card Budget</Label>
+                    {/* <Label htmlFor="allocatedAmount">Card Budget</Label> */}
+                    <Label htmlFor="allocatedAmount">Budget Limit</Label>
                     <AmountInput
                         id="allocatedAmount"
                         value={formData.allocatedAmount}
@@ -221,7 +223,7 @@ export default function CustomBudgetForm({
                     />
                 </div>
 
-                <CustomButton
+                {/* <CustomButton
                     type="button"
                     variant="outline"
                     onClick={handleAddCashAllocation}
@@ -229,10 +231,10 @@ export default function CustomBudgetForm({
                 >
                     <Plus className="w-4 h-4 mr-2" />
                     Add Cash
-                </CustomButton>
+                </CustomButton> */}
             </div>
 
-            {formData.cashAllocations.length > 0 && (
+            {/* {formData.cashAllocations.length > 0 && (
                 <div className="space-y-2 p-3 bg-green-50 rounded-lg border border-green-200">
                     <Label className="text-sm font-semibold text-green-900">Cash Allocations</Label>
 
@@ -281,7 +283,7 @@ export default function CustomBudgetForm({
                         })}
                     </div>
                 </div>
-            )}
+            )} */}
 
             <div className="space-y-2">
                 <Label className="text-sm">Color</Label>
