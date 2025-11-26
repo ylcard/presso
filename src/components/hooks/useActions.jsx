@@ -143,7 +143,7 @@ export const useGoalActions = (user, goals) => {
         },
     });
 
-    const handleGoalUpdate = async (priority, percentage) => {
+    const handleGoalUpdate = async (priority, percentage, extraData ={}) => {
         const existingGoal = goals.find(g => g.priority === priority);
 
         try {
@@ -151,14 +151,18 @@ export const useGoalActions = (user, goals) => {
                 // Return the promise directly, allowing the caller (GoalSettings) to handle resolution status
                 return updateGoalMutation.mutateAsync({
                     id: existingGoal.id,
-                    data: { target_percentage: percentage }
+                    data: {
+                        target_percentage: percentage,
+                        ...extraData
+                    }
                 });
             } else if (user) {
                 // Return the promise directly
                 return createGoalMutation.mutateAsync({
                     priority,
                     target_percentage: percentage,
-                    user_email: user.email
+                    user_email: user.email,
+                    ...extraData
                 });
             }
 
