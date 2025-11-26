@@ -21,9 +21,7 @@ import {
     getSystemBudgetStats,
     getCustomBudgetAllocationStats,
 } from "../components/utils/financialCalculations";
-// import { useCashWallet } from "../components/hooks/useBase44Entities";
 import { useTransactionActions } from "../components/hooks/useActions";
-// import { calculateRemainingCashAllocations, returnCashToWallet } from "../components/utils/cashAllocationUtils";
 import { useCustomBudgetActions } from "../components/hooks/useActions";
 import { usePeriod } from "../components/hooks/usePeriod";
 import { useMonthlyIncome } from "../components/hooks/useDerivedData";
@@ -33,7 +31,6 @@ import AllocationManager from "../components/custombudgets/AllocationManager";
 import BudgetCard from "../components/budgets/BudgetCard";
 import CustomBudgetForm from "../components/custombudgets/CustomBudgetForm";
 import ExpensesCardContent from "../components/budgetdetail/ExpensesCardContent";
-// import { QUERY_KEYS } from "../components/hooks/queryKeys";
 
 export default function BudgetDetail() {
     const { settings, user } = useSettings();
@@ -47,8 +44,6 @@ export default function BudgetDetail() {
 
     const urlParams = new URLSearchParams(location.search);
     const budgetId = urlParams.get('id');
-
-    // const { cashWallet } = useCashWallet(user);
 
     useEffect(() => {
         if (budgetId) {
@@ -129,17 +124,14 @@ export default function BudgetDetail() {
         enabled: !!budgetId && budget && !budget.isSystemBudget,
     });
 
-    // const budgetActions = useCustomBudgetActions(user, transactions, cashWallet);
     const budgetActions = useCustomBudgetActions({ transactions });
 
-    // const transactionActions = useTransactionActions(null, null, cashWallet);
     const transactionActions = useTransactionActions();
 
     const createTransactionMutation = useMutation({
         mutationFn: (data) => base44.entities.Transaction.create(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['transactions'] });
-            // queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CASH_WALLET] });
             setShowQuickAdd(false);
         },
     });
@@ -170,16 +162,6 @@ export default function BudgetDetail() {
             const budgetToComplete = budget;
             if (!budgetToComplete) return;
 
-            /* if (budgetToComplete.cashAllocations && budgetToComplete.cashAllocations.length > 0 && user) {
-                const remaining = calculateRemainingCashAllocations(budgetToComplete, transactions);
-                if (remaining.length > 0) {
-                    await returnCashToWallet(
-                        user.email,
-                        remaining
-                    );
-                }
-            } */
-
             await base44.entities.CustomBudget.update(id, {
                 status: 'completed'
             });
@@ -187,8 +169,6 @@ export default function BudgetDetail() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['budget', budgetId] });
             queryClient.invalidateQueries({ queryKey: ['customBudgets'] });
-            // queryClient.invalidateQueries({ queryKey: ['cashWallet'] });
-            // queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CASH_WALLET] });
         },
     });
 
@@ -414,12 +394,6 @@ export default function BudgetDetail() {
         totalRemaining = totalBudget - (stats?.totalSpentUnits || 0);
     }
 
-    // const hasBothDigitalAndCash = !budget.isSystemBudget &&
-    //     stats?.digital !== undefined &&
-    //     stats?.cashByCurrency &&
-    //     Object.keys(stats.cashByCurrency).length > 0 &&
-    //     (stats.digital.allocated > 0 || Object.values(stats.cashByCurrency).some(cashData => cashData.allocated > 0));
-
     return (
         <div className="min-h-screen p-4 md:p-8">
             <div className="max-w-7xl mx-auto space-y-6">
@@ -513,38 +487,6 @@ export default function BudgetDetail() {
                             <DollarSign className="w-4 h-4 text-blue-500" />
                         </CardHeader>
                         <CardContent>
-                            {/* {hasBothDigitalAndCash ? (
-                                <div className="space-y-3">
-                                    <div className="text-center pb-2 border-b">
-                                        <p className="text-sm text-gray-500 mb-1">Total</p>
-                                        <div className="text-lg font-bold text-gray-900">
-                                            {formatCurrency(totalBudget, settings)}
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div className="flex flex-col items-center justify-center">
-                                            <p className="text-xs text-gray-500 mb-1">Card</p>
-                                            <div className="text-base font-semibold text-gray-900">
-                                                {formatCurrency(stats.digital.allocated, settings)}
-                                            </div>
-                                        </div>
-                                        <div className="flex flex-col items-center justify-center">
-                                            <p className="text-xs text-gray-500 mb-1">Cash</p>
-                                            {Object.entries(stats.cashByCurrency).map(([currency, data]) => (
-                                                <div key={currency} className="text-base font-semibold text-gray-900">
-                                                    {formatCurrency(data.allocated, { ...settings, currencySymbol: getCurrencySymbol(currency) })}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="text-center">
-                                    <div className="text-lg font-bold text-gray-900">
-                                        {formatCurrency(totalBudget, settings)}
-                                    </div>
-                                </div>
-                            )} */}
                             <div className="text-center">
                                 <div className="text-lg font-bold text-gray-900">
                                     {formatCurrency(totalBudget, settings)}
@@ -569,38 +511,6 @@ export default function BudgetDetail() {
                             <CheckCircle className="w-4 h-4 text-green-500" />
                         </CardHeader>
                         <CardContent>
-                            {/* {hasBothDigitalAndCash ? (
-                                <div className="space-y-3">
-                                    <div className="text-center pb-2 border-b">
-                                        <p className="text-sm text-gray-500 mb-1">Total</p>
-                                        <div className={`text-lg font-bold ${totalRemaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                            {formatCurrency(totalRemaining, settings)}
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div className="flex flex-col items-center justify-center">
-                                            <p className="text-xs text-gray-500 mb-1">Card</p>
-                                            <div className={`text-base font-semibold ${stats.digital.remaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                {formatCurrency(stats.digital.remaining, settings)}
-                                            </div>
-                                        </div>
-                                        <div className="flex flex-col items-center justify-center">
-                                            <p className="text-xs text-gray-500 mb-1">Cash</p>
-                                            {Object.entries(stats.cashByCurrency).map(([currency, data]) => (
-                                                <div key={currency} className={`text-base font-semibold ${data.remaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                    {formatCurrency(data.remaining, { ...settings, currencySymbol: getCurrencySymbol(currency) })}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="text-center">
-                                    <div className={`text-lg font-bold ${totalRemaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                        {formatCurrency(totalRemaining, settings)}
-                                    </div>
-                                </div>
-                            )} */}
                             <div className="text-center">
                                 <div className={`text-lg font-bold ${totalRemaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                     {formatCurrency(totalRemaining, settings)}
