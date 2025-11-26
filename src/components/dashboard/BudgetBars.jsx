@@ -27,7 +27,6 @@ export default function BudgetBars({
     const [viewMode, setViewMode] = useState(settings.budgetViewMode || 'bars');
 
     const [customStartIndex, setCustomStartIndex] = useState(0);
-    // const barsPerPage = 7;
     const barsPerPage = viewMode === 'cards' ? 4 : 7;
 
     // Use the extracted hook for all calculations
@@ -37,11 +36,6 @@ export default function BudgetBars({
     const visibleCustomBudgets = customBudgetsData.slice(customStartIndex, customStartIndex + barsPerPage);
     const canScrollLeft = customStartIndex > 0;
     const canScrollRight = customStartIndex + barsPerPage < customBudgetsData.length;
-
-    // DEPRECATED: Persist view mode changes
-    // useEffect(() => {
-    //     localStorage.setItem('budgetViewMode', viewMode);
-    // }, [viewMode]);
 
     return (
         <div className="space-y-6">
@@ -118,7 +112,6 @@ export default function BudgetBars({
                             <span className="px-3 py-1 rounded-lg text-sm bg-purple-50 text-purple-600">
                                 Custom Budgets
                             </span>
-                            {/* <span className="text-gray-400">({customBudgetsData.length})</span> */}
                         </div>
                         <div className="flex items-center gap-2">
                             {customBudgetsData.length > barsPerPage && (
