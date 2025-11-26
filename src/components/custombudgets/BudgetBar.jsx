@@ -73,12 +73,12 @@ export default function BudgetBar({
     } else {
         if (isOver) {
             remainingDisplay = used - allocated;
-            statusLabel = 'Over by';
+            statusLabel = 'Over Limit';
             statusColor = 'text-red-600';
         } else {
             remainingDisplay = allocated - used;
-            statusLabel = 'Remaining';
-            statusColor = 'text-emerald-600';
+            statusLabel = 'Under Limit';
+            statusColor = 'text-blue-600';
         }
     }
 
@@ -186,6 +186,12 @@ export default function BudgetBar({
                             <p className={`font-semibold truncate ${statusColor}`} title={formatCurrency(remainingDisplay, settings)}>
                                 {formatCurrency(remainingDisplay, settings)}
                             </p>
+                            {/* Subliminal reinforcement: Remind user this is potential savings */}
+                            {!isSystemSavings && !isOver && (
+                                <p className="text-[8px] text-emerald-600/80 leading-none mt-0.5 transform scale-90 origin-right font-medium">
+                                    (Save it!)
+                                </p>
+                            )}
                         </div>
 
                         {/* Row 2 */}
