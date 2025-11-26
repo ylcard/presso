@@ -14,7 +14,10 @@ import { isDateInRange, parseDate } from "./dateUtils";
  * @returns {boolean} True if the transaction is a cash expense from the wallet.
  */
 export const isCashExpense = (transaction) => {
-    return transaction.isCashTransaction && transaction.cashTransactionType === 'expense_from_wallet';
+    // return transaction.isCashTransaction && transaction.cashTransactionType === 'expense_from_wallet';
+    // REFACTOR: In the new Consumption Model, cash expenses are treated like normal expenses.
+    // We return false so they are NOT excluded from calculations.
+    return false;
 };
 
 /**
@@ -80,7 +83,11 @@ const filterExpenses = (transaction, categories, startDate, endDate, allCustomBu
     } = options;
 
     if (transaction.type !== 'expense') return false;
-    if (isCashExpense(transaction)) return false;
+    // if (isCashExpense(transaction)) return false;
+
+    // Exclude "Withdrawals" (Transfers) so they don't count as spending
+    // Only needed if you have legacy data or still log withdrawals for some reason
+    if (transaction.cashTransactionType === 'withdrawal_to_wallet') return false
 
     // Filter by payment status
     if (isPaid !== undefined) {
@@ -105,7 +112,7 @@ const filterExpenses = (transaction, categories, startDate, endDate, allCustomBu
         // CHECK TRANSACTION PRIORITY FIRST (Override), then fallback to Category default
         const category = categories ? categories.find(c => c.id === transaction.category_id) : null;
         const effectivePriority = transaction.financial_priority || category?.priority;
-        
+
         if (effectivePriority !== priority) return false;
     }
 
