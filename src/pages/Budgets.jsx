@@ -9,7 +9,7 @@ import {
     useCategories,
     useCustomBudgetsAll,
     useSystemBudgetsForPeriod,
-    useCashWallet,
+    // useCashWallet,
 } from "../components/hooks/useBase44Entities";
 import { useBudgetsAggregates } from "../components/hooks/useDerivedData";
 import { useCustomBudgetActions } from "../components/hooks/useActions";
@@ -17,89 +17,6 @@ import { getCustomBudgetStats } from "../components/utils/financialCalculations"
 import BudgetCard from "../components/budgets/BudgetCard";
 import MonthNavigator from "../components/ui/MonthNavigator";
 import QuickAddBudget from "../components/dashboard/QuickAddBudget";
-
-
-/**
- * Calculates statistics for a custom budget, filtering expenses based on the selected month.
- */
-/* const getCustomBudgetStats = (customBudget, transactions, monthStart, monthEnd) => {
-    const budgetTransactions = transactions.filter(t => t.customBudgetId === customBudget.id);
-
-    // Parse month boundaries for filtering paid expenses
-    const monthStartDate = parseDate(monthStart);
-    const monthEndDate = parseDate(monthEnd);
-
-    // Separate digital and cash transactions
-    const digitalTransactions = budgetTransactions.filter(
-        t => !t.isCashTransaction || t.cashTransactionType !== 'expense_from_wallet'
-    );
-    const cashTransactions = budgetTransactions.filter(
-        t => t.isCashTransaction && t.cashTransactionType === 'expense_from_wallet'
-    );
-
-    // Calculate digital stats - ONLY include paid expenses that were paid within the selected month
-    const digitalAllocated = customBudget.allocatedAmount || 0;
-    const digitalSpent = digitalTransactions
-        .filter(t => {
-            if (t.type !== 'expense') return false;
-            if (!t.isPaid || !t.paidDate) return false;
-
-            // Filter by paidDate within selected month
-            const paidDate = parseDate(t.paidDate);
-            return paidDate >= monthStartDate && paidDate <= monthEndDate;
-        })
-        .reduce((sum, t) => sum + (t.originalAmount || t.amount), 0);
-
-    const digitalUnpaid = digitalTransactions
-        .filter(t => t.type === 'expense' && !t.isPaid)
-        .reduce((sum, t) => sum + (t.originalAmount || t.amount), 0);
-
-    // Calculate cash stats by currency - ONLY include paid expenses that were paid within the selected month
-    const cashByCurrency = {};
-    const cashAllocations = customBudget.cashAllocations || [];
-
-    cashAllocations.forEach(allocation => {
-        const currencyCode = allocation.currencyCode;
-        const allocated = allocation.amount || 0;
-
-        const spent = cashTransactions
-            .filter(t => {
-                if (t.type !== 'expense') return false;
-                if (t.cashCurrency !== currencyCode) return false;
-                if (!t.isPaid || !t.paidDate) return false;
-
-                // Filter by paidDate within selected month
-                const paidDate = parseDate(t.paidDate);
-                return paidDate >= monthStartDate && paidDate <= monthEndDate;
-            })
-            .reduce((sum, t) => sum + (t.cashAmount || 0), 0);
-
-        cashByCurrency[currencyCode] = {
-            allocated,
-            spent,
-            remaining: allocated - spent
-        };
-    });
-
-    // Calculate unit-based totals
-    const totalAllocatedUnits = digitalAllocated + cashAllocations.reduce((sum, alloc) => sum + alloc.amount, 0);
-    const totalSpentUnits = digitalSpent + Object.values(cashByCurrency).reduce((sum, cashData) => sum + cashData.spent, 0);
-    const totalUnpaidUnits = digitalUnpaid;
-
-    return {
-        digital: {
-            allocated: digitalAllocated,
-            spent: digitalSpent,
-            unpaid: digitalUnpaid,
-            remaining: digitalAllocated - digitalSpent
-        },
-        cashByCurrency,
-        totalAllocatedUnits,
-        totalSpentUnits,
-        totalUnpaidUnits,
-        totalTransactionCount: budgetTransactions.length
-    };
-}; */
 
 export default function Budgets() {
     const { user, settings } = useSettings();
@@ -109,7 +26,7 @@ export default function Budgets() {
     const { categories } = useCategories();
     const { allCustomBudgets } = useCustomBudgetsAll(user);
     const { systemBudgets } = useSystemBudgetsForPeriod(user, monthStart, monthEnd);
-    const { cashWallet } = useCashWallet(user);
+    // const { cashWallet } = useCashWallet(user);
     const { customBudgets, systemBudgetsWithStats } = useBudgetsAggregates(
         transactions,
         categories,
@@ -118,7 +35,8 @@ export default function Budgets() {
         selectedMonth,
         selectedYear
     );
-    const customBudgetActions = useCustomBudgetActions(user, transactions, cashWallet);
+    // const customBudgetActions = useCustomBudgetActions(user, transactions, cashWallet);
+    const customBudgetActions = useCustomBudgetActions({ transactions });
     const handleActivateBudget = (budgetId) => {
         customBudgetActions.handleStatusChange(budgetId, 'active');
     };
@@ -264,7 +182,7 @@ export default function Budgets() {
                     onSubmit={customBudgetActions.handleSubmit}
                     onCancel={() => setShowQuickAddBudget(false)}
                     isSubmitting={customBudgetActions.isSubmitting}
-                    cashWallet={cashWallet}
+                    // cashWallet={cashWallet}
                     baseCurrency={settings.baseCurrency}
                     transactions={transactions}
                     allBudgets={allCustomBudgets}

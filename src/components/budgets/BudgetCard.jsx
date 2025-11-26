@@ -2,14 +2,14 @@ import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
 import { formatCurrency } from "../utils/currencyUtils";
 import { parseDate } from "../utils/dateUtils";
 import { motion } from "framer-motion";
-import { CheckCircle, Clock, AlertTriangle, AlertCircle } from "lucide-react";
+import { CheckCircle, Clock, AlertTriangle } from "lucide-react";
 
 export default function BudgetCard({ budget, stats, settings, onActivateBudget, size = 'md' }) {
-    const baseCurrency = settings?.baseCurrency || 'USD';
+    // Possibly deprecated?
+    // const baseCurrency = settings?.baseCurrency || 'USD';
     const isSystemBudget = budget.isSystemBudget || false;
     const isSavings = isSystemBudget && budget.systemBudgetType === 'savings';
 
@@ -27,7 +27,6 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget, 
     }, [budget.status, budget.startDate, isSystemBudget]);
 
     // Unified Data Calculation
-    // const { allocated, paid, unpaid, percentage, isOverBudget, remaining, overAmount } = useMemo(() => {
     const { allocated, paid, unpaid, percentage, isOverBudget, remaining, overAmount, statusLabel, statusColor } = useMemo(() => {
         let alloc = 0;
         let pd = 0;
@@ -46,10 +45,6 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget, 
         const used = pd + unpd;
         let pct = alloc > 0 ? (used / alloc) * 100 : 0;
         if (isNaN(pct)) pct = 0;
-
-        // const isOver = used > alloc;
-        // const rem = Math.max(0, alloc - used);
-        // const over = Math.max(0, used - alloc);
 
         let isOver = used > alloc;
         let rem = Math.max(0, alloc - used);
@@ -153,7 +148,6 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget, 
 
                 <CardContent className={`${currentStyle.p} flex-1 flex flex-col`}>
                     {/* Header */}
-                    {/* <Link to={createPageUrl(`BudgetDetail?id=${budget.id}`)}> */}
                     <Link to={`/BudgetDetail?id=${budget.id}`} state={{ from: '/Budgets' }}>
                         <div className={`flex items-center gap-2 ${currentStyle.mb}`}>
                             <h3 className={`font-bold text-gray-900 hover:text-blue-600 transition-colors truncate flex-1 ${currentStyle.title}`}>
@@ -276,7 +270,6 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget, 
                     <div className={`grid grid-cols-2 mt-auto ${currentStyle.gap}`}>
                         {/* Row 1: Budget & Remaining */}
                         <div>
-                            {/* <p className={`text-gray-400 mb-px ${currentStyle.statLabel}`}>Budget</p> */}
                             <p className={`text-gray-400 mb-px ${currentStyle.statLabel}`}>{isSavings ? 'Target' : 'Budget'}</p>
                             <p className={`font-semibold text-gray-700 truncate ${currentStyle.statVal}`}>
                                 {formatCurrency(allocated, settings)}
@@ -287,7 +280,6 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget, 
                                 {statusLabel}
                             </p>
                             <p className={`font-semibold truncate ${statusColor} ${currentStyle.statVal}`}>
-                                {/* {isOverBudget ? '+' : ''} */}
                                 {formatCurrency(isOverBudget ? overAmount : remaining, settings)}
                             </p>
                         </div>
@@ -297,7 +289,6 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget, 
 
                         {/* Row 2: Paid & Unpaid */}
                         <div>
-                            {/* <p className={`text-gray-400 mb-px ${currentStyle.statLabel}`}>Paid</p> */}
                             <p className={`text-gray-400 mb-px ${currentStyle.statLabel}`}>{isSavings ? 'Actual' : 'Paid'}</p>
                             <p className={`font-semibold text-gray-900 truncate ${currentStyle.statVal}`}>
                                 {formatCurrency(paid, settings)}
@@ -316,7 +307,6 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget, 
                                 </>
                             ) : (
                                 <div className="h-full flex items-end justify-end">
-                                    {/* Optional: Put something else here for savings, or leave blank */}
                                     <span className="text-xs text-gray-300 italic">Net Flow</span>
                                 </div>
                             )}

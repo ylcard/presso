@@ -1,8 +1,13 @@
+// Deprecated, no longer using cash
+
+/*
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Wallet, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
 import { SUPPORTED_CURRENCIES } from "../utils/constants";
+*/
 
+/*
 export default function CashWalletCard({ cashWallet, onDepositCash, onReturnCash }) {
     const balances = cashWallet?.balances || [];
 
@@ -63,3 +68,4 @@ export default function CashWalletCard({ cashWallet, onDepositCash, onReturnCash
         </Card>
     );
 }
+*/

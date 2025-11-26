@@ -6,23 +6,26 @@ import { useCreateEntity } from "./useCreateEntity";
 import { useUpdateEntity } from "./useUpdateEntity";
 import { useDeleteEntity } from "./useDeleteEntity";
 import { QUERY_KEYS } from "./queryKeys";
-import {
-    allocateCashFromWallet,
-    returnCashToWallet,
-    calculateAllocationChanges,
-    calculateRemainingCashAllocations,
-    updateCurrencyBalance,
-} from "../utils/cashAllocationUtils";
+// import {
+//     allocateCashFromWallet,
+//     returnCashToWallet,
+//     calculateAllocationChanges,
+//     calculateRemainingCashAllocations,
+//     updateCurrencyBalance,
+// } from "../utils/cashAllocationUtils";
 import { parseDate } from "../utils/dateUtils";
 import { createPageUrl } from "@/utils";
 
 // Hook for transaction actions (CRUD operations - Transactions page)
-export const useTransactionActions = (setShowForm, setEditingTransaction, cashWallet, options = {}) => {
+// export const useTransactionActions = (setShowForm, setEditingTransaction, cashWallet, options = {}) => {
+export const useTransactionActions = (config = {}) => {
+    const { setShowForm, setEditingTransaction, ...options } = config;
 
     // CREATE: Use generic hook with cash wallet preprocessing
     const createMutation = useCreateEntity({
         entityName: 'Transaction',
-        queryKeysToInvalidate: [QUERY_KEYS.TRANSACTIONS, QUERY_KEYS.CASH_WALLET, QUERY_KEYS.SYSTEM_BUDGETS],
+        // queryKeysToInvalidate: [QUERY_KEYS.TRANSACTIONS, QUERY_KEYS.CASH_WALLET, QUERY_KEYS.SYSTEM_BUDGETS],
+        queryKeysToInvalidate: [QUERY_KEYS.TRANSACTIONS, QUERY_KEYS.SYSTEM_BUDGETS],
         onAfterSuccess: () => {
             if (setShowForm) setShowForm(false);
             if (setEditingTransaction) setEditingTransaction(null);
@@ -33,7 +36,7 @@ export const useTransactionActions = (setShowForm, setEditingTransaction, cashWa
     // UPDATE: Use generic hook with complex cash transaction handling
     const updateMutation = useUpdateEntity({
         entityName: 'Transaction',
-        queryKeysToInvalidate: [QUERY_KEYS.TRANSACTIONS, QUERY_KEYS.CASH_WALLET],
+        /* queryKeysToInvalidate: [QUERY_KEYS.TRANSACTIONS, QUERY_KEYS.CASH_WALLET],
         onBeforeUpdate: async ({ id, data, oldTransaction }) => {
             // Handle complex cash transaction status changes
             if (cashWallet && oldTransaction) {
@@ -79,7 +82,9 @@ export const useTransactionActions = (setShowForm, setEditingTransaction, cashWa
             }
 
             return data;
-        },
+        }, */
+
+        queryKeysToInvalidate: [QUERY_KEYS.TRANSACTIONS],
         onAfterSuccess: () => {
             if (setShowForm) setShowForm(false);
             if (setEditingTransaction) setEditingTransaction(null);
@@ -89,10 +94,11 @@ export const useTransactionActions = (setShowForm, setEditingTransaction, cashWa
     // DELETE: Use generic hook with cash wallet reversal
     const { handleDelete: handleDeleteTransaction } = useDeleteEntity({
         entityName: 'Transaction',
-        queryKeysToInvalidate: [QUERY_KEYS.TRANSACTIONS, QUERY_KEYS.CASH_WALLET],
+        // queryKeysToInvalidate: [QUERY_KEYS.TRANSACTIONS, QUERY_KEYS.CASH_WALLET],
+        queryKeysToInvalidate: [QUERY_KEYS.TRANSACTIONS],
         confirmTitle: "Delete Transaction",
         confirmMessage: "Are you sure you want to delete this transaction? This action cannot be undone.",
-        onBeforeDelete: async (transaction) => {
+        /* onBeforeDelete: async (transaction) => {
             // Handle cash wallet balance adjustment for cash transactions
             if (transaction.isCashTransaction && transaction.cashAmount && transaction.cashCurrency && cashWallet) {
                 const balances = cashWallet.balances || [];
@@ -109,7 +115,7 @@ export const useTransactionActions = (setShowForm, setEditingTransaction, cashWa
                     balances: updatedBalances
                 });
             }
-        }
+        } */
     });
 
     const handleSubmit = (data, editingTransaction) => {
@@ -249,14 +255,17 @@ export const useGoalActions = (user, goals) => {
 };
 
 // Hook for custom budget actions (CRUD operations)
-export const useCustomBudgetActions = (user, transactions, options = {}) => {
+// export const useCustomBudgetActions = (user, transactions, options = {}) => {
+export const useCustomBudgetActions = (config = {}) => {
+    const { transactions, ...options } = config;
     const [showForm, setShowForm] = useState(false);
     const [editingBudget, setEditingBudget] = useState(null);
 
     // CREATE: Use generic hook with intelligent status assignment and cash allocation
     const createMutation = useCreateEntity({
         entityName: 'CustomBudget',
-        queryKeysToInvalidate: [QUERY_KEYS.CUSTOM_BUDGETS, QUERY_KEYS.CASH_WALLET],
+        // queryKeysToInvalidate: [QUERY_KEYS.CUSTOM_BUDGETS, QUERY_KEYS.CASH_WALLET],
+        queryKeysToInvalidate: [QUERY_KEYS.CUSTOM_BUDGETS],
         onBeforeCreate: async (data) => {
             // CRITICAL: Determine status based on start date
             const today = new Date();
@@ -265,13 +274,13 @@ export const useCustomBudgetActions = (user, transactions, options = {}) => {
             const startDate = parseDate(data.startDate);
             const status = startDate > today ? 'planned' : 'active';
 
-            // Handle cash allocations if any
-            if (data.cashAllocations && data.cashAllocations.length > 0 && user) {
-                await allocateCashFromWallet(
-                    user.email,
-                    data.cashAllocations
-                );
-            }
+            // // Handle cash allocations if any
+            // if (data.cashAllocations && data.cashAllocations.length > 0 && user) {
+            //     await allocateCashFromWallet(
+            //         user.email,
+            //         data.cashAllocations
+            //     );
+            // }
 
             return {
                 ...data,
@@ -290,7 +299,8 @@ export const useCustomBudgetActions = (user, transactions, options = {}) => {
     // UPDATE: Use generic hook with cash allocation change handling
     const updateMutation = useUpdateEntity({
         entityName: 'CustomBudget',
-        queryKeysToInvalidate: [QUERY_KEYS.CUSTOM_BUDGETS, QUERY_KEYS.CASH_WALLET, ['budget'], ['allBudgets']],
+        // queryKeysToInvalidate: [QUERY_KEYS.CUSTOM_BUDGETS, QUERY_KEYS.CASH_WALLET, ['budget'], ['allBudgets']],
+        queryKeysToInvalidate: [QUERY_KEYS.CUSTOM_BUDGETS, ['budget'], ['allBudgets']],
         onBeforeUpdate: async ({ id, data }) => {
             // CRITICAL: Use get() instead of list().find() for efficiency
             const existingBudget = await base44.entities.CustomBudget.get(id);
@@ -300,7 +310,7 @@ export const useCustomBudgetActions = (user, transactions, options = {}) => {
             }
 
             // Handle cash allocation changes
-            if (user) {
+            /* if (user) {
                 const oldAllocations = existingBudget.cashAllocations || [];
                 const newAllocations = data.cashAllocations || [];
 
@@ -319,7 +329,7 @@ export const useCustomBudgetActions = (user, transactions, options = {}) => {
                         );
                     }
                 }
-            }
+            } */
 
             return data;
         },
@@ -331,7 +341,8 @@ export const useCustomBudgetActions = (user, transactions, options = {}) => {
 
     const { handleDelete: handleDeleteBudget, deleteDirect, isDeleting } = useDeleteEntity({
         entityName: 'CustomBudget',
-        queryKeysToInvalidate: [QUERY_KEYS.CUSTOM_BUDGETS, QUERY_KEYS.TRANSACTIONS, QUERY_KEYS.CASH_WALLET],
+        // queryKeysToInvalidate: [QUERY_KEYS.CUSTOM_BUDGETS, QUERY_KEYS.TRANSACTIONS, QUERY_KEYS.CASH_WALLET],
+        queryKeysToInvalidate: [QUERY_KEYS.CUSTOM_BUDGETS, QUERY_KEYS.TRANSACTIONS],
         confirmTitle: "Delete Budget",
         confirmMessage: "Are you sure you want to delete this budget? This will also delete all associated transactions and return cash allocations to your wallet.",
         onBeforeDelete: async (budgetId) => {
@@ -351,7 +362,7 @@ export const useCustomBudgetActions = (user, transactions, options = {}) => {
             }
 
             // Return any remaining cash allocations to wallet
-            if (budget.cashAllocations && budget.cashAllocations.length > 0 && user) {
+            /* if (budget.cashAllocations && budget.cashAllocations.length > 0 && user) {
                 const remaining = calculateRemainingCashAllocations(budget, transactions);
                 if (remaining.length > 0) {
                     console.log(`Returning ${remaining.length} cash allocations to wallet for budget ${budgetId}`);
@@ -360,10 +371,11 @@ export const useCustomBudgetActions = (user, transactions, options = {}) => {
                         remaining
                     );
                 }
-            }
+            } */
         },
         onAfterSuccess: () => {
             // Redirect to Budgets page after successful deletion
+            // Potentially refactor this to intelligently go back to whatever was the location before entering the budget
             window.location.href = createPageUrl("Budgets");
         }
     });
@@ -371,7 +383,8 @@ export const useCustomBudgetActions = (user, transactions, options = {}) => {
     // STATUS CHANGE: Use generic update hook with special handling for completion/reactivation
     const updateStatusMutation = useUpdateEntity({
         entityName: 'CustomBudget',
-        queryKeysToInvalidate: [QUERY_KEYS.CUSTOM_BUDGETS, QUERY_KEYS.CASH_WALLET],
+        // queryKeysToInvalidate: [QUERY_KEYS.CUSTOM_BUDGETS, QUERY_KEYS.CASH_WALLET],
+        queryKeysToInvalidate: [QUERY_KEYS.CUSTOM_BUDGETS],
         onBeforeUpdate: async ({ id, data }) => {
             // CRITICAL: Use get() instead of list().find()
             const budget = await base44.entities.CustomBudget.get(id);
@@ -382,7 +395,7 @@ export const useCustomBudgetActions = (user, transactions, options = {}) => {
 
             if (data.status === 'completed') {
                 // When completing: return remaining cash to wallet
-                if (budget.cashAllocations && budget.cashAllocations.length > 0 && user) {
+                /* if (budget.cashAllocations && budget.cashAllocations.length > 0 && user) {
                     const remaining = calculateRemainingCashAllocations(budget, transactions);
                     if (remaining.length > 0) {
                         await returnCashToWallet(
@@ -390,7 +403,7 @@ export const useCustomBudgetActions = (user, transactions, options = {}) => {
                             remaining
                         );
                     }
-                }
+                } */
 
                 // Calculate actual spent amount
                 const budgetTransactions = transactions.filter(t => t.customBudgetId === id && t.isPaid);
@@ -400,7 +413,7 @@ export const useCustomBudgetActions = (user, transactions, options = {}) => {
                     status: 'completed',
                     allocatedAmount: actualSpent,
                     originalAllocatedAmount: budget.originalAllocatedAmount || budget.allocatedAmount,
-                    cashAllocations: []
+                    // cashAllocations: []
                 };
             } else if (data.status === 'active') {
                 // When reactivating: restore original allocated amount, but do NOT restore cash allocations
@@ -408,7 +421,7 @@ export const useCustomBudgetActions = (user, transactions, options = {}) => {
                     status: 'active',
                     allocatedAmount: budget.originalAllocatedAmount || budget.allocatedAmount,
                     originalAllocatedAmount: null,
-                    cashAllocations: []
+                    // cashAllocations: []
                 };
             } else {
                 return data;

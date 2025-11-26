@@ -9,30 +9,14 @@ import { useSettings } from "@/components/utils/SettingsContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import CategorySelect from "@/components/ui/CategorySelect";
+import { parseDate, formatDate } from "@/components/utils/dateUtils";
 
-// Replaces the old ImportReview component
-// export default function CategorizeReview({ data, categories, onUpdateRow, onDeleteRow }) {
-// export default function CategorizeReview({ data, categories, customBudgets = [], onUpdateRow, onDeleteRow }) {
 export default function CategorizeReview({ data, categories, customBudgets = [], onUpdateRow, onDeleteRows }) {
     const { settings } = useSettings();
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
     const [selectedIndices, setSelectedIndices] = useState(new Set());
 
-    // SORTING LOGIC: Needs (A-Z) -> Wants (A-Z) -> Savings (A-Z) -> Others
-    {/* const sortedCategories = useMemo(() => {
-        const priorityOrder = { needs: 1, wants: 2, savings: 3 };
-
-        return [...categories].sort((a, b) => {
-            const pA = priorityOrder[a.priority] || 4;
-            const pB = priorityOrder[b.priority] || 4;
-
-            if (pA !== pB) return pA - pB;
-            return a.name.localeCompare(b.name);
-        });
-    }, [categories]); */}
-    {/* // Filter active custom budgets for the dropdown
     // Requires refactor to allow intelligent filter, not just "active" CBs. For back-filling. */}
-
     // --- Sorting Logic ---
     const handleSort = (key) => {
         let direction = 'asc';
@@ -87,9 +71,25 @@ export default function CategorizeReview({ data, categories, customBudgets = [],
     };
 
     // --- Filter Active Budgets ---
-    const activeCustomBudgets = useMemo(() => {
-        return customBudgets.filter(cb => cb.status === 'active' || cb.status === 'planned');
-    }, [customBudgets]);
+    // const activeCustomBudgets = useMemo(() => {
+    //     return customBudgets.filter(cb => cb.status === 'active' || cb.status === 'planned');
+    // }, [customBudgets]);
+    // --- Sort Custom Budgets for Dropdown ---
+    // Show ALL budgets, but sort by relevance to the import dates.
+    const sortedCustomBudgets = useMemo(() => {
+        if (data.length === 0) return customBudgets;
+
+        // Safe date parsing using dateUtils
+        const timestamps = data.map(d => parseDate(d.date)?.getTime()).filter(t => t);
+        const avgTime = timestamps.length > 0 ? (timestamps.reduce((a, b) => a + b, 0) / timestamps.length) : new Date().getTime();
+
+        return [...customBudgets].sort((a, b) => {
+            // Compare distance from budget start to average import date
+            const timeA = parseDate(a.startDate)?.getTime() || 0;
+            const timeB = parseDate(b.startDate)?.getTime() || 0;
+            return Math.abs(timeA - avgTime) - Math.abs(timeB - avgTime);
+        });
+    }, [customBudgets, data]);
 
     // Helper for Sort Icons
     const getSortIcon = (key) => {
@@ -220,13 +220,21 @@ export default function CategorizeReview({ data, categories, customBudgets = [],
                                                     <SelectItem value="system">
                                                         <div className="flex items-center">
                                                             <Star className="w-3 h-3 text-blue-600 mr-2" />
-                                                            <span>{row.financial_priority ? row.financial_priority.charAt(0).toUpperCase() + row.financial_priority.slice(1) : 'System Budget'}</span>
+                                                            <span>
+                                                                {row.financial_priority ? row.financial_priority.charAt(0).toUpperCase() + row.financial_priority.slice(1) : 'System Budget'}
+                                                                {(() => {
+                                                                    const d = parseDate(row.date);
+                                                                    if (!d) return null;
+                                                                    const isCurr = d.getFullYear() === new Date().getFullYear();
+                                                                    return <span className="ml-1 text-gray-400 font-normal">({formatDate(d, isCurr ? "MMM" : "MMM yyyy")})</span>;
+                                                                })()}
+                                                            </span>
                                                         </div>
                                                     </SelectItem>
-                                                    {activeCustomBudgets.length > 0 && (
+                                                    {sortedCustomBudgets.length > 0 && (
                                                         <SelectGroup>
                                                             <SelectLabel>Custom Budgets</SelectLabel>
-                                                            {activeCustomBudgets.map(cb => (
+                                                            {sortedCustomBudgets.map(cb => (
                                                                 <SelectItem key={cb.id} value={cb.id}>
                                                                     <div className="flex items-center">
                                                                         {cb.status === 'active' && <Clock className="w-3 h-3 text-orange-500 mr-2" />}

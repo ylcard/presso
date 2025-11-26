@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Pencil, Trash2, Calendar, Receipt, CheckCircle, Archive } from "lucide-react";
+import { Pencil, Trash2, Calendar, Receipt, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -29,7 +29,7 @@ export default function CustomBudgetCard({
         // Calculate stats inline (same logic as getCustomBudgetStats)
         const budgetTransactions = transactions.filter(t => t.customBudgetId === budget.id);
 
-        const digitalTransactions = budgetTransactions.filter(
+        /* const digitalTransactions = budgetTransactions.filter(
             t => !t.isCashTransaction || t.cashTransactionType !== 'expense_from_wallet'
         );
         const cashTransactions = budgetTransactions.filter(
@@ -67,10 +67,21 @@ export default function CustomBudgetCard({
 
         const totalAllocatedUnits = digitalAllocated + cashAllocations.reduce((sum, alloc) => sum + alloc.amount, 0);
         const totalSpentUnits = digitalSpent + Object.values(cashByCurrency).reduce((sum, cashData) => sum + cashData.spent, 0);
-        const totalUnpaidUnits = digitalUnpaid;
+        const totalUnpaidUnits = digitalUnpaid; */
+
+        // REFACTOR: Unified Consumption Model
+        // We no longer separate cash vs digital. A budget is just a single limit.
+        const allocated = budget.allocatedAmount || 0;
+
+        const expenseTransactions = budgetTransactions.filter(t => t.type === 'expense');
+        const spent = expenseTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+
+        const unpaid = expenseTransactions
+            .filter(t => !t.isPaid)
+            .reduce((sum, t) => sum + (t.amount || 0), 0);
 
         return {
-            digital: {
+            /* digital: {
                 allocated: digitalAllocated,
                 spent: digitalSpent,
                 unpaid: digitalUnpaid,
@@ -79,7 +90,11 @@ export default function CustomBudgetCard({
             cashByCurrency,
             totalAllocatedUnits,
             totalSpentUnits,
-            totalUnpaidUnits,
+            totalUnpaidUnits, */
+            allocated,
+            spent,
+            remaining: allocated - spent,
+            unpaid,
             totalTransactionCount: budgetTransactions.length
         };
     }, [budget, transactions]);
@@ -91,7 +106,7 @@ export default function CustomBudgetCard({
     const isCompleted = budget.status === 'completed';
 
     // Calculate totals from separated digital and cash with safety checks
-    let totalBudget = stats?.digital?.allocated || 0;
+    /* let totalBudget = stats?.digital?.allocated || 0;
     let totalSpent = stats?.digital?.spent || 0;
 
     if (stats?.cashByCurrency) {
@@ -99,7 +114,9 @@ export default function CustomBudgetCard({
             totalBudget += cashData?.allocated || 0;
             totalSpent += cashData?.spent || 0;
         });
-    }
+    } */
+    const totalBudget = stats?.allocated || 0;
+    const totalSpent = stats?.spent || 0;
 
     const percentageUsed = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
 
@@ -179,9 +196,11 @@ export default function CustomBudgetCard({
                             {isCompleted ? (
                                 <>
                                     <div>
-                                        <p className="text-xs text-gray-500 mb-1">Spent (Digital)</p>
+                                        {/* <p className="text-xs text-gray-500 mb-1">Spent (Digital)</p> */}
+                                        <p className="text-xs text-gray-500 mb-1">Total Spent</p>
                                         <p className="font-bold text-gray-900">
-                                            {formatCurrency(stats?.digital?.spent || 0, settings)}
+                                            {/* {formatCurrency(stats?.digital?.spent || 0, settings)} */}
+                                            {formatCurrency(totalSpent, settings)}
                                         </p>
                                     </div>
                                     <div>
@@ -194,11 +213,13 @@ export default function CustomBudgetCard({
                             ) : (
                                 <>
                                     <div>
-                                        <p className="text-xs text-gray-500 mb-1">Remaining (Digital)</p>
+                                        {/* <p className="text-xs text-gray-500 mb-1">Remaining (Digital)</p> */}
+                                        <p className="text-xs text-gray-500 mb-1">Remaining</p>
                                         <p className="font-bold text-gray-900">
-                                            {formatCurrency(stats?.digital?.remaining || 0, settings)}
+                                            {/* {formatCurrency(stats?.digital?.remaining || 0, settings)} */}
+                                            {formatCurrency(stats?.remaining || 0, settings)}
                                         </p>
-                                        {stats?.cashByCurrency && Object.keys(stats.cashByCurrency).length > 0 && (
+                                        {/* {stats?.cashByCurrency && Object.keys(stats.cashByCurrency).length > 0 && (
                                             <div className="mt-1 space-y-0.5">
                                                 {Object.entries(stats.cashByCurrency).map(([currency, data]) => (
                                                     <p key={currency} className="text-xs text-gray-600">
@@ -206,7 +227,7 @@ export default function CustomBudgetCard({
                                                     </p>
                                                 ))}
                                             </div>
-                                        )}
+                                        )} */}
                                     </div>
                                     <div>
                                         <p className="text-xs text-gray-500 mb-1">Total Budget</p>
@@ -223,9 +244,11 @@ export default function CustomBudgetCard({
                                 <Receipt className="w-4 h-4" />
                                 <span>{stats?.totalTransactionCount || 0} expenses</span>
                             </div>
-                            {!isCompleted && (stats?.digital?.unpaid || 0) > 0 && (
+                            {/* {!isCompleted && (stats?.digital?.unpaid || 0) > 0 && ( */}
+                            {!isCompleted && (stats?.unpaid || 0) > 0 && (
                                 <Badge variant="outline" className="text-orange-600 border-orange-600">
-                                    {formatCurrency(stats.digital.unpaid, settings)} unpaid
+                                    {/* {formatCurrency(stats.digital.unpaid, settings)} unpaid */}
+                                    {formatCurrency(stats.unpaid, settings)} unpaid
                                 </Badge>
                             )}
                         </div>

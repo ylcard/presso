@@ -10,20 +10,18 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import { ArrowLeft, DollarSign, TrendingDown, CheckCircle, Trash2, AlertCircle } from "lucide-react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useSettings } from "../components/utils/SettingsContext";
 import { useConfirm } from "../components/ui/ConfirmDialogProvider";
-import { formatCurrency, getCurrencySymbol } from "../components/utils/currencyUtils";
+import { formatCurrency } from "../components/utils/currencyUtils";
 import { formatDate, parseDate } from "../components/utils/dateUtils";
 import {
     getCustomBudgetStats,
     getSystemBudgetStats,
     getCustomBudgetAllocationStats,
 } from "../components/utils/financialCalculations";
-import { useCashWallet } from "../components/hooks/useBase44Entities";
 import { useTransactionActions } from "../components/hooks/useActions";
-import { calculateRemainingCashAllocations, returnCashToWallet } from "../components/utils/cashAllocationUtils";
 import { useCustomBudgetActions } from "../components/hooks/useActions";
 import { usePeriod } from "../components/hooks/usePeriod";
 import { useMonthlyIncome } from "../components/hooks/useDerivedData";
@@ -33,174 +31,6 @@ import AllocationManager from "../components/custombudgets/AllocationManager";
 import BudgetCard from "../components/budgets/BudgetCard";
 import CustomBudgetForm from "../components/custombudgets/CustomBudgetForm";
 import ExpensesCardContent from "../components/budgetdetail/ExpensesCardContent";
-import { QUERY_KEYS } from "../components/hooks/queryKeys";
-
-// Filters paid expenses by selected month
-/* const getCustomBudgetStats = (customBudget, transactions, monthStart, monthEnd) => {
-    const budgetTransactions = transactions.filter(t => t.customBudgetId === customBudget.id);
-
-    // Parse month boundaries for filtering paid expenses
-    const monthStartDate = parseDate(monthStart);
-    const monthEndDate = parseDate(monthEnd);
-
-    // Separate digital and cash transactions
-    const digitalTransactions = budgetTransactions.filter(
-        t => !t.isCashTransaction || t.cashTransactionType !== 'expense_from_wallet'
-    );
-    const cashTransactions = budgetTransactions.filter(
-        t => t.isCashTransaction && t.cashTransactionType === 'expense_from_wallet'
-    );
-
-    // Calculate digital stats - ONLY include paid expenses that were paid within the selected month
-    const digitalAllocated = customBudget.allocatedAmount || 0;
-    const digitalSpent = digitalTransactions
-        .filter(t => {
-            if (t.type !== 'expense') return false;
-            if (!t.isPaid || !t.paidDate) return false;
-
-            // Filter by paidDate within selected month
-            const paidDate = parseDate(t.paidDate);
-            return paidDate >= monthStartDate && paidDate <= monthEndDate;
-        })
-        .reduce((sum, t) => sum + (t.originalAmount || t.amount), 0);
-
-    const digitalUnpaid = digitalTransactions
-        .filter(t => t.type === 'expense' && !t.isPaid)
-        .reduce((sum, t) => sum + (t.originalAmount || t.amount), 0);
-    const digitalRemaining = digitalAllocated - digitalSpent;
-
-    // Calculate cash stats by currency - ONLY include paid expenses that were paid within the selected month
-    const cashByCurrency = {};
-    const cashAllocations = customBudget.cashAllocations || [];
-
-    cashAllocations.forEach(allocation => {
-        const currencyCode = allocation.currencyCode;
-        const allocated = allocation.amount || 0;
-
-        const spent = cashTransactions
-            .filter(t => {
-                if (t.type !== 'expense') return false;
-                if (t.cashCurrency !== currencyCode) return false;
-                if (!t.isPaid || !t.paidDate) return false;
-
-                // Filter by paidDate within selected month
-                const paidDate = parseDate(t.paidDate);
-                return paidDate >= monthStartDate && paidDate <= monthEndDate;
-            })
-            .reduce((sum, t) => sum + (t.cashAmount || 0), 0);
-
-        const remaining = allocated - spent;
-
-        cashByCurrency[currencyCode] = {
-            allocated,
-            spent,
-            remaining
-        };
-    });
-
-    // Calculate unit-based totals
-    const totalAllocatedUnits = digitalAllocated + cashAllocations.reduce((sum, alloc) => sum + alloc.amount, 0);
-    const totalSpentUnits = digitalSpent + Object.values(cashByCurrency).reduce((sum, cashData) => sum + cashData.spent, 0);
-    const totalUnpaidUnits = digitalUnpaid;
-
-    return {
-        digital: {
-            allocated: digitalAllocated,
-            spent: digitalSpent,
-            unpaid: digitalUnpaid,
-            remaining: digitalRemaining
-        },
-        cashByCurrency,
-        totalAllocatedUnits,
-        totalSpentUnits,
-        totalUnpaidUnits,
-        totalTransactionCount: budgetTransactions.length
-    };
-};
-
-// Helper to calculate system budget stats using expenseCalculations functions
-const getSystemBudgetStats = (systemBudget, transactions, categories, allCustomBudgets, startDate, endDate) => {
-    let paidAmount = 0;
-    let unpaidAmount = 0;
-
-    if (systemBudget.systemBudgetType === 'needs') {
-        paidAmount = getPaidNeedsExpenses(transactions, categories, startDate, endDate, allCustomBudgets);
-        unpaidAmount = getUnpaidNeedsExpenses(transactions, categories, startDate, endDate, allCustomBudgets);
-    } else if (systemBudget.systemBudgetType === 'wants') {
-        const directPaid = getDirectPaidWantsExpenses(transactions, categories, startDate, endDate, allCustomBudgets);
-        const customPaid = getPaidCustomBudgetExpenses(transactions, allCustomBudgets, startDate, endDate);
-        paidAmount = directPaid + customPaid;
-
-        const directUnpaid = getDirectUnpaidWantsExpenses(transactions, categories, startDate, endDate, allCustomBudgets);
-        const customUnpaid = getUnpaidCustomBudgetExpenses(transactions, allCustomBudgets, startDate, endDate);
-        unpaidAmount = directUnpaid + customUnpaid;
-    } else if (systemBudget.systemBudgetType === 'savings') {
-        paidAmount = getPaidSavingsExpenses(transactions, categories, startDate, endDate, allCustomBudgets);
-        unpaidAmount = 0;
-    }
-
-    const totalBudget = systemBudget.budgetAmount || 0;
-    const totalSpent = paidAmount + unpaidAmount;
-    const remaining = totalBudget - totalSpent;
-    const percentageUsed = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
-
-    return {
-        paid: {
-            totalBaseCurrencyAmount: paidAmount,
-            foreignCurrencyDetails: []
-        },
-        unpaid: {
-            totalBaseCurrencyAmount: unpaidAmount,
-            foreignCurrencyDetails: []
-        },
-        totalSpent,
-        paidAmount,
-        unpaidAmount,
-        remaining,
-        percentageUsed,
-        transactionCount: 0 // Could be calculated if needed
-    };
-};
-
-// Helper for custom budget allocation stats
-const getCustomBudgetAllocationStats = (customBudget, allocations, transactions) => {
-    const budgetTransactions = transactions.filter(t => t.customBudgetId === customBudget.id);
-
-    // Calculate total allocated
-    const totalAllocated = allocations.reduce((sum, a) => sum + a.allocatedAmount, 0);
-    const unallocated = customBudget.allocatedAmount - totalAllocated;
-
-    // Calculate spending per category
-    const categorySpending = {};
-    allocations.forEach(allocation => {
-        const spent = budgetTransactions
-            .filter(t => t.type === 'expense' && t.category_id === allocation.categoryId)
-            .reduce((sum, t) => sum + t.amount, 0);
-
-        const remaining = allocation.allocatedAmount - spent;
-
-        categorySpending[allocation.categoryId] = {
-            allocated: allocation.allocatedAmount,
-            spent,
-            remaining,
-            percentageUsed: allocation.allocatedAmount > 0 ? (spent / allocation.allocatedAmount) * 100 : 0
-        };
-    });
-
-    // Calculate unallocated spending
-    const allocatedCategoryIds = allocations.map(a => a.categoryId);
-    const unallocatedSpent = budgetTransactions
-        .filter(t => t.type === 'expense' && (!t.category_id || !allocatedCategoryIds.includes(t.category_id)))
-        .reduce((sum, t) => sum + t.amount, 0);
-
-    return {
-        totalAllocated,
-        unallocated,
-        unallocatedSpent,
-        unallocatedRemaining: unallocated - unallocatedSpent,
-        categorySpending
-    };
-}; */
 
 export default function BudgetDetail() {
     const { settings, user } = useSettings();
@@ -212,11 +42,8 @@ export default function BudgetDetail() {
 
     const { monthStart, monthEnd } = usePeriod();
 
-    // const urlParams = new URLSearchParams(window.location.search);
     const urlParams = new URLSearchParams(location.search);
     const budgetId = urlParams.get('id');
-
-    const { cashWallet } = useCashWallet(user);
 
     useEffect(() => {
         if (budgetId) {
@@ -297,15 +124,14 @@ export default function BudgetDetail() {
         enabled: !!budgetId && budget && !budget.isSystemBudget,
     });
 
-    const budgetActions = useCustomBudgetActions(user, transactions, cashWallet);
+    const budgetActions = useCustomBudgetActions({ transactions });
 
-    const transactionActions = useTransactionActions(null, null, cashWallet);
+    const transactionActions = useTransactionActions();
 
     const createTransactionMutation = useMutation({
         mutationFn: (data) => base44.entities.Transaction.create(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['transactions'] });
-            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CASH_WALLET] });
             setShowQuickAdd(false);
         },
     });
@@ -336,39 +162,13 @@ export default function BudgetDetail() {
             const budgetToComplete = budget;
             if (!budgetToComplete) return;
 
-            if (budgetToComplete.cashAllocations && budgetToComplete.cashAllocations.length > 0 && user) {
-                const remaining = calculateRemainingCashAllocations(budgetToComplete, transactions);
-                if (remaining.length > 0) {
-                    await returnCashToWallet(
-                        user.email,
-                        remaining
-                    );
-                }
-            }
-
-            // Calculate the TOTAL original budget (Digital + All Cash Allocations) before we wipe them
-            // const currentDigitalAllocation = budgetToComplete.allocatedAmount || 0;
-            // const currentCashAllocation = (budgetToComplete.cashAllocations || []).reduce((sum, a) => sum + (a.amount || 0), 0);
-            // const totalOriginalBudget = currentDigitalAllocation + currentCashAllocation;
-
-            // const actualSpent = getCustomBudgetStats(budgetToComplete, transactions, monthStart, monthEnd).totalSpentUnits;
-
             await base44.entities.CustomBudget.update(id, {
-                // status: 'completed',
-                // allocatedAmount: actualSpent,
-                // originalAllocatedAmount: budgetToComplete.originalAllocatedAmount || budgetToComplete.allocatedAmount,
-                // originalAllocatedAmount: budgetToComplete.originalAllocatedAmount || totalOriginalBudget,
-                // cashAllocations: []
                 status: 'completed'
-                // We DO NOT wipe allocations anymore. 
-                // This preserves the "Budget vs Actual" comparison for historical viewing.
             });
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['budget', budgetId] });
             queryClient.invalidateQueries({ queryKey: ['customBudgets'] });
-            queryClient.invalidateQueries({ queryKey: ['cashWallet'] });
-            queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.CASH_WALLET] });
         },
     });
 
@@ -380,9 +180,6 @@ export default function BudgetDetail() {
             // Simply set back to active
             await base44.entities.CustomBudget.update(id, {
                 status: 'active',
-                // allocatedAmount: budgetToReactivate.originalAllocatedAmount || budgetToReactivate.allocatedAmount,
-                // originalAllocatedAmount: null,
-                // cashAllocations: []
             });
         },
         onSuccess: () => {
@@ -414,7 +211,11 @@ export default function BudgetDetail() {
                 if (t.type !== 'expense' || !t.category_id) return false;
 
                 const category = categories.find(c => c.id === t.category_id);
-                if (!category || category.priority !== budget.systemBudgetType) return false;
+
+                // Use transaction priority if available, otherwise fallback to category default
+                const effectivePriority = t.financial_priority || (category ? category.priority : null);
+
+                if (effectivePriority !== budget.systemBudgetType) return false;
 
                 if (t.customBudgetId && allCustomBudgetIds.includes(t.customBudgetId)) {
                     return false;
@@ -479,15 +280,10 @@ export default function BudgetDetail() {
         if (!budget) return null;
 
         if (budget.isSystemBudget) {
-            // return getSystemBudgetStats(budget, transactions, categories, allCustomBudgets, budget.startDate, budget.endDate);
             return getSystemBudgetStats(budget, transactions, categories, allCustomBudgets, budget.startDate, budget.endDate, monthlyIncome)
         } else {
-            // return getCustomBudgetStats(budget, transactions, monthStart, monthEnd);
-            // return getCustomBudgetStats(budget, transactions, null, null);
             return getCustomBudgetStats(budget, transactions, null, null, settings.baseCurrency);
         }
-        // }, [budget, transactions, categories, allCustomBudgets, monthStart, monthEnd]);
-        // }, [budget, transactions, categories, allCustomBudgets, monthStart, monthEnd, monthlyIncome]);
     }, [budget, transactions, categories, allCustomBudgets, monthStart, monthEnd, monthlyIncome, settings.baseCurrency]);
 
     const allocationStats = useMemo(() => {
@@ -595,21 +391,8 @@ export default function BudgetDetail() {
         totalRemaining = stats.remaining || 0;
     } else {
         totalBudget = stats?.totalAllocatedUnits || 0;
-
-        // totalRemaining = stats?.digital?.remaining || 0;
-        // if (stats?.cashByCurrency) {
-        //     Object.values(stats.cashByCurrency).forEach(cashData => {
-        //         totalRemaining += cashData?.remaining || 0;
-        //     });
-        // }
         totalRemaining = totalBudget - (stats?.totalSpentUnits || 0);
     }
-
-    const hasBothDigitalAndCash = !budget.isSystemBudget &&
-        stats?.digital !== undefined &&
-        stats?.cashByCurrency &&
-        Object.keys(stats.cashByCurrency).length > 0 &&
-        (stats.digital.allocated > 0 || Object.values(stats.cashByCurrency).some(cashData => cashData.allocated > 0));
 
     return (
         <div className="min-h-screen p-4 md:p-8">
@@ -658,7 +441,7 @@ export default function BudgetDetail() {
                                             onSubmit={handleEditBudget}
                                             onCancel={() => budgetActions.setShowForm(false)}
                                             isSubmitting={budgetActions.isSubmitting}
-                                            cashWallet={cashWallet}
+                                            // cashWallet={cashWallet}
                                             baseCurrency={settings.baseCurrency}
                                             settings={settings}
                                         />
@@ -704,38 +487,11 @@ export default function BudgetDetail() {
                             <DollarSign className="w-4 h-4 text-blue-500" />
                         </CardHeader>
                         <CardContent>
-                            {hasBothDigitalAndCash ? (
-                                <div className="space-y-3">
-                                    <div className="text-center pb-2 border-b">
-                                        <p className="text-sm text-gray-500 mb-1">Total</p>
-                                        <div className="text-lg font-bold text-gray-900">
-                                            {formatCurrency(totalBudget, settings)}
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div className="flex flex-col items-center justify-center">
-                                            <p className="text-xs text-gray-500 mb-1">Card</p>
-                                            <div className="text-base font-semibold text-gray-900">
-                                                {formatCurrency(stats.digital.allocated, settings)}
-                                            </div>
-                                        </div>
-                                        <div className="flex flex-col items-center justify-center">
-                                            <p className="text-xs text-gray-500 mb-1">Cash</p>
-                                            {Object.entries(stats.cashByCurrency).map(([currency, data]) => (
-                                                <div key={currency} className="text-base font-semibold text-gray-900">
-                                                    {formatCurrency(data.allocated, { ...settings, currencySymbol: getCurrencySymbol(currency) })}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
+                            <div className="text-center">
+                                <div className="text-lg font-bold text-gray-900">
+                                    {formatCurrency(totalBudget, settings)}
                                 </div>
-                            ) : (
-                                <div className="text-center">
-                                    <div className="text-lg font-bold text-gray-900">
-                                        {formatCurrency(totalBudget, settings)}
-                                    </div>
-                                </div>
-                            )}
+                            </div>
                         </CardContent>
                     </Card>
 
@@ -755,38 +511,11 @@ export default function BudgetDetail() {
                             <CheckCircle className="w-4 h-4 text-green-500" />
                         </CardHeader>
                         <CardContent>
-                            {hasBothDigitalAndCash ? (
-                                <div className="space-y-3">
-                                    <div className="text-center pb-2 border-b">
-                                        <p className="text-sm text-gray-500 mb-1">Total</p>
-                                        <div className={`text-lg font-bold ${totalRemaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                            {formatCurrency(totalRemaining, settings)}
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div className="flex flex-col items-center justify-center">
-                                            <p className="text-xs text-gray-500 mb-1">Card</p>
-                                            <div className={`text-base font-semibold ${stats.digital.remaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                {formatCurrency(stats.digital.remaining, settings)}
-                                            </div>
-                                        </div>
-                                        <div className="flex flex-col items-center justify-center">
-                                            <p className="text-xs text-gray-500 mb-1">Cash</p>
-                                            {Object.entries(stats.cashByCurrency).map(([currency, data]) => (
-                                                <div key={currency} className={`text-base font-semibold ${data.remaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                    {formatCurrency(data.remaining, { ...settings, currencySymbol: getCurrencySymbol(currency) })}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
+                            <div className="text-center">
+                                <div className={`text-lg font-bold ${totalRemaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                    {formatCurrency(totalRemaining, settings)}
                                 </div>
-                            ) : (
-                                <div className="text-center">
-                                    <div className={`text-lg font-bold ${totalRemaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                        {formatCurrency(totalRemaining, settings)}
-                                    </div>
-                                </div>
-                            )}
+                            </div>
                         </CardContent>
                     </Card>
                 </div>

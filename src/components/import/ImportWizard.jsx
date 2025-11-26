@@ -229,8 +229,8 @@ export default function ImportWizard({ onSuccess }) {
                 category: catResult.categoryName || 'Uncategorized',
                 categoryId: catResult.categoryId || null,
                 financial_priority: catResult.priority || 'wants',
-                isPaid: false, // CSV usually doesn't imply paid status unless specified, default false
-                paidDate: null,
+                isPaid: true, // Assume bank import data is already paid/settled
+                paidDate: row[mappings.date],
                 customBudgetId: null,
                 originalData: row
             };
@@ -249,8 +249,7 @@ export default function ImportWizard({ onSuccess }) {
 
                 return {
                     title: item.title,
-                    // amount: item.amount,
-                    amount: finalAmount, // Save as Signed Number (-50.00)
+                    amount: finalAmount,
                     type: item.type,
                     date: new Date(item.date).toISOString().split('T')[0],
                     category_id: isExpense ? (item.categoryId || categories.find(c => c.name === 'Uncategorized')?.id) : null,

@@ -728,11 +728,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Keep for Priority
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
-import { RefreshCw, AlertCircle, Clock, CheckCircle, Check, ChevronsUpDown } from "lucide-react";
+import { RefreshCw, AlertCircle, Check, ChevronsUpDown } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
 import { useConfirm } from "../ui/ConfirmDialogProvider";
@@ -742,10 +742,10 @@ import CategorySelect from "../ui/CategorySelect";
 import AnimatePresenceContainer from "../ui/AnimatePresenceContainer";
 import { useSettings } from "../utils/SettingsContext";
 import { useExchangeRates } from "../hooks/useExchangeRates";
-import { getCurrencyBalance, getRemainingAllocatedCash } from "../utils/cashAllocationUtils";
+// import { getCurrencyBalance, getRemainingAllocatedCash } from "../utils/cashAllocationUtils";
 import { getCurrencySymbol } from "../utils/currencyUtils";
 import { calculateConvertedAmount, getRateForDate, getRateDetailsForDate } from "../utils/currencyCalculations";
-import { SUPPORTED_CURRENCIES, FINANCIAL_PRIORITIES } from "../utils/constants";
+import { SUPPORTED_CURRENCIES } from "../utils/constants";
 import { formatDateString, isDateInRange, formatDate } from "../utils/dateUtils";
 import { differenceInDays, parseISO, startOfDay } from "date-fns";
 import { normalizeAmount } from "../utils/generalUtils";
@@ -759,7 +759,7 @@ export default function TransactionFormContent({
     onSubmit,
     onCancel,
     isSubmitting = false,
-    cashWallet = null,
+    // cashWallet = null,
     transactions = []
 }) {
     const { settings, user } = useSettings();
@@ -803,7 +803,7 @@ export default function TransactionFormContent({
                 originalCurrency: initialTransaction.originalCurrency || settings?.baseCurrency || 'USD',
                 type: initialTransaction.type || 'expense',
                 category_id: initialTransaction.category_id || '',
-                financial_priority: initialTransaction.financial_priority || '', // ADDED 20-Jan-2025
+                financial_priority: initialTransaction.financial_priority || '',
                 date: initialTransaction.date || formatDateString(new Date()),
                 isPaid: initialTransaction.type === 'expense' ? (initialTransaction.isPaid || false) : false,
                 paidDate: initialTransaction.paidDate || '',
@@ -832,11 +832,6 @@ export default function TransactionFormContent({
 
     const isForeignCurrency = formData.originalCurrency !== (settings?.baseCurrency || 'USD');
 
-    // Proactively refresh exchange rates for foreign currencies
-    // REMOVED: Proactively refresh exchange rates for foreign currencies
-    // We now use a hybrid approach: Manual trigger + Fetch on Submit
-    // useEffect(() => { ... }, ...);
-
     // Get currency symbol for the selected currency
     const selectedCurrencySymbol = SUPPORTED_CURRENCIES.find(
         c => c.code === formData.originalCurrency
@@ -845,12 +840,18 @@ export default function TransactionFormContent({
     // Auto-set Priority based on Category
     useEffect(() => {
         if (formData.category_id) {
+            // Prevent overwriting existing priority on initial load of an edit
+            if (initialTransaction && formData.category_id === initialTransaction.category_id) {
+                // If we are editing and the category hasn't changed, respect the saved priority
+                return;
+            }
+
             const selectedCategory = categories.find(c => c.id === formData.category_id);
             if (selectedCategory && selectedCategory.priority) {
                 setFormData(prev => ({ ...prev, financial_priority: selectedCategory.priority }));
             }
         }
-    }, [formData.category_id, categories]);
+    }, [formData.category_id, categories, initialTransaction]);
 
     // Auto-Categorize based on Title
     useEffect(() => {
@@ -909,7 +910,8 @@ export default function TransactionFormContent({
             // Find a matching system budget (case-insensitive)
             const matchingSystemBudget = allBudgets.find(b =>
                 b.isSystemBudget &&
-                b.name.toLowerCase() === formData.financial_priority.toLowerCase()
+                b.name.toLowerCase() === formData.financial_priority.toLowerCase() &&
+                isDateInRange(formData.date, b.startDate, b.endDate)
             );
 
             if (matchingSystemBudget) {
@@ -922,9 +924,17 @@ export default function TransactionFormContent({
                 if (canAutoSwitch) {
                     setFormData(prev => ({ ...prev, customBudgetId: matchingSystemBudget.id }));
                 }
+            } else {
+                // If we can't find a matching system budget (e.g. future month not generated),
+                // and we are currently pointing to a system budget, we should clear it to avoid 
+                // pointing to the WRONG month (like November budget for January expense).
+                const currentBudget = allBudgets.find(b => b.id === formData.customBudgetId);
+                if (currentBudget && currentBudget.isSystemBudget) {
+                    setFormData(prev => ({ ...prev, customBudgetId: '' }));
+                }
             }
         }
-    }, [formData.financial_priority, allBudgets]);
+    }, [formData.financial_priority, allBudgets, formData.date]);
 
     // Filter budgets to show active + planned statuses + relevant completed budgets
     // This allows linking expenses to future/past budgets while keeping the list manageable
@@ -985,7 +995,7 @@ export default function TransactionFormContent({
 
 
     // Calculate available cash balance dynamically
-    const availableBalance = (() => {
+    /* const availableBalance = (() => {
         if (!formData.isCashExpense) return 0;
 
         const currency = formData.originalCurrency;
@@ -1000,7 +1010,7 @@ export default function TransactionFormContent({
 
         // Get total cash wallet balance for the selected currency
         return getCurrencyBalance(cashWallet, currency);
-    })();
+    })(); */
 
     const executeRefresh = async (force) => {
         const result = await refreshRates(
@@ -1055,20 +1065,21 @@ export default function TransactionFormContent({
         }
 
         // Check if sufficient cash for cash expenses
-        if (formData.isCashExpense && originalAmount > availableBalance) {
+        /* if (formData.isCashExpense && originalAmount > availableBalance) {
             setValidationError(
                 formData.customBudgetId
                     ? "You don't have enough allocated cash in this budget for this expense."
                     : "You don't have enough cash in your wallet for this expense."
             );
             return;
-        }
+        } */
 
         let finalAmount = originalAmount;
         let exchangeRateUsed = null;
 
         // Perform currency conversion if needed
-        if (isForeignCurrency && !formData.isCashExpense) {
+        // if (isForeignCurrency && !formData.isCashExpense) {
+        if (isForeignCurrency) {
             let sourceRate = getRateForDate(exchangeRates, formData.originalCurrency, formData.date);
             let targetRate = getRateForDate(exchangeRates, settings?.baseCurrency || 'USD', formData.date);
 
@@ -1087,40 +1098,15 @@ export default function TransactionFormContent({
                     return;
                 }
 
-                // Re-fetch rates from updated data (or result)
-                // Note: refreshRates invalidates query, so exchangeRates prop might not update immediately in this closure.
-                // However, we can use the result if needed, but getRateForDate relies on the list.
-                // For safety, we might need to rely on the fact that queryClient invalidation triggers re-render, 
-                // but we are in an async function. 
-                // Better approach: If result.rates is available, use it temporarily, or wait for re-render (which we can't do easily here).
-                // Actually, since we await refreshRates, and it invalidates, the prop *won't* update in this function scope.
-                // We should probably trust that if success=true, the rate is either in DB or we can proceed.
-                // Let's try to grab it again from the hook if possible, or just fail gracefully if still missing?
-                // A better way is to pass the new rates back from refreshRates, but let's assume the user might need to click submit again 
-                // if the prop doesn't update fast enough? No, that's bad UX.
-                // Let's just proceed. If it was a hard fetch, we might need to rely on the user clicking again?
-                // Wait, refreshRates returns the rates! We can use that.
-
-                // But getRateForDate expects the full list.
-                // Let's just show a message "Rates updated. Please click Save again."? 
-                // Or better: we can't easily update the `exchangeRates` variable here.
-                // Let's try to proceed, but if missing, warn.
-
-                // Actually, if we just fetched, we can assume it's there for the NEXT render.
-                // But we want to submit NOW.
-                // Let's block and ask user to click again? "Rates fetched! Please review and click Save."
                 setValidationError("Exchange rates updated. Please review the rate and click Save again.");
                 return;
             }
 
             if (!sourceRate || !targetRate) {
-                // If still missing (e.g. historical skipped, or fetch failed silently), warn.
                 if (!formData.isPaid) {
                     setValidationError("Exchange rate is missing. Please fetch rates manually or mark as paid.");
                     return;
                 }
-                // If isPaid, we don't strictly need a rate for the *amount* (we assume user entered final), 
-                // BUT we might want it for stats. For now, let's allow it if isPaid (logic below handles finalAmount).
             }
 
             if (sourceRate && targetRate) {
@@ -1134,22 +1120,22 @@ export default function TransactionFormContent({
                 finalAmount = conversion.convertedAmount;
                 exchangeRateUsed = conversion.exchangeRateUsed;
             }
-        } else if (formData.isCashExpense && isForeignCurrency) {
-            // For cash expenses in foreign currency, convert to base currency
-            const sourceRate = getRateForDate(exchangeRates, formData.originalCurrency, formData.date);
-            const targetRate = getRateForDate(exchangeRates, settings?.baseCurrency || 'USD', formData.date);
-
-            if (sourceRate && targetRate) {
-                const conversion = calculateConvertedAmount(
-                    originalAmount,
-                    formData.originalCurrency,
-                    settings?.baseCurrency || 'USD',
-                    { sourceToUSD: sourceRate, targetToUSD: targetRate }
-                );
-
-                finalAmount = conversion.convertedAmount;
-                exchangeRateUsed = conversion.exchangeRateUsed;
-            }
+            /* } else if (formData.isCashExpense && isForeignCurrency) {
+                // For cash expenses in foreign currency, convert to base currency
+                const sourceRate = getRateForDate(exchangeRates, formData.originalCurrency, formData.date);
+                const targetRate = getRateForDate(exchangeRates, settings?.baseCurrency || 'USD', formData.date);
+    
+                if (sourceRate && targetRate) {
+                    const conversion = calculateConvertedAmount(
+                        originalAmount,
+                        formData.originalCurrency,
+                        settings?.baseCurrency || 'USD',
+                        { sourceToUSD: sourceRate, targetToUSD: targetRate }
+                    );
+    
+                    finalAmount = conversion.convertedAmount;
+                    exchangeRateUsed = conversion.exchangeRateUsed;
+                } */
         }
 
         const submitData = {
@@ -1170,9 +1156,10 @@ export default function TransactionFormContent({
             submitData.paidDate = formData.isCashExpense ? formData.date : (formData.isPaid ? (formData.paidDate || formData.date) : null);
             submitData.customBudgetId = formData.customBudgetId || null;
             submitData.isCashTransaction = formData.isCashExpense;
-            submitData.cashTransactionType = formData.isCashExpense ? 'expense_from_wallet' : null;
-            submitData.cashAmount = formData.isCashExpense ? originalAmount : null;
-            submitData.cashCurrency = formData.isCashExpense ? formData.originalCurrency : null;
+            // submitData.cashTransactionType = formData.isCashExpense ? 'expense_from_wallet' : null;
+            // submitData.cashAmount = formData.isCashExpense ? originalAmount : null;
+            // submitData.cashCurrency = formData.isCashExpense ? formData.originalCurrency : null;
+            submitData.cashTransactionType = null;
         } else {
             submitData.isPaid = false;
             submitData.paidDate = null;
@@ -1213,7 +1200,8 @@ export default function TransactionFormContent({
             <div className="space-y-2">
                 <div className="flex justify-between items-center">
                     <Label htmlFor="amount">Amount</Label>
-                    {isForeignCurrency && !formData.isCashExpense && (
+                    {/* {isForeignCurrency && !formData.isCashExpense && ( */}
+                    {isForeignCurrency && (
                         <div className="flex items-center gap-2">
                             {(() => {
                                 const rateDetails = getRateDetailsForDate(exchangeRates, formData.originalCurrency, formData.date, settings?.baseCurrency);
@@ -1274,11 +1262,6 @@ export default function TransactionFormContent({
                     />
                     <Label htmlFor="isCashExpense" className="cursor-pointer flex items-center gap-2">
                         Paid with cash
-                        {formData.isCashExpense && (
-                            <span className="text-xs text-gray-500">
-                                (Available: {selectedCurrencySymbol}{availableBalance.toFixed(2)})
-                            </span>
-                        )}
                     </Label>
                 </div>
             )}

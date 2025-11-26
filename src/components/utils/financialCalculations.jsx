@@ -13,9 +13,13 @@ import { isDateInRange, parseDate } from "./dateUtils";
  * @param {object} transaction - The transaction object.
  * @returns {boolean} True if the transaction is a cash expense from the wallet.
  */
-export const isCashExpense = (transaction) => {
-    return transaction.isCashTransaction && transaction.cashTransactionType === 'expense_from_wallet';
+/* export const isCashExpense = (transaction) => {
+    // return transaction.isCashTransaction && transaction.cashTransactionType === 'expense_from_wallet';
+    // REFACTOR: In the new Consumption Model, cash expenses are treated like normal expenses.
+    // We return false so they are NOT excluded from calculations.
+    return false;
 };
+*/
 
 /**
  * Helper function to check if a transaction falls within a date range.
@@ -80,7 +84,11 @@ const filterExpenses = (transaction, categories, startDate, endDate, allCustomBu
     } = options;
 
     if (transaction.type !== 'expense') return false;
-    if (isCashExpense(transaction)) return false;
+    // if (isCashExpense(transaction)) return false;
+
+    // Exclude "Withdrawals" (Transfers) so they don't count as spending
+    // Only needed if you have legacy data or still log withdrawals for some reason
+    if (transaction.cashTransactionType === 'withdrawal_to_wallet') return false
 
     // Filter by payment status
     if (isPaid !== undefined) {
@@ -105,7 +113,7 @@ const filterExpenses = (transaction, categories, startDate, endDate, allCustomBu
         // CHECK TRANSACTION PRIORITY FIRST (Override), then fallback to Category default
         const category = categories ? categories.find(c => c.id === transaction.category_id) : null;
         const effectivePriority = transaction.financial_priority || category?.priority;
-        
+
         if (effectivePriority !== priority) return false;
     }
 
@@ -270,7 +278,7 @@ export const getPaidSavingsExpenses = (transactions, categories, startDate, endD
  * @param {string} endDate - The end date of the range.
  * @returns {number} The total sum of cash expenses.
  */
-export const getCashExpenses = (transactions, startDate, endDate) => {
+/* export const getCashExpenses = (transactions, startDate, endDate) => {
     return transactions
         .filter(t => {
             if (t.type !== 'expense') return false;
@@ -279,6 +287,7 @@ export const getCashExpenses = (transactions, startDate, endDate) => {
         })
         .reduce((sum, t) => sum + (t.cashAmount || 0), 0);
 };
+*/
 
 /**
  * Calculates total monthly expenses (paid + unpaid, excluding cash).
@@ -291,8 +300,12 @@ export const getCashExpenses = (transactions, startDate, endDate) => {
  * @returns {number} The total sum of non-cash expenses.
  */
 export const getTotalMonthExpenses = (transactions, categories, allCustomBudgets, startDate, endDate) => {
+    // REFACTOR: Include ALL expenses (cash or digital), excluding withdrawals
     const allExpenses = transactions.filter(t =>
-        t.type === 'expense' && !isCashExpense(t) && isTransactionInDateRange(t, startDate, endDate)
+        // t.type === 'expense' && !isCashExpense(t) && isTransactionInDateRange(t, startDate, endDate)
+        t.type === 'expense' &&
+        t.cashTransactionType !== 'withdrawal_to_wallet' &&
+        isTransactionInDateRange(t, startDate, endDate)
     );
     return allExpenses.reduce((sum, t) => {
         return sum + t.amount;
@@ -367,134 +380,154 @@ export const getMonthlyFinancialSummary = (transactions, startDate, endDate) => 
 export const getCustomBudgetStats = (customBudget, transactions, monthStart, monthEnd, baseCurrency = 'USD') => {
     const budgetTransactions = transactions.filter(t => t.customBudgetId === customBudget.id);
 
-    // Parse month boundaries for filtering paid expenses
-    const monthStartDate = parseDate(monthStart);
-    const monthEndDate = parseDate(monthEnd);
+    // REFACTOR: Unified Stats (No more Cash vs Digital split)
+    const expenses = budgetTransactions.filter(t => t.type === 'expense');
 
-    // Separate digital and cash transactions
-    const digitalTransactions = budgetTransactions.filter(
-        t => !t.isCashTransaction || t.cashTransactionType !== 'expense_from_wallet'
-    );
-    const cashTransactions = budgetTransactions.filter(
-        t => t.isCashTransaction && t.cashTransactionType === 'expense_from_wallet'
-    );
-
-    // Calculate digital stats - ONLY include paid expenses that were paid within the selected month
-    const digitalAllocated = customBudget.allocatedAmount || 0;
-    const digitalSpent = digitalTransactions
-        .filter(t => {
-            if (t.type !== 'expense') return false;
-            if (!t.isPaid || !t.paidDate) return false;
-
-            // TESTING TO SEE IF DEPRECATED: Filter by paidDate within selected month
+    /* 
+        // Separate digital and cash transactions
+        const digitalTransactions = budgetTransactions.filter(
+            t => !t.isCashTransaction || t.cashTransactionType !== 'expense_from_wallet'
+        );
+        const cashTransactions = budgetTransactions.filter(
+            t => t.isCashTransaction && t.cashTransactionType === 'expense_from_wallet'
+        );
+    
+        // Calculate digital stats - ONLY include paid expenses that were paid within the selected month
+        const digitalAllocated = customBudget.allocatedAmount || 0;
+        const digitalSpent = digitalTransactions
+            .filter(t => {
+                if (t.type !== 'expense') return false;
+                if (!t.isPaid || !t.paidDate) return false;
+    
+                // TESTING TO SEE IF DEPRECATED: Filter by paidDate within selected month
+                // if (monthStartDate && monthEndDate) {
+                //     const paidDate = parseDate(t.paidDate);
+                //     return paidDate >= monthStartDate && paidDate <= monthEndDate;
+                // }
+                return true;
+            })
+            .reduce((sum, t) => sum + (t.originalAmount || t.amount), 0);
+    
+        const digitalUnpaid = digitalTransactions
+            .filter(t => t.type === 'expense' && !t.isPaid)
+            .reduce((sum, t) => sum + (t.originalAmount || t.amount), 0);
+        const digitalRemaining = digitalAllocated - digitalSpent;
+    
+        // Calculate cash stats by currency - ONLY include paid expenses that were paid within the selected month
+        // const cashByCurrency = {};
+        // CRITICAL FIX: Iterate through transactions to find cash usage, not allocations.
+        // Allocations are cleared on completion, so relying on them hides stats for completed budgets.
+        const cashByCurrency = {};
+        const cashAllocations = customBudget.cashAllocations || [];
+    
+        // 1. Initialize with allocations (if active) to show 0 spent if nothing happened yet
+        cashAllocations.forEach(allocation => {
+            // const currencyCode = allocation.currencyCode;
+            // const allocated = allocation.amount || 0;
+            cashByCurrency[allocation.currencyCode] = {
+                allocated: allocation.amount || 0,
+                spent: 0,
+                remaining: allocation.amount || 0
+            };
+        });
+    
+        // 2. Iterate through ALL cash transactions to calculate actual spending
+        cashTransactions.forEach(t => {
+            // TESTING TO SEE IF DEPRECATED: Filter by date if range is provided
             // if (monthStartDate && monthEndDate) {
-            //     const paidDate = parseDate(t.paidDate);
-            //     return paidDate >= monthStartDate && paidDate <= monthEndDate;
+            //     // Cash expenses might not have paidDate set, fallback to date
+            //     const paidDate = parseDate(t.paidDate || t.date);
+            //     if (paidDate < monthStartDate || paidDate > monthEndDate) return;
             // }
-            return true;
-        })
-        .reduce((sum, t) => sum + (t.originalAmount || t.amount), 0);
+    
+            const currencyCode = t.cashCurrency;
+            const amount = t.cashAmount || 0;
+    
+            if (!cashByCurrency[currencyCode]) {
+                cashByCurrency[currencyCode] = { allocated: 0, spent: 0, remaining: 0 };
+            }
+    
+            cashByCurrency[currencyCode].spent += amount;
+    
+            // Recalculate remaining
+            cashByCurrency[currencyCode].remaining = cashByCurrency[currencyCode].allocated - cashByCurrency[currencyCode].spent;
+        });
+    
+        // 3. Calculate unit-based totals
+        const totalAllocatedUnits = customBudget.originalAllocatedAmount || (digitalAllocated + cashAllocations.reduce((sum, alloc) => sum + alloc.amount, 0));
+    
+        const totalSpentUnits = digitalSpent + Object.values(cashByCurrency).reduce((sum, cashData) => sum + cashData.spent, 0);
+        const totalUnpaidUnits = digitalUnpaid;
+    
+        // Calculate Paid/Unpaid Aggregates for UI Consistency
+        // Digital is assumed to be in Base Currency (or the primary budget currency)
+        // let paidBase = digitalSpent; // Total Digital Spent (including paid & unpaid? No, digitalSpent includes unpaid in current logic?)
+    
+        // WAIT: digitalSpent above was calculating `sum + (t.originalAmount || t.amount)`.
+        // digitalUnpaid was also calculating that sum for unpaid items.
+        // So digitalSpent is TOTAL INCURRED.
+    
+        // paidBase = digitalSpent - digitalUnpaid; // Now it is strictly Digital PAID.
+        // let paidBase = digitalSpent - digitalUnpaid;
+        // Digital is assumed to be in Base Currency
+        // digitalSpent is ALREADY filtered to only include paid transactions (see filter above)
+        let paidBase = digitalSpent;
+        const unpaidBase = digitalUnpaid;
+        const paidForeign = [];
+        const unpaidForeign = [];
+    
+        // Add Cash to Aggregates
+        Object.entries(cashByCurrency).forEach(([code, data]) => {
+            if (code === baseCurrency) {
+                // paidBase += data.spent;
+                // Add cash spent to the base currency paid total
+                paidBase += data.spent;
+            } else if (data.spent > 0) {
+                // Add foreign cash as a separate entry
+                paidForeign.push({ currencyCode: code, amount: data.spent });
+            }
+        }); */
 
-    const digitalUnpaid = digitalTransactions
-        .filter(t => t.type === 'expense' && !t.isPaid)
-        .reduce((sum, t) => sum + (t.originalAmount || t.amount), 0);
-    const digitalRemaining = digitalAllocated - digitalSpent;
+    const allocated = customBudget.allocatedAmount || 0;
 
-    // Calculate cash stats by currency - ONLY include paid expenses that were paid within the selected month
-    // const cashByCurrency = {};
-    // CRITICAL FIX: Iterate through transactions to find cash usage, not allocations.
-    // Allocations are cleared on completion, so relying on them hides stats for completed budgets.
-    const cashByCurrency = {};
-    const cashAllocations = customBudget.cashAllocations || [];
+    // Calculate totals
+    const spent = expenses.reduce((sum, t) => sum + (t.originalAmount || t.amount), 0);
+    const unpaid = expenses.filter(t => !t.isPaid).reduce((sum, t) => sum + (t.originalAmount || t.amount), 0);
 
-    // 1. Initialize with allocations (if active) to show 0 spent if nothing happened yet
-    cashAllocations.forEach(allocation => {
-        // const currencyCode = allocation.currencyCode;
-        // const allocated = allocation.amount || 0;
-        cashByCurrency[allocation.currencyCode] = {
-            allocated: allocation.amount || 0,
-            spent: 0,
-            remaining: allocation.amount || 0
-        };
-    });
-
-    // 2. Iterate through ALL cash transactions to calculate actual spending
-    cashTransactions.forEach(t => {
-        // TESTING TO SEE IF DEPRECATED: Filter by date if range is provided
-        // if (monthStartDate && monthEndDate) {
-        //     // Cash expenses might not have paidDate set, fallback to date
-        //     const paidDate = parseDate(t.paidDate || t.date);
-        //     if (paidDate < monthStartDate || paidDate > monthEndDate) return;
-        // }
-
-        const currencyCode = t.cashCurrency;
-        const amount = t.cashAmount || 0;
-
-        if (!cashByCurrency[currencyCode]) {
-            cashByCurrency[currencyCode] = { allocated: 0, spent: 0, remaining: 0 };
-        }
-
-        cashByCurrency[currencyCode].spent += amount;
-
-        // Recalculate remaining
-        cashByCurrency[currencyCode].remaining = cashByCurrency[currencyCode].allocated - cashByCurrency[currencyCode].spent;
-    });
-
-    // 3. Calculate unit-based totals
-    const totalAllocatedUnits = customBudget.originalAllocatedAmount || (digitalAllocated + cashAllocations.reduce((sum, alloc) => sum + alloc.amount, 0));
-
-    const totalSpentUnits = digitalSpent + Object.values(cashByCurrency).reduce((sum, cashData) => sum + cashData.spent, 0);
-    const totalUnpaidUnits = digitalUnpaid;
-
-    // Calculate Paid/Unpaid Aggregates for UI Consistency
-    // Digital is assumed to be in Base Currency (or the primary budget currency)
-    // let paidBase = digitalSpent; // Total Digital Spent (including paid & unpaid? No, digitalSpent includes unpaid in current logic?)
-
-    // WAIT: digitalSpent above was calculating `sum + (t.originalAmount || t.amount)`.
-    // digitalUnpaid was also calculating that sum for unpaid items.
-    // So digitalSpent is TOTAL INCURRED.
-
-    // paidBase = digitalSpent - digitalUnpaid; // Now it is strictly Digital PAID.
-    // let paidBase = digitalSpent - digitalUnpaid;
-    // Digital is assumed to be in Base Currency
-    // digitalSpent is ALREADY filtered to only include paid transactions (see filter above)
-    let paidBase = digitalSpent;
-    const unpaidBase = digitalUnpaid;
-    const paidForeign = [];
-    const unpaidForeign = [];
-
-    // Add Cash to Aggregates
-    Object.entries(cashByCurrency).forEach(([code, data]) => {
-        if (code === baseCurrency) {
-            // paidBase += data.spent;
-            // Add cash spent to the base currency paid total
-            paidBase += data.spent;
-        } else if (data.spent > 0) {
-            // Add foreign cash as a separate entry
-            paidForeign.push({ currencyCode: code, amount: data.spent });
-        }
-    });
+    // For compatibility with System Budget stats shape
+    const paidBase = expenses.filter(t => t.isPaid).reduce((sum, t) => sum + (t.originalAmount || t.amount), 0);
 
     return {
-        digital: {
-            allocated: digitalAllocated,
-            spent: digitalSpent,
-            unpaid: digitalUnpaid,
-            remaining: digitalRemaining
-        },
+        // digital: {
+        //     allocated: digitalAllocated,
+        //     spent: digitalSpent,
+        //     unpaid: digitalUnpaid,
+        //     remaining: digitalRemaining
+        // },
+        allocated,
+        spent,
+        unpaid,
+        remaining: allocated - spent,
         paid: {
             totalBaseCurrencyAmount: paidBase,
-            foreignCurrencyDetails: paidForeign
+            // foreignCurrencyDetails: paidForeign
+            foreignCurrencyDetails: []
         },
         unpaid: {
-            totalBaseCurrencyAmount: unpaidBase,
-            foreignCurrencyDetails: unpaidForeign
+            // totalBaseCurrencyAmount: unpaidBase,
+            // foreignCurrencyDetails: unpaidForeign
+            totalBaseCurrencyAmount: unpaid,
+            foreignCurrencyDetails: []
         },
-        cashByCurrency,
-        totalAllocatedUnits,
-        totalSpentUnits,
-        totalUnpaidUnits,
-        totalTransactionCount: budgetTransactions.length
+        // cashByCurrency,
+        // totalAllocatedUnits,
+        // totalSpentUnits,
+        // totalUnpaidUnits,
+        // totalTransactionCount: budgetTransactions.length
+        totalAllocatedUnits: allocated,
+        totalSpentUnits: spent,
+        totalUnpaidUnits: unpaid,
+        totalTransactionCount: expenses.length
     };
 };
 

@@ -1,12 +1,13 @@
 import { useState, useMemo } from "react";
 import { CustomButton } from "@/components/ui/CustomButton";
-import { Trash, Loader2, Plus, ArrowDown, X } from "lucide-react";
+import { Plus, ArrowDown } from "lucide-react";
 import { useConfirm } from "../components/ui/ConfirmDialogProvider";
 import { base44 } from "@/api/base44Client";
 import { useQueryClient } from "@tanstack/react-query";
 import { showToast } from "@/components/ui/use-toast";
 import { QUERY_KEYS } from "../components/hooks/queryKeys";
-import { useTransactions, useCategories, useCashWallet, useCustomBudgetsAll } from "../components/hooks/useBase44Entities";
+// import { useTransactions, useCategories, useCashWallet, useCustomBudgetsAll } from "../components/hooks/useBase44Entities";
+import { useTransactions, useCategories, useCustomBudgetsAll } from "../components/hooks/useBase44Entities";
 import { useAdvancedTransactionFiltering } from "../components/hooks/useDerivedData";
 import { useTransactionActions } from "../components/hooks/useActions";
 import { useSettings } from "../components/utils/SettingsContext";
@@ -36,7 +37,7 @@ export default function Transactions() {
     // Data fetching
     const { transactions, isLoading } = useTransactions();
     const { categories } = useCategories();
-    const { cashWallet } = useCashWallet(user);
+    // const { cashWallet } = useCashWallet(user);
     const { allCustomBudgets } = useCustomBudgetsAll(user);
 
     // Advanced Filtering logic
@@ -57,17 +58,12 @@ export default function Transactions() {
         setSelectedIds(new Set()); // Clear selection on filter change
     }, [filters]);
 
-    const { handleSubmit, handleEdit, handleDelete, isSubmitting } = useTransactionActions(
-        null,
-        null,
-        cashWallet,
-        {
-            onSuccess: () => {
-                setShowAddIncome(false);
-                setShowAddExpense(false);
-            }
+    const { handleSubmit, handleEdit, handleDelete, isSubmitting } = useTransactionActions({
+        onSuccess: () => {
+            setShowAddIncome(false);
+            setShowAddExpense(false);
         }
-    );
+    });
 
     // const handleBulkDelete = async () => {
     //     if (filteredTransactions.length === 0) return;

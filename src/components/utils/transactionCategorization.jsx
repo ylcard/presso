@@ -13,16 +13,15 @@ const HARDCODED_KEYWORDS = {
     'MCDONALD': 'Dining Out',
     'BURGER KING': 'Dining Out',
     'WALMART': 'Groceries',
-    'TARGET': 'Shopping',
     'KROGER': 'Groceries',
     'WHOLE FOODS': 'Groceries',
     'SHELL': 'Transport',
     'BP': 'Transport',
     'EXXON': 'Transport',
     'CHEVRON': 'Transport',
-    'AIRBNB': 'Travel',
-    'HOTEL': 'Travel',
-    'AIRLINES': 'Travel',
+    'AIRBNB': 'Hotels',
+    'HOTEL': 'Hotels',
+    'AIRLINES': 'Flights',
 };
 
 const FALLBACK_REGEX = [
