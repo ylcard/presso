@@ -53,14 +53,24 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget, 
         // "Over Budget" means we exceeded our savings target (GOOD).
         // "Remaining" means we are short of our target (BAD).
 
-        let statColor = isOver ? 'text-red-500' : 'text-emerald-600';
-        let statLabel = isOver ? 'Over by' : 'Remaining';
+        // Refactoring Nov 26
+        // let statColor = isOver ? 'text-red-500' : 'text-emerald-600';
+        // let statLabel = isOver ? 'Over by' : 'Remaining';
+        let statColor = isOver ? 'text-red-500' : 'text-blue-600';
+        let statLabel = isOver ? 'Over Limit' : 'Under Limit';
 
         if (isSavings) {
             // If savings (actual) > target (alloc), we have a surplus (GOOD - Green)
             // If savings (actual) < target (alloc), we have a shortfall (BAD - Orange)
             statColor = isOver ? 'text-emerald-600' : 'text-amber-600';
             statLabel = isOver ? 'Surplus' : 'Shortfall';
+            // Refactoring Nov 26
+        } else {
+            // For Needs/Wants (Ceilings), "Remaining" sounds like "Spend me!".
+            // We change this to "Under Limit" (Blue) to indicate capacity, not wealth.
+            if (!isOver) {
+                statColor = 'text-blue-600';
+            }
         }
 
         return {
@@ -279,6 +289,12 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget, 
                             <p className={`font-semibold truncate ${statusColor} ${currentStyle.statVal}`}>
                                 {formatCurrency(isOverBudget ? overAmount : remaining, settings)}
                             </p>
+                            {/* Subliminal reinforcement: If it's not a savings budget and we are under limit, hint that this is savings */}
+                            {!isSavings && !isOverBudget && (
+                                <p className="text-[10px] text-emerald-600/80 font-medium mt-0.5">
+                                    (Potential Savings)
+                                </p>
+                            )}
                         </div>
 
                         {/* Divider */}
