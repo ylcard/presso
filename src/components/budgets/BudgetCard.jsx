@@ -8,8 +8,6 @@ import { motion } from "framer-motion";
 import { CheckCircle, Clock, AlertTriangle } from "lucide-react";
 
 export default function BudgetCard({ budget, stats, settings, onActivateBudget, size = 'md' }) {
-    // Possibly deprecated?
-    // const baseCurrency = settings?.baseCurrency || 'USD';
     const isSystemBudget = budget.isSystemBudget || false;
     const isSavings = isSystemBudget && budget.systemBudgetType === 'savings';
 
@@ -76,7 +74,6 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget, 
             statusColor: statColor,
             statusLabel: statLabel
         };
-        // }, [stats, isSystemBudget, budget]);
     }, [stats, isSystemBudget, budget, isSavings]);
 
     // Visual Theme Helper
