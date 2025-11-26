@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { QUERY_KEYS } from "./queryKeys";
 import { getMonthlyIncome } from "../utils/financialCalculations";
+import { useSettings } from "../utils/SettingsContext";
 
 // Hook to fetch transactions
 export const useTransactions = () => {
@@ -170,6 +171,7 @@ export const useSystemBudgetManagement = (
     monthEnd
 ) => {
     const queryClient = useQueryClient();
+    const { settings } = useSettings();
 
     useEffect(() => {
         const ensureSystemBudgets = async () => {
@@ -197,11 +199,36 @@ export const useSystemBudgetManagement = (
                 }, {});
 
                 let needsInvalidation = false;
+                
+                // --- Fixed Lifestyle Logic ---
+                // Calculate raw amounts based on percentages
+                let amounts = {};
+                systemTypes.forEach(type => {
+                    const percentage = goalMap[type] || 0;
+                    amounts[type] = parseFloat(((currentMonthIncome * percentage) / 100).toFixed(2));
+                });
+
+                // If Mode is ON, check if we should cap 'needs' and move surplus to 'savings'
+                if (settings?.fixedLifestyleMode && systemBudgets) {
+                    const existingNeeds = systemBudgets.find(sb => sb.systemBudgetType === 'needs');
+                    
+                    // Only apply logic if we have a previous budget to compare against and income > 0
+                    if (existingNeeds && existingNeeds.budgetAmount > 0 && currentMonthIncome > 0) {
+                        // If the NEW calculated needs is higher than OLD needs, cap it.
+                        if (amounts['needs'] > existingNeeds.budgetAmount) {
+                            const surplus = amounts['needs'] - existingNeeds.budgetAmount;
+                            amounts['needs'] = existingNeeds.budgetAmount; // Cap Needs
+                            amounts['savings'] += surplus; // Move surplus to Savings
+                            // 'wants' stays as calculated (percentage based)
+                        }
+                    }
+                }
 
                 for (const type of systemTypes) {
                     const existingBudget = systemBudgets.find(sb => sb.systemBudgetType === type);
-                    const percentage = goalMap[type] || 0;
-                    const amount = parseFloat(((currentMonthIncome * percentage) / 100).toFixed(2));
+                    // const percentage = goalMap[type] || 0;
+                    // const amount = parseFloat(((currentMonthIncome * percentage) / 100).toFixed(2));
+                    const amount = amounts[type];
 
                     if (existingBudget) {
                         // Only update if the calculated amount significantly differs to avoid unnecessary writes
