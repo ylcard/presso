@@ -204,12 +204,22 @@ export const useSystemBudgetManagement = (
                 // Calculate raw amounts based on percentages
                 let amounts = {};
                 systemTypes.forEach(type => {
-                    const percentage = goalMap[type] || 0;
-                    amounts[type] = parseFloat(((currentMonthIncome * percentage) / 100).toFixed(2));
+                    // const percentage = goalMap[type] || 0;
+                    // amounts[type] = parseFloat(((currentMonthIncome * percentage) / 100).toFixed(2));
+                    // ABSOLUTE MODE OVERRIDE
+                    if (settings?.goalAllocationMode === 'absolute' && settings?.absoluteGoals) {
+                        amounts[type] = parseFloat(settings.absoluteGoals[type] || 0);
+                    } else {
+                        // STANDARD PERCENTAGE MODE
+                        const percentage = goalMap[type] || 0;
+                        amounts[type] = parseFloat(((currentMonthIncome * percentage) / 100).toFixed(2));
+                    }
                 });
 
                 // If Mode is ON, check if we should cap 'needs' and move surplus to 'savings'
-                if (settings?.fixedLifestyleMode && systemBudgets) {
+                // if (settings?.fixedLifestyleMode && systemBudgets) {
+                // Only applies in 'percentage' mode
+                if (settings?.goalAllocationMode !== 'absolute' && settings?.fixedLifestyleMode && systemBudgets) {
                     const existingNeeds = systemBudgets.find(sb => sb.systemBudgetType === 'needs');
                     
                     // Only apply logic if we have a previous budget to compare against and income > 0
