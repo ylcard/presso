@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { showToast } from "@/components/ui/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { useSettings } from "../utils/SettingsContext";
-import { AmountInput } from "@/components/ui/AmountInput"; // Assuming generic amount input exists or we use Input
+import { AmountInput } from "../components/ui/AmountInput"; // Assuming generic amount input exists or we use Input
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
