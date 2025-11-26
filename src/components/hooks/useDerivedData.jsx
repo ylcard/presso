@@ -607,7 +607,9 @@ export const usePriorityChartData = (transactions, categories, goals, monthlyInc
             .reduce((acc, t) => {
                 const category = categoryMap[t.category_id];
                 if (category) {
-                    const priority = category.priority;
+                    // const priority = category.priority;
+                    // Use transaction priority override if available, otherwise category default
+                    const priority = t.financial_priority || category.priority;
                     const amount = Number(t.amount) || 0;
                     acc[priority] = (acc[priority] || 0) + amount;
                 }
