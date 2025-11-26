@@ -6,6 +6,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { showToast } from "@/components/ui/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { useSettings } from "../utils/SettingsContext";
+import { AmountInput } from "@/components/ui/AmountInput"; // Assuming generic amount input exists or we use Input
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const priorityConfig = {
     needs: { label: "Needs", color: "#EF4444", description: "Essential expenses" },
@@ -21,6 +24,13 @@ export default function GoalSettings({ goals, onGoalUpdate, isLoading, isSaving 
     const [splits, setSplits] = useState({ split1: 50, split2: 80 });
     const containerRef = useRef(null);
     const [activeThumb, setActiveThumb] = useState(null);
+
+    // Local state for Absolute Mode inputs
+    const [absoluteValues, setAbsoluteValues] = useState({
+        needs: settings.absoluteGoals?.needs || 0,
+        wants: settings.absoluteGoals?.wants || 0,
+        savings: settings.absoluteGoals?.savings || 0
+    });
 
     useEffect(() => {
         const map = { needs: 0, wants: 0, savings: 0 };
@@ -42,8 +52,15 @@ export default function GoalSettings({ goals, onGoalUpdate, isLoading, isSaving 
         savings: 100 - splits.split2
     };
 
+    const isAbsoluteMode = settings.goalAllocationMode === 'absolute';
+
     const handleSave = async () => {
         try {
+            // Update global settings for Mode and Absolute Values
+            await updateSettings({
+                absoluteGoals: absoluteValues
+            });
+
             // Execute all goal updates
             const promises = Object.entries(currentValues).map(([priority, percentage]) =>
                 onGoalUpdate(priority, percentage)
@@ -122,101 +139,147 @@ export default function GoalSettings({ goals, onGoalUpdate, isLoading, isSaving 
             </CardHeader>
             <CardContent className="space-y-6">
 
-                {/* Interactive Slider Area */}
-                <div className="pt-6 pb-2 px-2">
-                    <div
-                        ref={containerRef}
-                        className="relative h-6 w-full bg-gray-100 rounded-full select-none touch-none"
+                {/* Mode Switcher */}
+                <div className="flex items-center justify-center p-1 bg-gray-100 rounded-lg">
+                    <button
+                        onClick={() => updateSettings({ goalAllocationMode: 'percentage' })}
+                        className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${!isAbsoluteMode ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                     >
-                        {/* Zone 1: Needs (Red) */}
-                        <div
-                            className="absolute top-0 left-0 h-full rounded-l-full transition-colors"
-                            style={{ width: `${splits.split1}%`, backgroundColor: priorityConfig.needs.color }}
-                        />
+                        Percentage
+                    </button>
+                    <button
+                        onClick={() => updateSettings({ goalAllocationMode: 'absolute' })}
+                        className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${isAbsoluteMode ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                        Absolute Values
+                    </button>
+                </div>
 
-                        {/* Zone 2: Wants (Amber) */}
+                {/* Interactive Slider Area */}
+                {!isAbsoluteMode ? (
+                    <div className="pt-6 pb-2 px-2 animate-in fade-in slide-in-from-top-2 duration-300">
                         <div
-                            className="absolute top-0 h-full transition-colors"
-                            style={{
-                                left: `${splits.split1}%`,
-                                width: `${splits.split2 - splits.split1}%`,
-                                backgroundColor: priorityConfig.wants.color
-                            }}
-                        />
-
-                        {/* Zone 3: Savings (Green) */}
-                        <div
-                            className="absolute top-0 h-full rounded-r-full transition-colors"
-                            style={{
-                                left: `${splits.split2}%`,
-                                width: `${100 - splits.split2}%`,
-                                backgroundColor: priorityConfig.savings.color
-                            }}
-                        />
-
-                        {/* Thumb 1 */}
-                        <div
-                            onPointerDown={(e) => handlePointerDown(e, 1)}
-                            onPointerMove={handlePointerMove}
-                            onPointerUp={handlePointerUp}
-                            className={`absolute top-0 bottom-0 w-4 -ml-2 bg-white shadow-sm rounded-full border flex items-center justify-center z-10 hover:scale-110 transition-transform ${activeThumb === 1 ? 'cursor-grabbing' : 'cursor-grab'}`}
-                            style={{ left: `${splits.split1}%` }}
+                            ref={containerRef}
+                            className="relative h-6 w-full bg-gray-100 rounded-full select-none touch-none"
                         >
-                            <GripVertical className="w-2.5 h-2.5 text-gray-400" />
-                        </div>
+                            {/* Zone 1: Needs (Red) */}
+                            <div
+                                className="absolute top-0 left-0 h-full rounded-l-full transition-colors"
+                                style={{ width: `${splits.split1}%`, backgroundColor: priorityConfig.needs.color }}
+                            />
 
-                        {/* Thumb 2 */}
-                        <div
-                            onPointerDown={(e) => handlePointerDown(e, 2)}
-                            onPointerMove={handlePointerMove}
-                            onPointerUp={handlePointerUp}
-                            className={`absolute top-0 bottom-0 w-4 -ml-2 bg-white shadow-sm rounded-full border flex items-center justify-center z-10 hover:scale-110 transition-transform ${activeThumb === 2 ? 'cursor-grabbing' : 'cursor-grab'}`}
-                            style={{ left: `${splits.split2}%` }}
-                        >
-                            <GripVertical className="w-3 h-3 text-gray-400" />
+                            {/* Zone 2: Wants (Amber) */}
+                            <div
+                                className="absolute top-0 h-full transition-colors"
+                                style={{
+                                    left: `${splits.split1}%`,
+                                    width: `${splits.split2 - splits.split1}%`,
+                                    backgroundColor: priorityConfig.wants.color
+                                }}
+                            />
+
+                            {/* Zone 3: Savings (Green) */}
+                            <div
+                                className="absolute top-0 h-full rounded-r-full transition-colors"
+                                style={{
+                                    left: `${splits.split2}%`,
+                                    width: `${100 - splits.split2}%`,
+                                    backgroundColor: priorityConfig.savings.color
+                                }}
+                            />
+
+                            {/* Thumb 1 */}
+                            <div
+                                onPointerDown={(e) => handlePointerDown(e, 1)}
+                                onPointerMove={handlePointerMove}
+                                onPointerUp={handlePointerUp}
+                                className={`absolute top-0 bottom-0 w-4 -ml-2 bg-white shadow-sm rounded-full border flex items-center justify-center z-10 hover:scale-110 transition-transform ${activeThumb === 1 ? 'cursor-grabbing' : 'cursor-grab'}`}
+                                style={{ left: `${splits.split1}%` }}
+                            >
+                                <GripVertical className="w-2.5 h-2.5 text-gray-400" />
+                            </div>
+
+                            {/* Thumb 2 */}
+                            <div
+                                onPointerDown={(e) => handlePointerDown(e, 2)}
+                                onPointerMove={handlePointerMove}
+                                onPointerUp={handlePointerUp}
+                                className={`absolute top-0 bottom-0 w-4 -ml-2 bg-white shadow-sm rounded-full border flex items-center justify-center z-10 hover:scale-110 transition-transform ${activeThumb === 2 ? 'cursor-grabbing' : 'cursor-grab'}`}
+                                style={{ left: `${splits.split2}%` }}
+                            >
+                                <GripVertical className="w-3 h-3 text-gray-400" />
+                            </div>
                         </div>
                     </div>
-                </div>
+                ) : (
+                    /* Absolute Mode Inputs */
+                    <div className="grid grid-cols-1 gap-4 pt-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                        {Object.entries(priorityConfig).map(([key, config]) => (
+                            <div key={key} className="space-y-1.5">
+                                <Label className="text-xs font-semibold uppercase tracking-wider text-gray-500 flex items-center gap-2">
+                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: config.color }} />
+                                    {config.label}
+                                </Label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
+                                        {settings.currencySymbol || '$'}
+                                    </span>
+                                    <Input
+                                        type="number"
+                                        value={absoluteValues[key]}
+                                        onChange={(e) => setAbsoluteValues(prev => ({ ...prev, [key]: parseFloat(e.target.value) || 0 }))}
+                                        className="pl-8 font-mono"
+                                        placeholder="0.00"
+                                    />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
 
                 {/* Lifestyle Creep Protection Toggle */}
-                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-100">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-blue-100 rounded-full text-blue-600">
-                            <Lock className="w-4 h-4" />
+                {!isAbsoluteMode && (
+                    <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-100 animate-in fade-in slide-in-from-top-1 duration-300 delay-75">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-blue-100 rounded-full text-blue-600">
+                                <Lock className="w-4 h-4" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-bold text-gray-900">Fixed Lifestyle Mode</p>
+                                <p className="text-[10px] text-gray-500">If income rises, keep Needs budget fixed and save the rest.</p>
+                            </div>
                         </div>
-                        <div>
-                            <p className="text-sm font-bold text-gray-900">Fixed Lifestyle Mode</p>
-                            <p className="text-[10px] text-gray-500">If income rises, keep Needs budget fixed and save the rest.</p>
-                        </div>
+                        <Switch
+                            checked={settings.fixedLifestyleMode}
+                            onCheckedChange={(checked) => updateSettings({ fixedLifestyleMode: checked })}
+                        />
                     </div>
-                    <Switch 
-                        checked={settings.fixedLifestyleMode}
-                        onCheckedChange={(checked) => updateSettings({ fixedLifestyleMode: checked })}
-                    />
-                </div>
+                )}
 
                 {/* Legend & Values */}
-                <div className="grid grid-cols-3 gap-4">
-                    {Object.entries(priorityConfig).map(([key, config]) => (
-                        <div key={key} className="text-center space-y-1">
-                            <div className="flex items-center justify-center gap-2 mb-1">
-                                <div
-                                    className="w-2 h-2 rounded-full"
-                                    style={{ backgroundColor: config.color }}
-                                />
-                                <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                                    {config.label}
-                                </span>
+                {!isAbsoluteMode && (
+                    <div className="grid grid-cols-3 gap-4 animate-in fade-in">
+                        {Object.entries(priorityConfig).map(([key, config]) => (
+                            <div key={key} className="text-center space-y-1">
+                                <div className="flex items-center justify-center gap-2 mb-1">
+                                    <div
+                                        className="w-2 h-2 rounded-full"
+                                        style={{ backgroundColor: config.color }}
+                                    />
+                                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                                        {config.label}
+                                    </span>
+                                </div>
+                                <div className="text-2xl font-bold text-gray-900">
+                                    {Math.round(currentValues[key])}%
+                                </div>
+                                <p className="text-[10px] text-gray-400 line-clamp-1 px-1">
+                                    {config.description}
+                                </p>
                             </div>
-                            <div className="text-2xl font-bold text-gray-900">
-                                {Math.round(currentValues[key])}%
-                            </div>
-                            <p className="text-[10px] text-gray-400 line-clamp-1 px-1">
-                                {config.description}
-                            </p>
-                        </div>
-                    ))}
-                </div>
+                        ))}
+                    </div>
+                )}
 
                 <CustomButton
                     onClick={handleSave}
