@@ -25,11 +25,16 @@ export default function GoalSettings({ goals, onGoalUpdate, isLoading, isSaving 
     const [activeThumb, setActiveThumb] = useState(null);
 
     // Local state for Absolute Mode inputs
+    // Initialize from the goals prop (which comes from DB)
+    const needsGoal = goals.find(g => g.priority === 'needs');
     const [absoluteValues, setAbsoluteValues] = useState({
-        needs: settings.absoluteGoals?.needs || 0,
-        wants: settings.absoluteGoals?.wants || 0,
-        savings: settings.absoluteGoals?.savings || 0
+        needs: goals.find(g => g.priority === 'needs')?.target_amount || 0,
+        wants: goals.find(g => g.priority === 'wants')?.target_amount || 0,
+        savings: goals.find(g => g.priority === 'savings')?.target_amount || 0
     });
+
+    // Track mode based on the 'needs' goal (assuming all follow same mode or just using needs as master)
+    const [isAbsoluteMode, setIsAbsoluteMode] = useState(needsGoal?.is_absolute || false);
 
     useEffect(() => {
         const map = { needs: 0, wants: 0, savings: 0 };
@@ -51,18 +56,23 @@ export default function GoalSettings({ goals, onGoalUpdate, isLoading, isSaving 
         savings: 100 - splits.split2
     };
 
-    const isAbsoluteMode = settings.goalAllocationMode === 'absolute';
+    // const isAbsoluteMode = settings.goalAllocationMode === 'absolute';
 
     const handleSave = async () => {
         try {
             // Update global settings for Mode and Absolute Values
-            await updateSettings({
-                absoluteGoals: absoluteValues
-            });
+            // await updateSettings({
+            //     absoluteGoals: absoluteValues
+            // });
 
             // Execute all goal updates
+            // We now save target_amount and is_absolute to the entity directly
             const promises = Object.entries(currentValues).map(([priority, percentage]) =>
-                onGoalUpdate(priority, percentage)
+                // onGoalUpdate(priority, percentage)
+                onGoalUpdate(priority, percentage, {
+                    target_amount: absoluteValues[priority],
+                    is_absolute: isAbsoluteMode
+                })
             );
 
             // Wait for all updates to complete
@@ -142,14 +152,14 @@ export default function GoalSettings({ goals, onGoalUpdate, isLoading, isSaving 
                 <div className="flex items-center justify-center p-1 bg-gray-100 rounded-lg">
                     <button
                         type="button"
-                        onClick={() => updateSettings({ goalAllocationMode: 'percentage' })}
+                        onClick={() => setIsAbsoluteMode(false)}
                         className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${!isAbsoluteMode ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                     >
                         Percentage
                     </button>
                     <button
                         type="button"
-                        onClick={() => updateSettings({ goalAllocationMode: 'absolute' })}
+                        onClick={() => setIsAbsoluteMode(true)}
                         className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${isAbsoluteMode ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                     >
                         Absolute Values
