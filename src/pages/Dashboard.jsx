@@ -9,7 +9,6 @@ import {
     useSystemBudgetsAll,
     useSystemBudgetsForPeriod,
     useSystemBudgetManagement,
-    // useCashWallet,
 } from "../components/hooks/useBase44Entities";
 import {
     usePaidTransactions,
@@ -21,7 +20,6 @@ import {
     useTransactionActions,
     useCustomBudgetActions,
 } from "../components/hooks/useActions";
-// import { useCashWalletActions } from "../components/cashwallet/useCashWalletActions";
 import { useExchangeRates } from "../components/hooks/useExchangeRates";
 import MonthNavigator from "../components/ui/MonthNavigator";
 import RemainingBudgetCard from "../components/dashboard/RemainingBudgetCard";
@@ -30,9 +28,6 @@ import RecentTransactions from "../components/dashboard/RecentTransactions";
 import QuickAddTransaction from "../components/transactions/QuickAddTransaction";
 import QuickAddIncome from "../components/transactions/QuickAddIncome";
 import QuickAddBudget from "../components/dashboard/QuickAddBudget";
-// import CashWalletCard from "../components/cashwallet/CashWalletCard";
-// import CashWithdrawDialog from "../components/cashwallet/CashWithdrawDialog";
-// import CashDepositDialog from "../components/cashwallet/CashDepositDialog";
 import { ImportWizardDialog } from "../components/import/ImportWizard";
 
 export default function Dashboard() {
@@ -51,8 +46,6 @@ export default function Dashboard() {
     const { allCustomBudgets } = useCustomBudgetsAll(user);
     const { allSystemBudgets } = useSystemBudgetsAll(user);
     const { systemBudgets } = useSystemBudgetsForPeriod(user, monthStart, monthEnd);
-    // const { cashWallet } = useCashWallet(user);
-    const { exchangeRates } = useExchangeRates();
 
     // System budget management (auto-creation/update)
     useSystemBudgetManagement(user, selectedMonth, selectedYear, goals, transactions, systemBudgets, monthStart, monthEnd);
@@ -79,7 +72,6 @@ export default function Dashboard() {
         selectedYear
     );
 
-    // const transactionActions = useTransactionActions(null, null, cashWallet, {
     const transactionActions = useTransactionActions({
         onSuccess: () => {
             setShowQuickAdd(false);
@@ -87,15 +79,12 @@ export default function Dashboard() {
         }
     });
 
-    // const budgetActions = useCustomBudgetActions(user, transactions, cashWallet, {
     const budgetActions = useCustomBudgetActions({
         transactions,
         onSuccess: () => {
             setShowQuickAddBudget(false);
         }
     });
-
-    // const cashWalletActions = useCashWalletActions(user, cashWallet, settings, exchangeRates);
 
     return (
         <div className="min-h-screen p-4 md:p-8">
@@ -159,13 +148,6 @@ export default function Dashboard() {
                             }
                         />
                     </div>
-                    {/* <div className="md:col-span-1">
-                        <CashWalletCard
-                            cashWallet={cashWallet}
-                            onDepositCash={cashWalletActions.openDepositCashDialog}
-                            onReturnCash={cashWalletActions.openReturnCashDialog}
-                        />
-                    </div> */}
                 </div>
 
                 <div className="grid lg:grid-cols-3 gap-6">
@@ -203,28 +185,8 @@ export default function Dashboard() {
                     onSubmit={budgetActions.handleSubmit}
                     onCancel={() => setShowQuickAddBudget(false)}
                     isSubmitting={budgetActions.isSubmitting}
-                    // cashWallet={cashWallet}
                     baseCurrency={settings.baseCurrency}
                 />
-
-                {/* <CashWithdrawDialog
-                    open={cashWalletActions.depositCashDialogOpen}
-                    onOpenChange={cashWalletActions.setDepositCashDialogOpen}
-                    categories={categories}
-                    onSubmit={cashWalletActions.handleDepositCash}
-                    isSubmitting={cashWalletActions.isDepositingCash}
-                    baseCurrency={settings.baseCurrency}
-                /> */}
-
-                {/* <CashDepositDialog
-                    open={cashWalletActions.returnCashDialogOpen}
-                    onOpenChange={cashWalletActions.setReturnCashDialogOpen}
-                    onSubmit={cashWalletActions.handleReturnCash}
-                    isSubmitting={cashWalletActions.isReturningCash}
-                    cashWallet={cashWallet}
-                    baseCurrency={settings.baseCurrency}
-                    settings={settings}
-                /> */}
             </div>
         </div>
     );
