@@ -6,8 +6,6 @@ import AllocationFormDialog from "./AllocationFormDialog";
 import AllocationCard from "./AllocationCard";
 import ConfirmDialog from "../ui/ConfirmDialog";
 import { useSettings } from "../utils/SettingsContext";
-// import { useCashWallet } from "../hooks/useBase44Entities";
-// import { formatCurrency, getCurrencySymbol } from "../utils/currencyUtils";
 import { formatCurrency } from "../utils/currencyUtils";
 
 export default function AllocationManager({
@@ -21,7 +19,6 @@ export default function AllocationManager({
     isSubmitting
 }) {
     const { settings, user } = useSettings();
-    // const { cashWallet } = useCashWallet(user);
     const [showForm, setShowForm] = useState(false);
     const [editingAllocation, setEditingAllocation] = useState(null);
     const [deleteAllocationId, setDeleteAllocationId] = useState(null);
@@ -55,26 +52,6 @@ export default function AllocationManager({
         }
     };
 
-    // Calculate remaining funds purely based on allocations (no expenses)
-    // Card remaining = customBudget.allocatedAmount - sum of digital allocations
-    /* const digitalAllocations = allocations.filter(a => a.allocationType === 'digital');
-    const totalDigitalAllocated = digitalAllocations.reduce((sum, a) => sum + a.allocatedAmount, 0);
-    const remainingCard = customBudget.allocatedAmount - totalDigitalAllocated;
-
-    // Cash remaining per currency = cashAllocations[currency] - sum of cash allocations for that currency
-    const remainingCashByCurrency = {};
-    if (customBudget?.cashAllocations) {
-        customBudget.cashAllocations.forEach(cashAlloc => {
-            const cashAllocationsForCurrency = allocations.filter(
-                a => a.allocationType === 'cash' && a.currency === cashAlloc.currencyCode
-            );
-            const totalAllocatedForCurrency = cashAllocationsForCurrency.reduce((sum, a) => sum + a.allocatedAmount, 0);
-
-            remainingCashByCurrency[cashAlloc.currencyCode] = cashAlloc.amount - totalAllocatedForCurrency;
-        });
-    } */
-
-    // REFACTOR: Unified Consumption Model
     // Remaining funds = Total Budget - Sum of ALL allocations
     const totalAllocated = allocations.reduce((sum, a) => sum + a.allocatedAmount, 0);
     const remainingFunds = customBudget.allocatedAmount - totalAllocated;
@@ -88,7 +65,6 @@ export default function AllocationManager({
                         Allocate portions of your budget to specific categories
                     </p>
                 </div>
-                {/* UPDATED 15-Jan-2025: Changed to CustomButton with create variant */}
                 <CustomButton
                     onClick={() => setShowForm(true)}
                     size="sm"
@@ -118,7 +94,6 @@ export default function AllocationManager({
                     onSubmit={handleSubmit}
                     isSubmitting={isSubmitting}
                     settings={settings}
-                // cashWallet={cashWallet}
                 />
 
                 {/* Allocations List */}
