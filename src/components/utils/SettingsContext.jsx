@@ -14,7 +14,8 @@ const defaultSettings = {
     decimalPlaces: 2,
     hideTrailingZeros: false,
     dateFormat: 'MMM dd, yyyy',
-    budgetViewMode: 'bars'
+    budgetViewMode: 'bars',
+    fixedLifestyleMode: false
 };
 
 export const useSettings = () => {
@@ -65,7 +66,8 @@ export const SettingsProvider = ({ children }) => {
                     decimalPlaces: userSettings.decimalPlaces || 2,
                     hideTrailingZeros: userSettings.hideTrailingZeros || false,
                     dateFormat: userSettings.dateFormat || 'MMM dd, yyyy',
-                    budgetViewMode: userSettings.budgetViewMode || 'bars'
+                    budgetViewMode: userSettings.budgetViewMode || 'bars',
+                    fixedLifestyleMode: userSettings.fixedLifestyleMode || false
                 };
 
                 // Update state and localStorage
