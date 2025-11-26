@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { TrendingUp, Wallet, ArrowUpRight, ArrowDownRight, Target } from "lucide-react";
+import { TrendingUp, Wallet, ArrowUpRight, ArrowDownRight, Target, PiggyBank } from "lucide-react";
 import { formatCurrency } from "../utils/currencyUtils";
 import { getMonthlyPaidExpenses } from "../utils/financialCalculations";
 import { estimateCurrentMonth } from "../utils/projectionUtils";
@@ -14,11 +14,12 @@ export default function ReportStats({
     settings,
     safeBaseline = 0,
     startDate,
-    endDate
+    endDate,
+    bonusSavingsPotential = 0
 }) {
     if (isLoading) {
         return (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {[1, 2].map((i) => (
                     <div key={i} className="h-32 bg-gray-100 animate-pulse rounded-xl" />
                 ))}
@@ -69,7 +70,7 @@ export default function ReportStats({
         : <ArrowDownRight className="w-3 h-3" />;
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card className="border-none shadow-sm">
                 <CardContent className="p-6 text-center">
                     <div className="flex flex-col items-center">
@@ -128,6 +129,30 @@ export default function ReportStats({
                     <div className="mt-4 flex justify-center">
                         <div className="p-3 rounded-full bg-blue-100 text-blue-600">
                             <Wallet className="w-5 h-5" />
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Card className="border-none shadow-sm">
+                <CardContent className="p-6 text-center">
+                    <div className="flex flex-col items-center">
+                        <p className="text-sm font-medium text-gray-500">Efficiency Bonus</p>
+                        <motion.h3
+                            initial={{ y: 5, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ delay: 0.2, duration: 0.5 }}
+                            className="text-2xl font-bold mt-1 text-emerald-600"
+                        >
+                            {formatCurrency(bonusSavingsPotential, settings)}
+                        </motion.h3>
+                        <div className="flex items-center gap-1 mt-2 text-xs font-medium text-emerald-600/80">
+                            <span>Unspent Needs & Wants</span>
+                        </div>
+                    </div>
+                    <div className="mt-4 flex justify-center">
+                        <div className="p-3 rounded-full bg-emerald-100 text-emerald-600">
+                            <PiggyBank className="w-5 h-5" />
                         </div>
                     </div>
                 </CardContent>
