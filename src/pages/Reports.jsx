@@ -1,7 +1,13 @@
 import { useMemo } from "react";
 import { useSettings } from "../components/utils/SettingsContext";
 import { usePeriod } from "../components/hooks/usePeriod";
-import { useTransactions, useCategories, useGoals } from "../components/hooks/useBase44Entities";
+import { 
+    useTransactions, 
+    useCategories, 
+    useGoals,
+    useSystemBudgetsForPeriod,
+    useCustomBudgetsAll 
+} from "../components/hooks/useBase44Entities";
 import { useMonthlyTransactions, useMonthlyIncome } from "../components/hooks/useDerivedData";
 import MonthlyBreakdown from "../components/reports/MonthlyBreakdown";
 import PriorityChart from "../components/reports/PriorityChart";
@@ -9,6 +15,7 @@ import MonthNavigator from "../components/ui/MonthNavigator";
 import ProjectionChart from "../components/reports/ProjectionChart";
 import ReportStats from "../components/reports/ReportStats";
 import { calculateProjection } from "../components/utils/projectionUtils";
+import { calculateBonusSavingsPotential } from "../components/utils/financialCalculations";
 
 export default function Reports() {
     const { user, settings } = useSettings();
@@ -27,6 +34,8 @@ export default function Reports() {
     const { transactions, isLoading: loadingTransactions } = useTransactions();
     const { categories, isLoading: loadingCategories } = useCategories();
     const { goals, isLoading: loadingGoals } = useGoals(user);
+    const { allCustomBudgets } = useCustomBudgetsAll(user);
+    const { systemBudgets } = useSystemBudgetsForPeriod(user, monthStart, monthEnd);
 
     // Derived data
     const monthlyTransactions = useMonthlyTransactions(transactions, selectedMonth, selectedYear);
@@ -39,6 +48,12 @@ export default function Reports() {
 
 
     const isLoading = loadingTransactions || loadingCategories || loadingGoals;
+
+    // Calculate Efficiency Bonus
+    const bonusSavingsPotential = useMemo(() => {
+        if (!monthStart || !monthEnd || !systemBudgets) return 0;
+        return calculateBonusSavingsPotential(systemBudgets, transactions, categories, allCustomBudgets, monthStart, monthEnd);
+    }, [systemBudgets, transactions, categories, allCustomBudgets, monthStart, monthEnd]);
 
     // Calculate the "Safe Baseline" using your existing logic
     const projectionData = useMemo(() => calculateProjection(transactions, categories, 6), [transactions, categories]);
@@ -77,6 +92,7 @@ export default function Reports() {
                     safeBaseline={projectionData.totalProjectedMonthly}
                     startDate={monthStart}
                     endDate={monthEnd}
+                    bonusSavingsPotential={bonusSavingsPotential}
                 />
 
                 {/* 2. Historical Context & Future Projection */}
