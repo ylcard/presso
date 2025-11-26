@@ -3,11 +3,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Keep for Priority
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
-import { RefreshCw, AlertCircle, Clock, CheckCircle, Check, ChevronsUpDown } from "lucide-react";
+import { RefreshCw, AlertCircle, Check, ChevronsUpDown } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
 import { useConfirm } from "../ui/ConfirmDialogProvider";
@@ -20,7 +20,7 @@ import { useExchangeRates } from "../hooks/useExchangeRates";
 import { getCurrencyBalance, getRemainingAllocatedCash } from "../utils/cashAllocationUtils";
 import { getCurrencySymbol } from "../utils/currencyUtils";
 import { calculateConvertedAmount, getRateForDate, getRateDetailsForDate } from "../utils/currencyCalculations";
-import { SUPPORTED_CURRENCIES, FINANCIAL_PRIORITIES } from "../utils/constants";
+import { SUPPORTED_CURRENCIES } from "../utils/constants";
 import { formatDateString, isDateInRange, formatDate } from "../utils/dateUtils";
 import { differenceInDays, parseISO, startOfDay } from "date-fns";
 import { normalizeAmount } from "../utils/generalUtils";
@@ -78,7 +78,7 @@ export default function TransactionFormContent({
                 originalCurrency: initialTransaction.originalCurrency || settings?.baseCurrency || 'USD',
                 type: initialTransaction.type || 'expense',
                 category_id: initialTransaction.category_id || '',
-                financial_priority: initialTransaction.financial_priority || '', // ADDED 20-Jan-2025
+                financial_priority: initialTransaction.financial_priority || '',
                 date: initialTransaction.date || formatDateString(new Date()),
                 isPaid: initialTransaction.type === 'expense' ? (initialTransaction.isPaid || false) : false,
                 paidDate: initialTransaction.paidDate || '',
@@ -106,11 +106,6 @@ export default function TransactionFormContent({
     }, [initialTransaction, settings?.baseCurrency]);
 
     const isForeignCurrency = formData.originalCurrency !== (settings?.baseCurrency || 'USD');
-
-    // Proactively refresh exchange rates for foreign currencies
-    // REMOVED: Proactively refresh exchange rates for foreign currencies
-    // We now use a hybrid approach: Manual trigger + Fetch on Submit
-    // useEffect(() => { ... }, ...);
 
     // Get currency symbol for the selected currency
     const selectedCurrencySymbol = SUPPORTED_CURRENCIES.find(
@@ -362,40 +357,15 @@ export default function TransactionFormContent({
                     return;
                 }
 
-                // Re-fetch rates from updated data (or result)
-                // Note: refreshRates invalidates query, so exchangeRates prop might not update immediately in this closure.
-                // However, we can use the result if needed, but getRateForDate relies on the list.
-                // For safety, we might need to rely on the fact that queryClient invalidation triggers re-render, 
-                // but we are in an async function. 
-                // Better approach: If result.rates is available, use it temporarily, or wait for re-render (which we can't do easily here).
-                // Actually, since we await refreshRates, and it invalidates, the prop *won't* update in this function scope.
-                // We should probably trust that if success=true, the rate is either in DB or we can proceed.
-                // Let's try to grab it again from the hook if possible, or just fail gracefully if still missing?
-                // A better way is to pass the new rates back from refreshRates, but let's assume the user might need to click submit again 
-                // if the prop doesn't update fast enough? No, that's bad UX.
-                // Let's just proceed. If it was a hard fetch, we might need to rely on the user clicking again?
-                // Wait, refreshRates returns the rates! We can use that.
-
-                // But getRateForDate expects the full list.
-                // Let's just show a message "Rates updated. Please click Save again."? 
-                // Or better: we can't easily update the `exchangeRates` variable here.
-                // Let's try to proceed, but if missing, warn.
-
-                // Actually, if we just fetched, we can assume it's there for the NEXT render.
-                // But we want to submit NOW.
-                // Let's block and ask user to click again? "Rates fetched! Please review and click Save."
                 setValidationError("Exchange rates updated. Please review the rate and click Save again.");
                 return;
             }
 
             if (!sourceRate || !targetRate) {
-                // If still missing (e.g. historical skipped, or fetch failed silently), warn.
                 if (!formData.isPaid) {
                     setValidationError("Exchange rate is missing. Please fetch rates manually or mark as paid.");
                     return;
                 }
-                // If isPaid, we don't strictly need a rate for the *amount* (we assume user entered final), 
-                // BUT we might want it for stats. For now, let's allow it if isPaid (logic below handles finalAmount).
             }
 
             if (sourceRate && targetRate) {
