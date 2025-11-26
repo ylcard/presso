@@ -14,7 +14,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useSettings } from "../components/utils/SettingsContext";
 import { useConfirm } from "../components/ui/ConfirmDialogProvider";
-import { formatCurrency, getCurrencySymbol } from "../components/utils/currencyUtils";
+import { formatCurrency } from "../components/utils/currencyUtils";
 import { formatDate, parseDate } from "../components/utils/dateUtils";
 import {
     getCustomBudgetStats,
@@ -33,7 +33,7 @@ import AllocationManager from "../components/custombudgets/AllocationManager";
 import BudgetCard from "../components/budgets/BudgetCard";
 import CustomBudgetForm from "../components/custombudgets/CustomBudgetForm";
 import ExpensesCardContent from "../components/budgetdetail/ExpensesCardContent";
-import { QUERY_KEYS } from "../components/hooks/queryKeys";
+// import { QUERY_KEYS } from "../components/hooks/queryKeys";
 
 export default function BudgetDetail() {
     const { settings, user } = useSettings();
