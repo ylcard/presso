@@ -179,7 +179,6 @@ export const useDashboardSummary = (transactions, selectedMonth, selectedYear, a
             .filter(t => {
                 if (t.type !== 'expense') return false;
                 if (t.isPaid) return false;
-                // if (isCashExpense(t)) return false;
 
                 const transactionDate = parseDate(t.date);
                 return transactionDate >= monthStartDate && transactionDate <= monthEndDate;
@@ -327,9 +326,6 @@ export const useBudgetsAggregates = (
             // Use centralized calculation
             const stats = getSystemBudgetStats(sb, transactions, categories, allCustomBudgets, monthStart, monthEnd, monthlyIncome);
 
-            // Extract values for backward compatibility if needed, or just pass the whole stats object
-            const { paidAmount, unpaidAmount, totalSpent, remaining, percentageUsed } = stats;
-
             return {
                 ...sb,
                 allocatedAmount: sb.budgetAmount,
@@ -472,7 +468,6 @@ export const useBudgetBarsData = (
             const stats = getCustomBudgetStats(cb, transactions, monthStartDate, monthEndDate, baseCurrency);
 
             // Calculate totals for BudgetBars
-            // REFACTOR: Use unified stats
             const totalBudget = stats.allocated;
             const paidAmount = stats.paid.totalBaseCurrencyAmount;
             const expectedAmount = stats.unpaid;
@@ -488,11 +483,6 @@ export const useBudgetBarsData = (
                 stats: {
                     paidAmount,
                     totalBudget,
-                    // totalAllocatedUnits: stats.totalAllocatedUnits,
-                    // totalSpentUnits: stats.totalSpentUnits,
-                    // totalUnpaidUnits: stats.totalUnpaidUnits,
-                    // digital: stats.digital,
-                    // cashByCurrency: stats.cashByCurrency
                     totalAllocatedUnits: stats.allocated,
                     totalSpentUnits: stats.spent,
                     totalUnpaidUnits: stats.unpaid
@@ -599,7 +589,6 @@ export const usePriorityChartData = (transactions, categories, goals, monthlyInc
             .reduce((acc, t) => {
                 const category = categoryMap[t.category_id];
                 if (category) {
-                    // const priority = category.priority;
                     // Use transaction priority override if available, otherwise category default
                     const priority = t.financial_priority || category.priority;
                     const amount = Number(t.amount) || 0;
