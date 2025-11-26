@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Pencil, Trash2, Calendar, Receipt, CheckCircle, Archive } from "lucide-react";
+import { Pencil, Trash2, Calendar, Receipt, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
