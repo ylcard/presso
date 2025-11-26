@@ -472,21 +472,10 @@ export const useBudgetBarsData = (
             const stats = getCustomBudgetStats(cb, transactions, monthStartDate, monthEndDate, baseCurrency);
 
             // Calculate totals for BudgetBars
-            let totalBudget = stats.digital.allocated;
-            if (stats.cashByCurrency) {
-                Object.values(stats.cashByCurrency).forEach(cashData => {
-                    totalBudget += cashData?.allocated || 0;
-                });
-            }
-
-            let paidAmount = stats.digital.spent;
-            if (stats.cashByCurrency) {
-                Object.values(stats.cashByCurrency).forEach(cashData => {
-                    paidAmount += cashData?.spent || 0;
-                });
-            }
-
-            const expectedAmount = stats.digital.unpaid;
+            // REFACTOR: Use unified stats
+            const totalBudget = stats.allocated;
+            const paidAmount = stats.paid.totalBaseCurrencyAmount;
+            const expectedAmount = stats.unpaid;
             const totalSpent = paidAmount + expectedAmount;
 
             const maxHeight = Math.max(totalBudget, totalSpent);
@@ -499,11 +488,14 @@ export const useBudgetBarsData = (
                 stats: {
                     paidAmount,
                     totalBudget,
-                    totalAllocatedUnits: stats.totalAllocatedUnits,
-                    totalSpentUnits: stats.totalSpentUnits,
-                    totalUnpaidUnits: stats.totalUnpaidUnits,
-                    digital: stats.digital,
-                    cashByCurrency: stats.cashByCurrency
+                    // totalAllocatedUnits: stats.totalAllocatedUnits,
+                    // totalSpentUnits: stats.totalSpentUnits,
+                    // totalUnpaidUnits: stats.totalUnpaidUnits,
+                    // digital: stats.digital,
+                    // cashByCurrency: stats.cashByCurrency
+                    totalAllocatedUnits: stats.allocated,
+                    totalSpentUnits: stats.spent,
+                    totalUnpaidUnits: stats.unpaid
                 },
                 targetAmount: totalBudget,
                 expectedAmount,
