@@ -364,6 +364,7 @@ export const useCustomBudgetActions = (user, transactions, options = {}) => {
         },
         onAfterSuccess: () => {
             // Redirect to Budgets page after successful deletion
+            // Potentially refactor this to intelligently go back to whatever was the location before entering the budget
             window.location.href = createPageUrl("Budgets");
         }
     });
