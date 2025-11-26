@@ -115,12 +115,18 @@ export default function TransactionFormContent({
     // Auto-set Priority based on Category
     useEffect(() => {
         if (formData.category_id) {
+            // Prevent overwriting existing priority on initial load of an edit
+            if (initialTransaction && formData.category_id === initialTransaction.category_id) {
+                // If we are editing and the category hasn't changed, respect the saved priority
+                return;
+            }
+
             const selectedCategory = categories.find(c => c.id === formData.category_id);
             if (selectedCategory && selectedCategory.priority) {
                 setFormData(prev => ({ ...prev, financial_priority: selectedCategory.priority }));
             }
         }
-    }, [formData.category_id, categories]);
+    }, [formData.category_id, categories, initialTransaction]);
 
     // Auto-Categorize based on Title
     useEffect(() => {
@@ -179,7 +185,8 @@ export default function TransactionFormContent({
             // Find a matching system budget (case-insensitive)
             const matchingSystemBudget = allBudgets.find(b =>
                 b.isSystemBudget &&
-                b.name.toLowerCase() === formData.financial_priority.toLowerCase()
+                b.name.toLowerCase() === formData.financial_priority.toLowerCase() &&
+                isDateInRange(formData.date, b.startDate, b.endDate)
             );
 
             if (matchingSystemBudget) {
@@ -192,9 +199,17 @@ export default function TransactionFormContent({
                 if (canAutoSwitch) {
                     setFormData(prev => ({ ...prev, customBudgetId: matchingSystemBudget.id }));
                 }
+            } else {
+                // If we can't find a matching system budget (e.g. future month not generated),
+                // and we are currently pointing to a system budget, we should clear it to avoid 
+                // pointing to the WRONG month (like November budget for January expense).
+                const currentBudget = allBudgets.find(b => b.id === formData.customBudgetId);
+                if (currentBudget && currentBudget.isSystemBudget) {
+                    setFormData(prev => ({ ...prev, customBudgetId: '' }));
+                }
             }
         }
-    }, [formData.financial_priority, allBudgets]);
+    }, [formData.financial_priority, allBudgets, formData.date]);
 
     // Filter budgets to show active + planned statuses + relevant completed budgets
     // This allows linking expenses to future/past budgets while keeping the list manageable
