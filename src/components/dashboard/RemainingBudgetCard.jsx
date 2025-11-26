@@ -20,7 +20,6 @@ export default function RemainingBudgetCard({
     const displayAmount = Math.abs(remainingBudget);
     const titleText = isOverspent ? "Overspent by" : "Remaining Budget";
     const amountColor = isOverspent ? "text-red-200" : "text-white";
-    console.log(currentMonthExpenses)
 
     return (
         <Card className="relative overflow-hidden border-none shadow-lg h-full">
