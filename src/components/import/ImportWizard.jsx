@@ -98,8 +98,6 @@ export default function ImportWizard({ onSuccess }) {
             const extractedData = result.output?.transactions || [];
 
             const processed = extractedData.map(item => {
-                // const amountClean = parseFloat(item.amount);
-                // const type = amountClean >= 0 ? 'income' : 'expense';
                 // 1. Get raw magnitude (absolute value)
                 const rawMagnitude = parseCleanRawAmount(item.amount);
 
@@ -136,11 +134,8 @@ export default function ImportWizard({ onSuccess }) {
                 );
 
                 return {
-                    // date: item.date,
                     date: txDate,
                     title: item.reason || 'Untitled Transaction',
-                    // amount: Math.abs(amountClean),
-                    // originalAmount: amountClean,
                     amount: rawMagnitude, // UI always sees positive
                     originalAmount: isNegative ? -rawMagnitude : rawMagnitude, // Keep record of original sign
                     originalCurrency: settings?.baseCurrency || 'USD',
@@ -149,11 +144,14 @@ export default function ImportWizard({ onSuccess }) {
                     categoryId: catResult.categoryId || null,
                     financial_priority: catResult.priority || 'wants',
 <<<<<<< HEAD
+<<<<<<< HEAD
                     isPaid: !!item.valueDate,
                     paidDate: item.valueDate || null,
 =======
                     // isPaid: !!item.valueDate,
                     // paidDate: item.valueDate || null,
+=======
+>>>>>>> upstream/main
                     isPaid: !!pdDate,
                     paidDate: pdDate || null,
 >>>>>>> upstream/main
@@ -181,8 +179,6 @@ export default function ImportWizard({ onSuccess }) {
     const processData = () => {
         const processed = csvData.data.map(row => {
             const amountRaw = row[mappings.amount];
-            // Basic cleaning of amount (remove currency symbols, commas)
-            // const amountClean = amountRaw ? parseFloat(amountRaw.replace(/[^0-9.-]+/g, "")) : 0;
             // 1. Clean data to pure number
             const rawMagnitude = parseCleanRawAmount(amountRaw);
 
@@ -190,7 +186,6 @@ export default function ImportWizard({ onSuccess }) {
             if (mappings.type && row[mappings.type]) {
                 type = row[mappings.type].toLowerCase().includes('income') ? 'income' : 'expense';
             } else {
-                // type = amountClean >= 0 ? 'income' : 'expense';
                 // Auto-detect if no type column: check for minus sign or parens in amount
                 const isNegative = amountRaw && (amountRaw.includes('-') || amountRaw.includes('('));
                 type = isNegative ? 'expense' : 'income';
@@ -220,8 +215,6 @@ export default function ImportWizard({ onSuccess }) {
             return {
                 date: row[mappings.date],
                 title: row[mappings.title] || 'Untitled Transaction',
-                // amount: Math.abs(amountClean),
-                // originalAmount: amountClean,
                 amount: rawMagnitude, // Store as positive for Review UI
                 originalAmount: type === 'expense' ? -rawMagnitude : rawMagnitude,
                 originalCurrency: settings?.baseCurrency || 'USD',
@@ -278,8 +271,6 @@ export default function ImportWizard({ onSuccess }) {
         }
     };
 
-    // const handleDeleteRow = (index) => {
-    //     setProcessedData(prev => prev.filter((_, i) => i !== index));
     const handleDeleteRows = (indicesToDelete) => {
         // Convert array to Set for O(1) lookup
         const indicesSet = new Set(indicesToDelete);
@@ -364,7 +355,6 @@ export default function ImportWizard({ onSuccess }) {
                             categories={categories}
                             customBudgets={allCustomBudgets}
                             onUpdateRow={handleUpdateRow}
-                            // onDeleteRow={handleDeleteRow}
                             onDeleteRows={handleDeleteRows}
                         />
                         <div className="flex justify-end gap-4">

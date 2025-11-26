@@ -12,7 +12,6 @@ export default function QuickAddBudget({
     onOpenChange,
     onSubmit,
     isSubmitting,
-    // cashWallet,
     baseCurrency
 }) {
     const { settings } = useSettings();
@@ -36,7 +35,6 @@ export default function QuickAddBudget({
                     onSubmit={handleSubmitWrapper}
                     onCancel={() => onOpenChange(false)}
                     isSubmitting={isSubmitting}
-                    // cashWallet={cashWallet}
                     baseCurrency={baseCurrency}
                     settings={settings}
                 />

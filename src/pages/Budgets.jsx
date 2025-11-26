@@ -9,7 +9,6 @@ import {
     useCategories,
     useCustomBudgetsAll,
     useSystemBudgetsForPeriod,
-    // useCashWallet,
 } from "../components/hooks/useBase44Entities";
 import { useBudgetsAggregates } from "../components/hooks/useDerivedData";
 import { useCustomBudgetActions } from "../components/hooks/useActions";
@@ -26,7 +25,6 @@ export default function Budgets() {
     const { categories } = useCategories();
     const { allCustomBudgets } = useCustomBudgetsAll(user);
     const { systemBudgets } = useSystemBudgetsForPeriod(user, monthStart, monthEnd);
-    // const { cashWallet } = useCashWallet(user);
     const { customBudgets, systemBudgetsWithStats } = useBudgetsAggregates(
         transactions,
         categories,
@@ -35,7 +33,6 @@ export default function Budgets() {
         selectedMonth,
         selectedYear
     );
-    // const customBudgetActions = useCustomBudgetActions(user, transactions, cashWallet);
     const customBudgetActions = useCustomBudgetActions({ transactions });
     const handleActivateBudget = (budgetId) => {
         customBudgetActions.handleStatusChange(budgetId, 'active');
@@ -182,7 +179,6 @@ export default function Budgets() {
                     onSubmit={customBudgetActions.handleSubmit}
                     onCancel={() => setShowQuickAddBudget(false)}
                     isSubmitting={customBudgetActions.isSubmitting}
-                    // cashWallet={cashWallet}
                     baseCurrency={settings.baseCurrency}
                     transactions={transactions}
                     allBudgets={allCustomBudgets}

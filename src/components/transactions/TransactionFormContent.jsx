@@ -742,7 +742,6 @@ import CategorySelect from "../ui/CategorySelect";
 import AnimatePresenceContainer from "../ui/AnimatePresenceContainer";
 import { useSettings } from "../utils/SettingsContext";
 import { useExchangeRates } from "../hooks/useExchangeRates";
-// import { getCurrencyBalance, getRemainingAllocatedCash } from "../utils/cashAllocationUtils";
 import { getCurrencySymbol } from "../utils/currencyUtils";
 import { calculateConvertedAmount, getRateForDate, getRateDetailsForDate } from "../utils/currencyCalculations";
 import { SUPPORTED_CURRENCIES } from "../utils/constants";
@@ -759,8 +758,6 @@ export default function TransactionFormContent({
     onSubmit,
     onCancel,
     isSubmitting = false,
-    // cashWallet = null,
-    transactions = []
 }) {
     const { settings, user } = useSettings();
     const { toast } = useToast();
@@ -832,10 +829,10 @@ export default function TransactionFormContent({
 
     const isForeignCurrency = formData.originalCurrency !== (settings?.baseCurrency || 'USD');
 
-    // Get currency symbol for the selected currency
-    const selectedCurrencySymbol = SUPPORTED_CURRENCIES.find(
-        c => c.code === formData.originalCurrency
-    )?.symbol || getCurrencySymbol(formData.originalCurrency);
+    // DEPRECATED? Get currency symbol for the selected currency
+    // const selectedCurrencySymbol = SUPPORTED_CURRENCIES.find(
+    //     c => c.code === formData.originalCurrency
+    // )?.symbol || getCurrencySymbol(formData.originalCurrency);
 
     // Auto-set Priority based on Category
     useEffect(() => {
@@ -993,25 +990,6 @@ export default function TransactionFormContent({
         return smartSortedBudgets.slice(0, 5);
     }, [smartSortedBudgets, budgetSearchTerm]);
 
-
-    // Calculate available cash balance dynamically
-    /* const availableBalance = (() => {
-        if (!formData.isCashExpense) return 0;
-
-        const currency = formData.originalCurrency;
-
-        if (formData.customBudgetId) {
-            // Get remaining allocated cash for the selected budget and currency
-            const selectedBudget = allBudgets.find(b => b.id === formData.customBudgetId);
-            if (selectedBudget && !selectedBudget.isSystemBudget) {
-                return getRemainingAllocatedCash(selectedBudget, transactions, currency);
-            }
-        }
-
-        // Get total cash wallet balance for the selected currency
-        return getCurrencyBalance(cashWallet, currency);
-    })(); */
-
     const executeRefresh = async (force) => {
         const result = await refreshRates(
             formData.originalCurrency,
@@ -1064,16 +1042,6 @@ export default function TransactionFormContent({
             return;
         }
 
-        // Check if sufficient cash for cash expenses
-        /* if (formData.isCashExpense && originalAmount > availableBalance) {
-            setValidationError(
-                formData.customBudgetId
-                    ? "You don't have enough allocated cash in this budget for this expense."
-                    : "You don't have enough cash in your wallet for this expense."
-            );
-            return;
-        } */
-
         let finalAmount = originalAmount;
         let exchangeRateUsed = null;
 
@@ -1120,22 +1088,6 @@ export default function TransactionFormContent({
                 finalAmount = conversion.convertedAmount;
                 exchangeRateUsed = conversion.exchangeRateUsed;
             }
-            /* } else if (formData.isCashExpense && isForeignCurrency) {
-                // For cash expenses in foreign currency, convert to base currency
-                const sourceRate = getRateForDate(exchangeRates, formData.originalCurrency, formData.date);
-                const targetRate = getRateForDate(exchangeRates, settings?.baseCurrency || 'USD', formData.date);
-    
-                if (sourceRate && targetRate) {
-                    const conversion = calculateConvertedAmount(
-                        originalAmount,
-                        formData.originalCurrency,
-                        settings?.baseCurrency || 'USD',
-                        { sourceToUSD: sourceRate, targetToUSD: targetRate }
-                    );
-    
-                    finalAmount = conversion.convertedAmount;
-                    exchangeRateUsed = conversion.exchangeRateUsed;
-                } */
         }
 
         const submitData = {
@@ -1156,9 +1108,6 @@ export default function TransactionFormContent({
             submitData.paidDate = formData.isCashExpense ? formData.date : (formData.isPaid ? (formData.paidDate || formData.date) : null);
             submitData.customBudgetId = formData.customBudgetId || null;
             submitData.isCashTransaction = formData.isCashExpense;
-            // submitData.cashTransactionType = formData.isCashExpense ? 'expense_from_wallet' : null;
-            // submitData.cashAmount = formData.isCashExpense ? originalAmount : null;
-            // submitData.cashCurrency = formData.isCashExpense ? formData.originalCurrency : null;
             submitData.cashTransactionType = null;
         } else {
             submitData.isPaid = false;
@@ -1200,7 +1149,6 @@ export default function TransactionFormContent({
             <div className="space-y-2">
                 <div className="flex justify-between items-center">
                     <Label htmlFor="amount">Amount</Label>
-                    {/* {isForeignCurrency && !formData.isCashExpense && ( */}
                     {isForeignCurrency && (
                         <div className="flex items-center gap-2">
                             {(() => {

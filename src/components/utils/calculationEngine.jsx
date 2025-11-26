@@ -12,18 +12,6 @@
 import { parseDate } from "./dateUtils";
 
 /**
- * Check if a transaction is a cash expense (should be excluded from budget math)
- * @param {object} transaction - The transaction object
- * @returns {boolean} True if this is a cash wallet expense
- */
-/* export const isCashExpense = (transaction) => {
-    // return transaction.isCashTransaction && transaction.cashTransactionType === 'expense_from_wallet';
-    // REFACTOR: In the Consumption Model, we treat cash expenses as normal expenses.
-    // We return false to ensure they are NOT excluded from calculations.
-    return false;
-}; */
-
-/**
  * Get effective financial priority for a transaction
  * Hierarchy: (1) Custom Budget -> 'wants', (2) transaction.financial_priority, (3) category.priority
  * 
@@ -87,8 +75,6 @@ export const calculateCommitmentView = (bucketId, expenses) => {
  * @param {object} options - Filtering options
  * @returns {number} Total settled amount in this period
  */
-// export const calculateSettlementView = (transactions, startDate, endDate, options = {}) => {
-// const { type = 'expense', excludeCash = true } = options;
 export const calculateSettlementView = (transactions, startDate, endDate, options = {}) => {
     const { type = 'expense' } = options;
     const start = parseDate(startDate);
@@ -98,9 +84,6 @@ export const calculateSettlementView = (transactions, startDate, endDate, option
         .filter(t => {
             // Filter by type
             if (t.type !== type) return false;
-
-            // Exclude cash expenses if requested
-            // if (excludeCash && isCashExpense(t)) return false;
 
             // Determine effective date
             const effectiveDate = (t.isPaid && t.paidDate)

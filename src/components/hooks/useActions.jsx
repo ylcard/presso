@@ -6,25 +6,16 @@ import { useCreateEntity } from "./useCreateEntity";
 import { useUpdateEntity } from "./useUpdateEntity";
 import { useDeleteEntity } from "./useDeleteEntity";
 import { QUERY_KEYS } from "./queryKeys";
-// import {
-//     allocateCashFromWallet,
-//     returnCashToWallet,
-//     calculateAllocationChanges,
-//     calculateRemainingCashAllocations,
-//     updateCurrencyBalance,
-// } from "../utils/cashAllocationUtils";
 import { parseDate } from "../utils/dateUtils";
 import { createPageUrl } from "@/utils";
 
 // Hook for transaction actions (CRUD operations - Transactions page)
-// export const useTransactionActions = (setShowForm, setEditingTransaction, cashWallet, options = {}) => {
 export const useTransactionActions = (config = {}) => {
     const { setShowForm, setEditingTransaction, ...options } = config;
 
     // CREATE: Use generic hook with cash wallet preprocessing
     const createMutation = useCreateEntity({
         entityName: 'Transaction',
-        // queryKeysToInvalidate: [QUERY_KEYS.TRANSACTIONS, QUERY_KEYS.CASH_WALLET, QUERY_KEYS.SYSTEM_BUDGETS],
         queryKeysToInvalidate: [QUERY_KEYS.TRANSACTIONS, QUERY_KEYS.SYSTEM_BUDGETS],
         onAfterSuccess: () => {
             if (setShowForm) setShowForm(false);
@@ -36,54 +27,6 @@ export const useTransactionActions = (config = {}) => {
     // UPDATE: Use generic hook with complex cash transaction handling
     const updateMutation = useUpdateEntity({
         entityName: 'Transaction',
-        /* queryKeysToInvalidate: [QUERY_KEYS.TRANSACTIONS, QUERY_KEYS.CASH_WALLET],
-        onBeforeUpdate: async ({ id, data, oldTransaction }) => {
-            // Handle complex cash transaction status changes
-            if (cashWallet && oldTransaction) {
-                const balances = cashWallet.balances || [];
-                let updatedBalances = [...balances];
-                let needsWalletUpdate = false;
-
-                const wasDigital = !oldTransaction.isCashTransaction;
-                const isNowDigital = !data.isCashTransaction;
-                const wasCash = oldTransaction.isCashTransaction && oldTransaction.cashTransactionType === 'expense_from_wallet';
-                const isNowCash = data.isCashTransaction && data.cashTransactionType === 'expense_from_wallet';
-
-                // Scenario 1: Digital to Cash
-                if (wasDigital && isNowCash) {
-                    updatedBalances = updateCurrencyBalance(updatedBalances, data.cashCurrency, -data.cashAmount);
-                    needsWalletUpdate = true;
-                }
-                // Scenario 2: Cash to Digital
-                else if (wasCash && isNowDigital) {
-                    updatedBalances = updateCurrencyBalance(updatedBalances, oldTransaction.cashCurrency, oldTransaction.cashAmount);
-                    needsWalletUpdate = true;
-                }
-                // Scenario 3: Cash Transaction Update (amount or currency change)
-                else if (wasCash && isNowCash) {
-                    const oldAmount = oldTransaction.cashAmount;
-                    const newAmount = data.cashAmount;
-                    const oldCurrency = oldTransaction.cashCurrency;
-                    const newCurrency = data.cashCurrency;
-
-                    if (oldAmount !== newAmount || oldCurrency !== newCurrency) {
-                        updatedBalances = updateCurrencyBalance(updatedBalances, oldCurrency, oldAmount);
-                        updatedBalances = updateCurrencyBalance(updatedBalances, newCurrency, -newAmount);
-                        needsWalletUpdate = true;
-                    }
-                }
-
-                // Update wallet if changes were made
-                if (needsWalletUpdate) {
-                    await base44.entities.CashWallet.update(cashWallet.id, {
-                        balances: updatedBalances
-                    });
-                }
-            }
-
-            return data;
-        }, */
-
         queryKeysToInvalidate: [QUERY_KEYS.TRANSACTIONS],
         onAfterSuccess: () => {
             if (setShowForm) setShowForm(false);
@@ -94,28 +37,9 @@ export const useTransactionActions = (config = {}) => {
     // DELETE: Use generic hook with cash wallet reversal
     const { handleDelete: handleDeleteTransaction } = useDeleteEntity({
         entityName: 'Transaction',
-        // queryKeysToInvalidate: [QUERY_KEYS.TRANSACTIONS, QUERY_KEYS.CASH_WALLET],
         queryKeysToInvalidate: [QUERY_KEYS.TRANSACTIONS],
         confirmTitle: "Delete Transaction",
         confirmMessage: "Are you sure you want to delete this transaction? This action cannot be undone.",
-        /* onBeforeDelete: async (transaction) => {
-            // Handle cash wallet balance adjustment for cash transactions
-            if (transaction.isCashTransaction && transaction.cashAmount && transaction.cashCurrency && cashWallet) {
-                const balances = cashWallet.balances || [];
-                let updatedBalances = [...balances];
-
-                // Reverse the transaction effect on wallet
-                if (transaction.cashTransactionType === 'withdrawal_to_wallet') {
-                    updatedBalances = updateCurrencyBalance(updatedBalances, transaction.cashCurrency, -transaction.cashAmount);
-                } else if (transaction.cashTransactionType === 'deposit_from_wallet_to_bank' || transaction.cashTransactionType === 'expense_from_wallet') {
-                    updatedBalances = updateCurrencyBalance(updatedBalances, transaction.cashCurrency, transaction.cashAmount);
-                }
-
-                await base44.entities.CashWallet.update(cashWallet.id, {
-                    balances: updatedBalances
-                });
-            }
-        } */
     });
 
     const handleSubmit = (data, editingTransaction) => {
@@ -264,7 +188,6 @@ export const useCustomBudgetActions = (config = {}) => {
     // CREATE: Use generic hook with intelligent status assignment and cash allocation
     const createMutation = useCreateEntity({
         entityName: 'CustomBudget',
-        // queryKeysToInvalidate: [QUERY_KEYS.CUSTOM_BUDGETS, QUERY_KEYS.CASH_WALLET],
         queryKeysToInvalidate: [QUERY_KEYS.CUSTOM_BUDGETS],
         onBeforeCreate: async (data) => {
             // CRITICAL: Determine status based on start date
@@ -273,14 +196,6 @@ export const useCustomBudgetActions = (config = {}) => {
 
             const startDate = parseDate(data.startDate);
             const status = startDate > today ? 'planned' : 'active';
-
-            // // Handle cash allocations if any
-            // if (data.cashAllocations && data.cashAllocations.length > 0 && user) {
-            //     await allocateCashFromWallet(
-            //         user.email,
-            //         data.cashAllocations
-            //     );
-            // }
 
             return {
                 ...data,
@@ -299,7 +214,6 @@ export const useCustomBudgetActions = (config = {}) => {
     // UPDATE: Use generic hook with cash allocation change handling
     const updateMutation = useUpdateEntity({
         entityName: 'CustomBudget',
-        // queryKeysToInvalidate: [QUERY_KEYS.CUSTOM_BUDGETS, QUERY_KEYS.CASH_WALLET, ['budget'], ['allBudgets']],
         queryKeysToInvalidate: [QUERY_KEYS.CUSTOM_BUDGETS, ['budget'], ['allBudgets']],
         onBeforeUpdate: async ({ id, data }) => {
             // CRITICAL: Use get() instead of list().find() for efficiency
@@ -308,28 +222,6 @@ export const useCustomBudgetActions = (config = {}) => {
             if (!existingBudget) {
                 throw new Error('Budget not found');
             }
-
-            // Handle cash allocation changes
-            /* if (user) {
-                const oldAllocations = existingBudget.cashAllocations || [];
-                const newAllocations = data.cashAllocations || [];
-
-                const changes = calculateAllocationChanges(oldAllocations, newAllocations);
-
-                for (const change of changes) {
-                    if (change.isIncrease) {
-                        await allocateCashFromWallet(
-                            user.email,
-                            [{ currencyCode: change.currencyCode, amount: change.amount }]
-                        );
-                    } else {
-                        await returnCashToWallet(
-                            user.email,
-                            [{ currencyCode: change.currencyCode, amount: change.amount }]
-                        );
-                    }
-                }
-            } */
 
             return data;
         },
@@ -341,7 +233,6 @@ export const useCustomBudgetActions = (config = {}) => {
 
     const { handleDelete: handleDeleteBudget, deleteDirect, isDeleting } = useDeleteEntity({
         entityName: 'CustomBudget',
-        // queryKeysToInvalidate: [QUERY_KEYS.CUSTOM_BUDGETS, QUERY_KEYS.TRANSACTIONS, QUERY_KEYS.CASH_WALLET],
         queryKeysToInvalidate: [QUERY_KEYS.CUSTOM_BUDGETS, QUERY_KEYS.TRANSACTIONS],
         confirmTitle: "Delete Budget",
         confirmMessage: "Are you sure you want to delete this budget? This will also delete all associated transactions and return cash allocations to your wallet.",
@@ -360,18 +251,6 @@ export const useCustomBudgetActions = (config = {}) => {
             for (const transaction of budgetTransactions) {
                 await base44.entities.Transaction.delete(transaction.id);
             }
-
-            // Return any remaining cash allocations to wallet
-            /* if (budget.cashAllocations && budget.cashAllocations.length > 0 && user) {
-                const remaining = calculateRemainingCashAllocations(budget, transactions);
-                if (remaining.length > 0) {
-                    console.log(`Returning ${remaining.length} cash allocations to wallet for budget ${budgetId}`);
-                    await returnCashToWallet(
-                        user.email,
-                        remaining
-                    );
-                }
-            } */
         },
         onAfterSuccess: () => {
             // Redirect to Budgets page after successful deletion
@@ -383,7 +262,6 @@ export const useCustomBudgetActions = (config = {}) => {
     // STATUS CHANGE: Use generic update hook with special handling for completion/reactivation
     const updateStatusMutation = useUpdateEntity({
         entityName: 'CustomBudget',
-        // queryKeysToInvalidate: [QUERY_KEYS.CUSTOM_BUDGETS, QUERY_KEYS.CASH_WALLET],
         queryKeysToInvalidate: [QUERY_KEYS.CUSTOM_BUDGETS],
         onBeforeUpdate: async ({ id, data }) => {
             // CRITICAL: Use get() instead of list().find()
@@ -394,17 +272,6 @@ export const useCustomBudgetActions = (config = {}) => {
             }
 
             if (data.status === 'completed') {
-                // When completing: return remaining cash to wallet
-                /* if (budget.cashAllocations && budget.cashAllocations.length > 0 && user) {
-                    const remaining = calculateRemainingCashAllocations(budget, transactions);
-                    if (remaining.length > 0) {
-                        await returnCashToWallet(
-                            user.email,
-                            remaining
-                        );
-                    }
-                } */
-
                 // Calculate actual spent amount
                 const budgetTransactions = transactions.filter(t => t.customBudgetId === id && t.isPaid);
                 const actualSpent = budgetTransactions.reduce((sum, t) => sum + t.amount, 0);
@@ -413,7 +280,6 @@ export const useCustomBudgetActions = (config = {}) => {
                     status: 'completed',
                     allocatedAmount: actualSpent,
                     originalAllocatedAmount: budget.originalAllocatedAmount || budget.allocatedAmount,
-                    // cashAllocations: []
                 };
             } else if (data.status === 'active') {
                 // When reactivating: restore original allocated amount, but do NOT restore cash allocations
@@ -421,7 +287,6 @@ export const useCustomBudgetActions = (config = {}) => {
                     status: 'active',
                     allocatedAmount: budget.originalAllocatedAmount || budget.allocatedAmount,
                     originalAllocatedAmount: null,
-                    // cashAllocations: []
                 };
             } else {
                 return data;
