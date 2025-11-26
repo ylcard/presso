@@ -1,19 +1,19 @@
 import { useMemo } from "react";
 import { useSettings } from "../components/utils/SettingsContext";
 import { usePeriod } from "../components/hooks/usePeriod";
-import { 
-    useTransactions, 
-    useCategories, 
+import {
+    useTransactions,
+    useCategories,
     useGoals,
     useSystemBudgetsForPeriod,
-    useCustomBudgetsAll 
+    useCustomBudgetsAll
 } from "../components/hooks/useBase44Entities";
 import { useMonthlyTransactions, useMonthlyIncome } from "../components/hooks/useDerivedData";
 import MonthlyBreakdown from "../components/reports/MonthlyBreakdown";
 import PriorityChart from "../components/reports/PriorityChart";
 import MonthNavigator from "../components/ui/MonthNavigator";
 import ProjectionChart from "../components/reports/ProjectionChart";
-import ReportStats from "../components/reports/ReportStats";
+import ReportStats, { FinancialHealthScore } from "../components/reports/ReportStats";
 import { calculateProjection } from "../components/utils/projectionUtils";
 import { calculateBonusSavingsPotential } from "../components/utils/financialCalculations";
 
@@ -93,6 +93,18 @@ export default function Reports() {
                     startDate={monthStart}
                     endDate={monthEnd}
                     bonusSavingsPotential={bonusSavingsPotential}
+                />
+
+                {/* 2. Financial Health Score (New) */}
+                <FinancialHealthScore
+                    monthlyIncome={monthlyIncome}
+                    transactions={monthlyTransactions}
+                    prevMonthlyIncome={prevMonthlyIncome}
+                    prevTransactions={prevMonthlyTransactions}
+                    startDate={monthStart}
+                    endDate={monthEnd}
+                    isLoading={isLoading}
+                    settings={settings}
                 />
 
                 {/* 2. Historical Context & Future Projection */}
