@@ -221,8 +221,8 @@ export default function ImportWizard({ onSuccess }) {
                 category: catResult.categoryName || 'Uncategorized',
                 categoryId: catResult.categoryId || null,
                 financial_priority: catResult.priority || 'wants',
-                isPaid: false, // CSV usually doesn't imply paid status unless specified, default false
-                paidDate: null,
+                isPaid: true, // Assume bank import data is already paid/settled
+                paidDate: row[mappings.date],
                 customBudgetId: null,
                 originalData: row
             };
