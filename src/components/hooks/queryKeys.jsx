@@ -10,5 +10,5 @@ export const QUERY_KEYS = {
     ALL_BUDGETS: 'allBudgets',
     ALLOCATIONS: 'allocations',
     EXCHANGE_RATES: 'exchangeRates',
-    CASH_WALLET: 'cashWallet',
+    // CASH_WALLET: 'cashWallet',
 };
