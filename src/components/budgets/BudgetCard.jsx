@@ -142,7 +142,7 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget, 
     let displayPercentage = 0;
     let mainOffset = 0;
     
-    if (isSystemSavings) {
+    if (isSavings) {
         // Savings: Grow from 0 -> 100%
         displayPercentage = Math.min(percentage, 100);
         mainOffset = circumference - (displayPercentage / 100) * circumference;
