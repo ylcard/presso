@@ -80,7 +80,7 @@ export default function Dashboard() {
     );
 
     // const transactionActions = useTransactionActions(null, null, cashWallet, {
-    const transactionActions = useTransactionActions(null, null, null, {
+    const transactionActions = useTransactionActions({
         onSuccess: () => {
             setShowQuickAdd(false);
             setShowQuickAddIncome(false);
@@ -88,7 +88,8 @@ export default function Dashboard() {
     });
 
     // const budgetActions = useCustomBudgetActions(user, transactions, cashWallet, {
-    const budgetActions = useCustomBudgetActions(user, transactions, null, {
+    const budgetActions = useCustomBudgetActions({
+        transactions,
         onSuccess: () => {
             setShowQuickAddBudget(false);
         }
