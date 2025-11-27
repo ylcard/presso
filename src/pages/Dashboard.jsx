@@ -171,8 +171,8 @@ export default function Dashboard() {
                     <div className="lg:col-span-2 flex flex-col">
                         <BudgetBars
                             systemBudgets={systemBudgets}
-                            // customBudgets={activeCustomBudgets}
-                            // allCustomBudgets={allCustomBudgets}
+                            customBudgets={activeCustomBudgets}
+                            allCustomBudgets={allCustomBudgets}
                             // Pass pre-calculated data to avoid double calculation
                             preCalculatedSystemData={systemBudgetsData}
                             preCalculatedCustomData={customBudgetsData}
