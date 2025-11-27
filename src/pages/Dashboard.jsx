@@ -119,6 +119,7 @@ export default function Dashboard() {
                             bonusSavingsPotential={bonusSavingsPotential}
                             currentMonthIncome={currentMonthIncome}
                             currentMonthExpenses={currentMonthExpenses}
+                            goals={goals}
                             settings={settings}
                             monthNavigator={
                                 <MonthNavigator
@@ -178,6 +179,7 @@ export default function Dashboard() {
                             preCalculatedCustomData={customBudgetsData}
                             preCalculatedSavings={{ totalActualSavings, savingsTarget, savingsShortfall }}
                             transactions={transactions}
+                            showSystem={false}
                             categories={categories}
                             currentMonth={selectedMonth}
                             currentYear={selectedYear}
