@@ -44,6 +44,10 @@ export default function RemainingBudgetCard({
     const needsBudget = systemBudgets.find(sb => sb.systemBudgetType === 'needs');
     const wantsBudget = systemBudgets.find(sb => sb.systemBudgetType === 'wants');
 
+    // Dynamic Colors (Fallbacks provided just in case)
+    const needsColor = needsBudget?.color || '#3B82F6'; // Default Blue
+    const wantsColor = wantsBudget?.color || '#F59E0B'; // Default Amber
+
     // Actual Spend (from pre-calculated stats)
     // const needsSpent = needsBudget?.stats?.paidAmount || 0;
     // const wantsSpent = wantsBudget?.stats?.paidAmount || 0;
@@ -153,8 +157,8 @@ export default function RemainingBudgetCard({
     // const isWantsOver = wantsSpent > wantsLimit;
     // const isNeedsOver = needsTotal > needsLimit;
     // const isWantsOver = wantsTotal > wantsLimit;
-    const isNeedsOver = needsSegs.total > needsLimit;
-    const isWantsOver = wantsSegs.total > wantsLimit;
+    // const isNeedsOver = needsSegs.total > needsLimit;
+    // const isWantsOver = wantsSegs.total > wantsLimit;
     // const isTotalOver = totalSpent > income;
     const isTotalOver = totalSpent > currentMonthIncome; // Check against real income
 
@@ -237,19 +241,19 @@ export default function RemainingBudgetCard({
                                 className={`h-full transition-all duration-500 relative group hover:brightness-110 cursor-pointer border-r border-white/20 overflow-hidden flex`}
                                 style={{ width: `${needsVisualPct}%` }}
                             >
-                                {/* 1. Safe Paid (Solid Blue) */}
+                                {/* 1. Safe Paid (Solid) */}
                                 {needsSegs.safePaid > 0 && (
-                                    <div className="h-full bg-blue-500" style={{ width: `${(needsSegs.safePaid / needsSegs.total) * 100}%` }} />
+                                    <div className="h-full" style={{ width: `${(needsSegs.safePaid / needsSegs.total) * 100}%`, backgroundColor: needsColor }} />
                                 )}
 
-                                {/* 2. Safe Unpaid (Striped Blue) */}
+                                {/* 2. Safe Unpaid (Striped) */}
                                 {needsSegs.safeUnpaid > 0 && (
                                     <div className="h-full bg-blue-500 opacity-60" style={{ width: `${(needsSegs.safeUnpaid / needsSegs.total) * 100}%`, ...stripePattern }} />
                                 )}
 
                                 {/* 3. Overflow (Striped Red) */}
                                 {needsSegs.overflow > 0 && (
-                                    <div className="h-full bg-red-500" style={{ width: `${(needsSegs.overflow / needsSegs.total) * 100}%`, ...stripePattern }} />
+                                    <div className="h-full opacity-60" style={{ width: `${(needsSegs.safeUnpaid / needsSegs.total) * 100}%`, backgroundColor: needsColor, ...stripePattern }} />
                                 )}
 
                                 {/* Show label always if bar is wide enough (>10%), otherwise hover only */}
@@ -264,14 +268,14 @@ export default function RemainingBudgetCard({
                                 className={`h-full transition-all duration-500 relative group hover:brightness-110 cursor-pointer border-r border-white/20 overflow-hidden flex`}
                                 style={{ width: `${wantsVisualPct}%` }}
                             >
-                                {/* 1. Safe Paid (Solid Amber) */}
+                                {/* 1. Safe Paid (Solid) */}
                                 {wantsSegs.safePaid > 0 && (
-                                    <div className="h-full bg-amber-400" style={{ width: `${(wantsSegs.safePaid / wantsSegs.total) * 100}%` }} />
+                                    <div className="h-full" style={{ width: `${(wantsSegs.safePaid / wantsSegs.total) * 100}%`, backgroundColor: wantsColor }} />
                                 )}
 
-                                {/* 2. Safe Unpaid (Striped Amber) */}
+                                {/* 2. Safe Unpaid (Striped) */}
                                 {wantsSegs.safeUnpaid > 0 && (
-                                    <div className="h-full bg-amber-400 opacity-60" style={{ width: `${(wantsSegs.safeUnpaid / wantsSegs.total) * 100}%`, ...stripePattern }} />
+                                    <div className="h-full opacity-60" style={{ width: `${(wantsSegs.safeUnpaid / wantsSegs.total) * 100}%`, backgroundColor: wantsColor, ...stripePattern }} />
                                 )}
 
                                 {/* 3. Overflow (Striped Red) */}
@@ -324,15 +328,29 @@ export default function RemainingBudgetCard({
                         </div>
 
                         {/* Legend Row */}
-                        <div className="flex justify-between text-xs text-gray-400 pt-1">
-                            <div className="flex gap-4">
+                        <div className="flex flex-col sm:flex-row justify-between text-xs text-gray-400 pt-1 gap-2">
+                            {/* Amounts Legend */}
+                            <div className="flex gap-4 items-center">
                                 <span className="flex items-center gap-1.5">
-                                    <div className={`w-2 h-2 rounded-full ${isNeedsOver ? 'bg-red-500' : 'bg-blue-500'}`}></div>
+                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: needsColor }}></div>
                                     Essentials: {formatCurrency(needsSegs.total, settings)}
                                 </span>
                                 <span className="flex items-center gap-1.5">
-                                    <div className={`w-2 h-2 rounded-full ${isWantsOver ? 'bg-red-400' : 'bg-amber-400'}`}></div>
+                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: wantsColor }}></div>
                                     Lifestyle: {formatCurrency(wantsSegs.total, settings)}
+                                </span>
+                            </div>
+
+                            {/* Status Key */}
+                            <div className="flex gap-3 items-center text-[10px] bg-gray-50 px-2 py-1 rounded border border-gray-100">
+                                <span className="flex items-center gap-1">
+                                    <div className="w-2 h-2 bg-gray-400 rounded-sm"></div> Paid
+                                </span>
+                                <span className="flex items-center gap-1">
+                                    <div className="w-2 h-2 bg-gray-400/50 rounded-sm" style={stripePattern}></div> Plan
+                                </span>
+                                <span className="flex items-center gap-1 text-red-500 font-medium">
+                                    <div className="w-2 h-2 bg-red-500/80 rounded-sm" style={stripePattern}></div> Over
                                 </span>
                             </div>
 
