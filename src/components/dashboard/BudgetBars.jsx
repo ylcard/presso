@@ -8,6 +8,7 @@ import { formatCurrency } from "../utils/currencyUtils";
 import { useBudgetBarsData } from "../hooks/useDerivedData";
 import BudgetBar from "../custombudgets/BudgetBar";
 import BudgetCard from "../budgets/BudgetCard";
+import { useSettings } from "../utils/SettingsContext";
 
 export default function BudgetBars({
     systemBudgets,
@@ -26,6 +27,9 @@ export default function BudgetBars({
     preCalculatedSavings,
     showSystem = true
 }) {
+
+    // Get the updater from context
+    const { updateSettings } = useSettings();
 
     // Initialize state from global settings, defaulting to 'bars'
     // This acts as a temporary override that resets on page reload
@@ -49,6 +53,13 @@ export default function BudgetBars({
     const visibleCustomBudgets = customBudgetsData.slice(customStartIndex, customStartIndex + barsPerPage);
     const canScrollLeft = customStartIndex > 0;
     const canScrollRight = customStartIndex + barsPerPage < customBudgetsData.length;
+
+    // Wrapper to update local state AND persist to settings
+    const handleViewModeChange = (checked) => {
+        const newMode = checked ? 'cards' : 'bars';
+        setViewMode(newMode);
+        updateSettings({ budgetViewMode: newMode });
+    };
 
     return (
         <div className="space-y-6">
@@ -155,7 +166,8 @@ export default function BudgetBars({
                             <Switch
                                 id="view-mode-custom"
                                 checked={viewMode === 'cards'}
-                                onCheckedChange={(checked) => setViewMode(checked ? 'cards' : 'bars')}
+                                // onCheckedChange={(checked) => setViewMode(checked ? 'cards' : 'bars')}
+                                onCheckedChange={handleViewModeChange}
                             />
                         </div>
                         <div className={`flex ${viewMode === 'cards' ? 'w-full gap-4' : 'flex-wrap justify-center gap-4'}`}>
