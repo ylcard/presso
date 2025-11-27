@@ -68,7 +68,7 @@ export default function Dashboard() {
     );
 
     // NEW: Calculate the aggregated "Needs" and "Wants" totals using the new simplified logic
-    const { aggregateNeedsTotal, aggregateWantsTotal } = useMonthlyBreakdown(
+    const { aggregateNeedsTotal, aggregateWantsTotal, detailedBreakdown } = useMonthlyBreakdown(
         transactions,
         categories,
         monthlyIncome,
@@ -124,16 +124,15 @@ export default function Dashboard() {
                 <div className="grid md:grid-cols-3 gap-6">
                     <div className="md:col-span-3">
                         <RemainingBudgetCard
-                            // systemBudgets={systemBudgets}
-                            // remainingBudget={remainingBudget}
+                            breakdown={detailedBreakdown}
                             systemBudgets={systemBudgetsData} // NEW: Budgets with calculated stats
                             bonusSavingsPotential={bonusSavingsPotential}
                             currentMonthIncome={currentMonthIncome}
                             currentMonthExpenses={currentMonthExpenses}
                             goals={goals}
                             settings={settings}
-                            aggregateNeedsTotal={aggregateNeedsTotal}
-                            aggregateWantsTotal={aggregateWantsTotal}
+                            // aggregateNeedsTotal={aggregateNeedsTotal}
+                            // aggregateWantsTotal={aggregateWantsTotal}
                             monthNavigator={
                                 <MonthNavigator
                                     currentMonth={selectedMonth}
