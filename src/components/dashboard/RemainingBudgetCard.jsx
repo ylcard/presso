@@ -178,7 +178,7 @@ export default function RemainingBudgetCard({
                             <Link
                                 to={wantsBudget ? `/BudgetDetail?id=${wantsBudget.id}` : '#'}
                                 className={`h-full transition-all duration-500 relative group hover:brightness-110 cursor-pointer border-r border-white/20`}
-                                style={{ width: `${wantsVisualPct}%`, backgroundColor: isWantsOver ? '#F87171' : '#F59E0B' }}
+                                style={{ width: `${wantsVisualPct}%`, backgroundColor: isWantsOver ? '#ec8d1fff' : '#e6b42dff' }}
                             >
                                 <div className={`absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white transition-opacity ${wantsVisualPct > 10 ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                                     Lifestyle
