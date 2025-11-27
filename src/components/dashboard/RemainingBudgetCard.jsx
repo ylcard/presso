@@ -31,7 +31,7 @@ export default function RemainingBudgetCard({
         ? `${formatCurrency(needsGoal?.target_amount || 0, settings)} / ${formatCurrency(wantsGoal?.target_amount || 0, settings)} / ${formatCurrency(savingsGoal?.target_amount || 0, settings)}`
         : `${needsGoal?.target_percentage || 50}% / ${wantsGoal?.target_percentage || 30}% / ${savingsGoal?.target_percentage || 20}%`;
 
-    // Find specific budgets (Needs/Wants) to visualize the "stack"
+    // Find specific budgets (Essentials/Lifestyle) to visualize the "stack"
     const needsBudget = systemBudgets.find(sb => sb.systemBudgetType === 'needs');
     const wantsBudget = systemBudgets.find(sb => sb.systemBudgetType === 'wants');
 
@@ -118,7 +118,7 @@ export default function RemainingBudgetCard({
                         {/* The Bar Container */}
                         <div className="relative h-8 w-full bg-gray-100 rounded-lg overflow-hidden flex shadow-inner">
 
-                            {/* NEEDS Segment (Blue/Red) */}
+                            {/* Essentials Segment (Blue/Red) */}
                             <Link
                                 to={needsBudget ? `/BudgetDetail?id=${needsBudget.id}` : '#'}
                                 className={`h-full transition-all duration-500 relative group hover:brightness-110 cursor-pointer ${isNeedsOver ? 'bg-red-500' : 'bg-blue-500'}`}
@@ -129,15 +129,15 @@ export default function RemainingBudgetCard({
                                 </div>
                             </Link>
 
-                            {/* WANTS Segment (Amber/Red) */}
-                            {/* Stacks directly after Needs */}
+                            {/* Lifestyle Segment (Amber/Red) */}
+                            {/* Stacks directly after Essentials */}
                             <Link
                                 to={wantsBudget ? `/BudgetDetail?id=${wantsBudget.id}` : '#'}
                                 className={`h-full transition-all duration-500 relative group hover:brightness-110 cursor-pointer ${isWantsOver ? 'bg-red-400' : 'bg-amber-400'}`}
                                 style={{ width: `${Math.min(wantsPct, 100 - needsPct)}%` }}
                             >
                                 <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                                    Wants
+                                    Lifestyle
                                 </div>
                             </Link>
 
@@ -150,17 +150,17 @@ export default function RemainingBudgetCard({
 
                             {/* --- LIMIT MARKERS (The Ceilings) --- */}
 
-                            {/* Needs Limit Line */}
+                            {/* Essentials Limit Line */}
                             {needsLimitPct < 100 && (
                                 <div
                                     className="absolute top-0 bottom-0 w-px bg-gray-800/30 z-10 border-r border-white/50"
                                     style={{ left: `${needsLimitPct}%` }}
                                 >
-                                    <div className="absolute -top-3 -left-3 text-[9px] text-gray-400 font-medium">Needs</div>
+                                    <div className="absolute -top-3 -left-3 text-[9px] text-gray-400 font-medium">Essentials</div>
                                 </div>
                             )}
 
-                            {/* Total Spending Limit Line (Needs + Wants) */}
+                            {/* Total Spending Limit Line (Essentials + Lifestyle) */}
                             {totalLimitPct < 100 && (
                                 <div
                                     className="absolute top-0 bottom-0 w-px bg-gray-800/30 z-10 border-r border-white/50"
@@ -176,11 +176,11 @@ export default function RemainingBudgetCard({
                             <div className="flex gap-4">
                                 <span className="flex items-center gap-1.5">
                                     <div className={`w-2 h-2 rounded-full ${isNeedsOver ? 'bg-red-500' : 'bg-blue-500'}`}></div>
-                                    Needs: {formatCurrency(needsSpent, settings)}
+                                    Essentials: {formatCurrency(needsSpent, settings)}
                                 </span>
                                 <span className="flex items-center gap-1.5">
                                     <div className={`w-2 h-2 rounded-full ${isWantsOver ? 'bg-red-400' : 'bg-amber-400'}`}></div>
-                                    Wants: {formatCurrency(wantsSpent, settings)}
+                                    Lifestyle: {formatCurrency(wantsSpent, settings)}
                                 </span>
                             </div>
 
