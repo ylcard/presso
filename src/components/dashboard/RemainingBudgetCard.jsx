@@ -2,6 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, AlertCircle, Target } from "lucide-react";
 import { formatCurrency } from "../utils/currencyUtils";
 import { Link } from "react-router-dom";
+import { useMonthlyBreakdown } from "../hooks/useDerivedData";
 
 export default function RemainingBudgetCard({
     bonusSavingsPotential,
