@@ -257,23 +257,23 @@ export default function RemainingBudgetCard({
 
                             {/* --- LIMIT MARKERS (The Ceilings) --- */}
 
-                            {/* Essentials Limit Line */}
-                            {needsLimitPct < 100 && (
-                                <div
-                                    className="absolute top-0 bottom-0 w-px bg-gray-800/30 z-10 border-r border-white/50"
-                                    style={{ left: `${needsLimitPct}%` }}
-                                >
-                                    <div className="absolute -top-3 -left-3 text-[9px] text-gray-400 font-medium">Essentials</div>
-                                </div>
-                            )}
-
-                            {/* Total Spending Limit Line (Essentials + Lifestyle) */}
+                            {/* Savings Barrier / Guardrail */}
                             {totalLimitPct < 100 && (
                                 <div
-                                    className="absolute top-0 bottom-0 w-px bg-gray-800/30 z-10 border-r border-white/50"
-                                    style={{ left: `${totalLimitPct}%` }}
+                                    className="absolute top-0 bottom-0 z-20 flex flex-col items-center"
+                                    style={{ left: `${totalLimitPct}%`, transform: 'translateX(-50%)' }}
                                 >
-                                    <div className="absolute -top-3 -left-3 text-[9px] text-gray-400 font-medium">Limit</div>
+                                    {/* The visual line */}
+                                    <div className="h-full w-0.5 border-l-2 border-red-400/60 border-dashed" />
+
+                                    {/* The warning label */}
+                                    <div className="absolute -top-6 flex flex-col items-center">
+                                        <div className="px-1.5 py-0.5 bg-red-50 border border-red-200 rounded text-[9px] font-bold text-red-600 shadow-sm whitespace-nowrap flex items-center gap-1">
+                                            <span>🛡️ Savings Barrier</span>
+                                        </div>
+                                        {/* Little pointer triangle */}
+                                        <div className="w-0 h-0 border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-red-200" />
+                                    </div>
                                 </div>
                             )}
                         </div>
