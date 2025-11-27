@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Plus, ChevronLeft, ChevronRight, AlertTriangle } from "lucide-react";
@@ -21,7 +21,6 @@ export default function BudgetBars({
     monthlyIncome,
     baseCurrency,
     onCreateBudget,
-    // New props for pre-calculated data
     preCalculatedSystemData,
     preCalculatedCustomData,
     preCalculatedSavings,
@@ -31,17 +30,11 @@ export default function BudgetBars({
     // Get the updater from context
     const { updateSettings } = useSettings();
 
-    // Initialize state from global settings, defaulting to 'bars'
-    // This acts as a temporary override that resets on page reload
-    const [viewMode, setViewMode] = useState(settings.budgetViewMode || 'bars');
+    const viewMode = settings.budgetViewMode || 'bars';
 
     const [customStartIndex, setCustomStartIndex] = useState(0);
     const barsPerPage = viewMode === 'cards' ? 4 : 7;
 
-    // Use the extracted hook for all calculations
-    // const { systemBudgetsData, customBudgetsData, totalActualSavings, savingsTarget, savingsShortfall } =
-    //     useBudgetBarsData(systemBudgets, customBudgets, allCustomBudgets, transactions, categories, goals, monthlyIncome, baseCurrency); // Pass baseCurrency to hook
-    // Use passed data OR calculate if not provided (backward compatibility)
     const calculatedData = useBudgetBarsData(systemBudgets, customBudgets, allCustomBudgets, transactions, categories, goals, monthlyIncome, baseCurrency);
 
     const systemBudgetsData = preCalculatedSystemData || calculatedData.systemBudgetsData;
@@ -57,7 +50,6 @@ export default function BudgetBars({
     // Wrapper to update local state AND persist to settings
     const handleViewModeChange = (checked) => {
         const newMode = checked ? 'cards' : 'bars';
-        setViewMode(newMode);
         updateSettings({ budgetViewMode: newMode });
     };
 
@@ -166,7 +158,6 @@ export default function BudgetBars({
                             <Switch
                                 id="view-mode-custom"
                                 checked={viewMode === 'cards'}
-                                // onCheckedChange={(checked) => setViewMode(checked ? 'cards' : 'bars')}
                                 onCheckedChange={handleViewModeChange}
                             />
                         </div>
