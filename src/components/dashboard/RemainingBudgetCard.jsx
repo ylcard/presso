@@ -44,8 +44,8 @@ export default function RemainingBudgetCard({
     // Actual Spend (from pre-calculated stats)
     // const needsSpent = needsBudget?.stats?.paidAmount || 0;
     // const wantsSpent = wantsBudget?.stats?.paidAmount || 0;
-    const needsSpent = needsBudget?.stats?.totalSpentUnits || 0;
-    const wantsSpent = wantsBudget?.stats?.totalSpentUnits || 0;
+    const needsSpent = aggregateNeedsTotal;
+    const wantsSpent = aggregateWantsTotal;
     const totalSpent = currentMonthExpenses;
 
     // Goals (Limits) - Use budgetAmount as the ceiling
