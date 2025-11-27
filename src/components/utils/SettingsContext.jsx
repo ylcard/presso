@@ -98,11 +98,22 @@ export const SettingsProvider = ({ children }) => {
             setSettings(updatedSettings);
             localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedSettings));
 
-            // Then sync to database using the stored ID
-            if (settingsId) {
-                await base44.entities.UserSettings.update(settingsId, newSettings);
-            } else {
-                // Fallback: If no ID exists yet, create the record
+            // --- DATABASE SYNC ---
+            // Safety: Ensure we have an ID. If state is empty, fetch it one last time.
+            let targetId = settingsId;
+
+            if (!targetId && user?.email) {
+                const existing = await base44.entities.UserSettings.filter({ user_email: user.email });
+                if (existing && existing[0]) {
+                    targetId = existing[0].id;
+                    setSettingsId(targetId); // Update state for next time
+                }
+            }
+
+            if (targetId) {
+                await base44.entities.UserSettings.update(targetId, newSettings);
+            } else if (user?.email) {
+                // Only create if we genuinely couldn't find an existing record
                 const created = await base44.entities.UserSettings.create({
                     ...updatedSettings, // CRITICAL: Use full, merged settings for creation
                     user_email: user.email
