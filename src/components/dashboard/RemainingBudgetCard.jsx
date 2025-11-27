@@ -4,7 +4,6 @@ import { formatCurrency } from "../utils/currencyUtils";
 import { Link } from "react-router-dom";
 
 export default function RemainingBudgetCard({
-    // Cleaned up props: Removed unused 'remainingBudget', 'bonusSavingsPotential' (calculated internally or re-added if needed)
     bonusSavingsPotential,
     currentMonthIncome,
     currentMonthExpenses,
@@ -28,7 +27,7 @@ export default function RemainingBudgetCard({
     const wantsSpent = wantsBudget?.stats?.paidAmount || 0;
     const totalSpent = currentMonthExpenses; // Should roughly equal needs + wants + other
 
-    // Goals (Limits) - Use budgetAmount from system budget as the absolute limit
+    // Goals (Limits)
     const needsLimit = needsBudget?.budgetAmount || 0;
     const wantsLimit = wantsBudget?.budgetAmount || 0;
 
@@ -44,7 +43,7 @@ export default function RemainingBudgetCard({
     // Status Logic
     const isNeedsOver = needsSpent > needsLimit;
     const isWantsOver = wantsSpent > wantsLimit;
-    const isTotalOver = totalSpent > income;
+    const isTotalOver = totalSpent > income; // <--- NOW USED
 
     return (
         <Card className="border-none shadow-md bg-white overflow-hidden h-full flex flex-col">
@@ -68,17 +67,27 @@ export default function RemainingBudgetCard({
                     {/* 1. The Verdict (Text) */}
                     <div className="flex items-end justify-between">
                         <div>
-                            <h2 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-                                {Math.round(savingsPct)}%
-                                <span className="text-lg font-medium text-gray-500">Saved</span>
-                            </h2>
+                            {/* CHANGED: Use isTotalOver to switch headline state */}
+                            {isTotalOver ? (
+                                <h2 className="text-3xl font-bold text-red-600 flex items-center gap-2">
+                                    Over Limit
+                                    <AlertCircle className="w-6 h-6" />
+                                </h2>
+                            ) : (
+                                <h2 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+                                    {Math.round(savingsPct)}%
+                                    <span className="text-lg font-medium text-gray-500">Saved</span>
+                                </h2>
+                            )}
+
                             <p className="text-sm text-gray-500 mt-1">
-                                You've spent <strong>{formatCurrency(totalSpent, settings)}</strong> of your <strong>{formatCurrency(income, settings)}</strong> income.
+                                {/* CHANGED: Highlight spent amount in red if over total income */}
+                                You've spent <strong className={isTotalOver ? "text-red-600" : "text-gray-900"}>{formatCurrency(totalSpent, settings)}</strong> of your <strong>{formatCurrency(income, settings)}</strong> income.
                             </p>
                         </div>
 
                         {/* Efficiency Bonus Badge */}
-                        {bonusSavingsPotential > 0 && (
+                        {bonusSavingsPotential > 0 && !isTotalOver && (
                             <div className="text-right hidden sm:block">
                                 <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-100">
                                     <TrendingUp className="w-3 h-3 text-emerald-600" />
