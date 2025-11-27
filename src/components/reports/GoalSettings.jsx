@@ -235,7 +235,6 @@ export default function GoalSettings({ goals, onGoalUpdate, isLoading, isSaving 
                                     <AmountInput
                                         value={absoluteValues[key]}
                                         onChange={(val) => setAbsoluteValues(prev => ({ ...prev, [key]: val || 0 }))}
-                                        className="pl-8 font-mono"
                                         placeholder="0.00"
                                         className="font-mono"
                                     />
