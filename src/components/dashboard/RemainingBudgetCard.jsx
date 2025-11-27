@@ -70,6 +70,12 @@ export default function RemainingBudgetCard({
     // Helper to calculate segment splits (Safe Paid, Safe Unpaid, Overflow)
     const calculateSegments = (paid, unpaid, limit) => {
         const total = paid + unpaid;
+
+        // FIX: If limit is 0 or missing, treat as "Safe" (Unbudgeted) instead of "Overflow"
+        if (!limit || limit <= 0) {
+            return { safePaid: paid, safeUnpaid: unpaid, overflow: 0, total };
+        }
+
         // If limit is 0 (no budget), everything is overflow
         const overflow = limit > 0 ? Math.max(0, total - limit) : total;
         const safeTotal = total - overflow;
@@ -136,11 +142,30 @@ export default function RemainingBudgetCard({
     const wantsVisualPct = wantsSegs.total > 0 ? Math.max(rawWantsPct, CLICKABLE_MIN_PCT) : 0;
 
     // Calculate the total space required by the inflated visual bars
-    const totalVisualOccupied = Math.min(100, needsVisualPct + wantsVisualPct);
+    // const totalVisualOccupied = Math.min(100, needsVisualPct + wantsVisualPct);
+
+    // Calculate Limits
+    const needsLimitPct = (needsLimit / safeIncome) * 100;
+    const totalLimitPct = ((needsLimit + wantsLimit) / safeIncome) * 100;
 
     // Calculate the true remaining space (used for Savings visual bar calculation)
-    const trueSavingsSpace = Math.max(0, 100 - totalVisualOccupied);
+    // const trueSavingsSpace = Math.max(0, 100 - totalVisualOccupied);
 
+    // --- SAVINGS SEGMENT CALCULATIONS ---
+    // We calculate two types of savings:
+    // 1. Efficiency: The gap between Spending and the Budget Cap (The "Notch")
+    // 2. Target: The space beyond the Budget Cap (The "Planned" Savings)
+
+    const visualSpendingEnd = needsVisualPct + wantsVisualPct;
+
+    // Efficiency: Amount saved by spending LESS than budget (Gap between spending and notch)
+    const efficiencyBarPct = Math.max(0, totalLimitPct - visualSpendingEnd);
+
+    // Target: The pure savings allocated beyond the budget (Gap between notch and 100%)
+    // If spending > limit, spending eats into this bar.
+    const targetSavingsBarPct = Math.max(0, 100 - Math.max(totalLimitPct, visualSpendingEnd));
+
+    // Text Percentage for display
     // Savings is strictly "Income minus Spending"
     // const savingsPct = Math.max(0, 100 - (totalSpent / income) * 100);
     const savingsPct = Math.max(0, 100 - (totalSpent / safeIncome) * 100);
@@ -148,8 +173,8 @@ export default function RemainingBudgetCard({
     // Limit Markers (Where the ceilings sit relative to Income)
     // const needsLimitPct = (needsLimit / income) * 100;
     // const totalLimitPct = ((needsLimit + wantsLimit) / income) * 100;
-    const needsLimitPct = (needsLimit / safeIncome) * 100;
-    const totalLimitPct = ((needsLimit + wantsLimit) / safeIncome) * 100;
+    // const needsLimitPct = (needsLimit / safeIncome) * 100;
+    // const totalLimitPct = ((needsLimit + wantsLimit) / safeIncome) * 100;
 
     // Status Logic
     // Refactoring to differentiate between paid and unpaid
@@ -288,12 +313,32 @@ export default function RemainingBudgetCard({
                                 </div>
                             </Link>
 
-                            {/* SAVINGS Segment (The Empty Space) */}
-                            <div className="flex-1 h-full bg-emerald-50/50 flex items-center justify-center relative">
-                                {savingsPct > 5 && (
-                                    <span className="text-xs font-medium text-emerald-600/70 animate-pulse">Savings</span>
-                                )}
-                            </div>
+                            {/* EFFICIENCY SAVINGS (Bright Green) */}
+                            {/* Represents money saved by staying UNDER budget */}
+                            {efficiencyBarPct > 0 && (
+                                <div
+                                    className="h-full bg-emerald-300 relative group border-r border-white/20"
+                                    style={{ width: `${efficiencyBarPct}%` }}
+                                >
+                                    <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-emerald-800 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        Efficiency
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* TARGET SAVINGS (Solid Emerald) */}
+                            {/* Represents planned savings (Income - Budget) */}
+                            {targetSavingsBarPct > 0 && (
+                                <div
+                                    className="h-full bg-emerald-500 relative group"
+                                    style={{ width: `${targetSavingsBarPct}%` }}
+                                >
+                                    <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white transition-opacity opacity-0 group-hover:opacity-100">
+                                        Saved
+                                    </div>
+                                </div>
+                            )}
+
 
                             {/* --- LIMIT MARKERS (The Ceilings) --- */}
 
