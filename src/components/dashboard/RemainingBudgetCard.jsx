@@ -1,59 +1,57 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { TrendingUp, Settings } from "lucide-react";
+import { TrendingUp, AlertCircle, Target } from "lucide-react";
 import { formatCurrency } from "../utils/currencyUtils";
 import { Link } from "react-router-dom";
 
 export default function RemainingBudgetCard({
+    // Cleaned up props: Removed unused 'remainingBudget', 'bonusSavingsPotential' (calculated internally or re-added if needed)
     bonusSavingsPotential,
-    currentMonthIncome, // Why is it unused?
+    currentMonthIncome,
     currentMonthExpenses,
     settings,
     monthNavigator,
-    // These buttons are preserved in the new layout header
     addIncomeButton,
     addExpenseButton,
     importDataButton,
     systemBudgets = []
 }) {
-    // Safety check
     if (!settings) return null;
 
-    // 1. Extract Needs & Wants data for the "Pressure Gauges"
+    // 1. Extract & Calculate Data
+    const income = currentMonthIncome || 1; // Prevent division by zero
+
     const needsBudget = systemBudgets.find(sb => sb.systemBudgetType === 'needs');
     const wantsBudget = systemBudgets.find(sb => sb.systemBudgetType === 'wants');
 
-    // Helper to calculate "Pressure" (Spend vs Limit)
-    const getPressureData = (budget) => {
-        if (!budget) return { used: 0, limit: 0, percent: 0, isOver: false };
+    // Actual Spend
+    const needsSpent = needsBudget?.stats?.paidAmount || 0;
+    const wantsSpent = wantsBudget?.stats?.paidAmount || 0;
+    const totalSpent = currentMonthExpenses; // Should roughly equal needs + wants + other
 
-        const limit = budget.budgetAmount || 0;
-        // Use pre-calculated stats if available, otherwise fallback to raw (though Dashboard usually passes stats)
-        const spent = budget.stats?.paidAmount || 0;
+    // Goals (Limits) - Use budgetAmount from system budget as the absolute limit
+    const needsLimit = needsBudget?.budgetAmount || 0;
+    const wantsLimit = wantsBudget?.budgetAmount || 0;
 
-        // Calculate percentage of the limit used
-        const percent = limit > 0 ? (spent / limit) * 100 : 0;
+    // Percentages for the Bar (Relative to INCOME)
+    const needsPct = (needsSpent / income) * 100;
+    const wantsPct = (wantsSpent / income) * 100;
+    const savingsPct = Math.max(0, 100 - (totalSpent / income) * 100);
 
-        return {
-            used: spent,
-            limit: limit,
-            percent: Math.min(percent, 100), // Cap visual bar at 100%
-            isOver: spent > limit
-        };
-    };
+    // Percentages for the Limit Markers (Relative to INCOME)
+    const needsLimitPct = (needsLimit / income) * 100;
+    const totalLimitPct = ((needsLimit + wantsLimit) / income) * 100;
 
-    const needsData = getPressureData(needsBudget);
-    const wantsData = getPressureData(wantsBudget);
-
-    // 2. High Level Status Logic
-    // "On Track" means you haven't blown your ceilings
-    const isOnTrack = !needsData.isOver && !wantsData.isOver;
+    // Status Logic
+    const isNeedsOver = needsSpent > needsLimit;
+    const isWantsOver = wantsSpent > wantsLimit;
+    const isTotalOver = totalSpent > income;
 
     return (
         <Card className="border-none shadow-md bg-white overflow-hidden h-full flex flex-col">
             <CardContent className="p-5 flex-1 flex flex-col">
 
-                {/* Header / Actions Row */}
-                <div className="flex items-center justify-between mb-4">
+                {/* Header / Controls */}
+                <div className="flex items-center justify-between mb-6">
                     <div className="flex-1">
                         {monthNavigator}
                     </div>
@@ -64,78 +62,106 @@ export default function RemainingBudgetCard({
                     </div>
                 </div>
 
-                <div className="flex flex-col md:flex-row gap-6 items-start md:items-center flex-1">
+                {/* Main Content Grid */}
+                <div className="flex flex-col gap-6">
 
-                    {/* LEFT: The "Hero" Verdict */}
-                    <div className="flex-1 min-w-[200px]">
-                        <h3 className="text-gray-500 font-medium text-xs uppercase tracking-wider mb-1">Monthly Pulse</h3>
-
-                        <div className="flex items-baseline gap-2">
-                            <h2 className={`text-3xl font-bold ${isOnTrack ? 'text-gray-900' : 'text-amber-600'}`}>
-                                {isOnTrack ? "On Track" : "Over Limit"}
+                    {/* 1. The Verdict (Text) */}
+                    <div className="flex items-end justify-between">
+                        <div>
+                            <h2 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+                                {Math.round(savingsPct)}%
+                                <span className="text-lg font-medium text-gray-500">Saved</span>
                             </h2>
+                            <p className="text-sm text-gray-500 mt-1">
+                                You've spent <strong>{formatCurrency(totalSpent, settings)}</strong> of your <strong>{formatCurrency(income, settings)}</strong> income.
+                            </p>
                         </div>
-
-                        <p className="text-sm text-gray-500 mt-2 leading-relaxed">
-                            You have used <span className="font-semibold text-gray-900">{formatCurrency(currentMonthExpenses, settings)}</span> of your income.
-                        </p>
 
                         {/* Efficiency Bonus Badge */}
                         {bonusSavingsPotential > 0 && (
-                            <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-100">
-                                <TrendingUp className="w-3 h-3 text-emerald-600" />
-                                <span className="text-xs font-medium text-emerald-700">
-                                    Potential Savings: +{formatCurrency(bonusSavingsPotential, settings)}
-                                </span>
+                            <div className="text-right hidden sm:block">
+                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-100">
+                                    <TrendingUp className="w-3 h-3 text-emerald-600" />
+                                    <span className="text-xs font-medium text-emerald-700">
+                                        Efficiency: +{formatCurrency(bonusSavingsPotential, settings)}
+                                    </span>
+                                </div>
                             </div>
                         )}
                     </div>
 
-                    {/* RIGHT: The "Pressure Gauges" (Ceilings) */}
-                    <div className="flex-1 w-full space-y-5 border-l border-gray-100 md:pl-6 py-1">
+                    {/* 2. The Unified Income Bar (The Visualization) */}
+                    <div className="space-y-2">
+                        {/* The Bar Container */}
+                        <div className="relative h-8 w-full bg-gray-100 rounded-lg overflow-hidden flex shadow-inner">
 
-                        {/* Needs Gauge */}
-                        <div className="space-y-1.5">
-                            <div className="flex justify-between text-xs">
-                                <span className="font-medium text-gray-700 flex items-center gap-1.5">
-                                    <div className="w-2 h-2 rounded-full bg-red-500"></div> Needs
-                                </span>
-                                <span className="text-gray-400">
-                                    {formatCurrency(needsData.used, settings)} / {formatCurrency(needsData.limit, settings)}
-                                </span>
+                            {/* NEEDS Segment */}
+                            <div
+                                className={`h-full transition-all duration-500 relative group ${isNeedsOver ? 'bg-red-500' : 'bg-blue-500'}`}
+                                style={{ width: `${Math.min(needsPct, 100)}%` }}
+                            >
+                                {/* Tooltip-ish Label */}
+                                <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                                    Needs
+                                </div>
                             </div>
-                            {/* The Track (Gray) = The Ceiling. The Fill (Color) = The Pressure. */}
-                            <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                                <div
-                                    className={`h-full rounded-full transition-all duration-500 ${needsData.isOver ? 'bg-red-600' : 'bg-red-400'}`}
-                                    style={{ width: `${needsData.percent}%` }}
-                                />
+
+                            {/* WANTS Segment */}
+                            <div
+                                className={`h-full transition-all duration-500 relative group ${isWantsOver ? 'bg-red-400' : 'bg-amber-400'}`}
+                                style={{ width: `${Math.min(wantsPct, 100 - needsPct)}%` }}
+                            >
+                                <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                                    Wants
+                                </div>
+                            </div>
+
+                            {/* SAVINGS Segment (The rest) */}
+                            <div className="flex-1 h-full bg-emerald-50/50 flex items-center justify-center relative">
+                                {savingsPct > 5 && (
+                                    <span className="text-xs font-medium text-emerald-600/70 animate-pulse">Savings</span>
+                                )}
+                            </div>
+
+                            {/* --- LIMIT MARKERS (The Ceilings) --- */}
+
+                            {/* Needs Limit Line (e.g. 50%) */}
+                            <div
+                                className="absolute top-0 bottom-0 w-px bg-gray-800/30 z-10 border-r border-white/50"
+                                style={{ left: `${Math.min(needsLimitPct, 100)}%` }}
+                            >
+                                <div className="absolute -top-3 -left-3 text-[9px] text-gray-400 font-medium">
+                                    Needs
+                                </div>
+                            </div>
+
+                            {/* Total Spending Limit Line (e.g. 80%) */}
+                            <div
+                                className="absolute top-0 bottom-0 w-px bg-gray-800/30 z-10 border-r border-white/50"
+                                style={{ left: `${Math.min(totalLimitPct, 100)}%` }}
+                            >
+                                <div className="absolute -top-3 -left-3 text-[9px] text-gray-400 font-medium">
+                                    Limit
+                                </div>
                             </div>
                         </div>
 
-                        {/* Wants Gauge */}
-                        <div className="space-y-1.5">
-                            <div className="flex justify-between text-xs">
-                                <span className="font-medium text-gray-700 flex items-center gap-1.5">
-                                    <div className="w-2 h-2 rounded-full bg-amber-500"></div> Wants
+                        {/* Legend / Legend Row */}
+                        <div className="flex justify-between text-xs text-gray-400 pt-1">
+                            <div className="flex gap-4">
+                                <span className="flex items-center gap-1.5">
+                                    <div className={`w-2 h-2 rounded-full ${isNeedsOver ? 'bg-red-500' : 'bg-blue-500'}`}></div>
+                                    Needs: {formatCurrency(needsSpent, settings)}
                                 </span>
-                                <span className="text-gray-400">
-                                    {formatCurrency(wantsData.used, settings)} / {formatCurrency(wantsData.limit, settings)}
+                                <span className="flex items-center gap-1.5">
+                                    <div className={`w-2 h-2 rounded-full ${isWantsOver ? 'bg-red-400' : 'bg-amber-400'}`}></div>
+                                    Wants: {formatCurrency(wantsSpent, settings)}
                                 </span>
                             </div>
-                            <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                                <div
-                                    className={`h-full rounded-full transition-all duration-500 ${wantsData.isOver ? 'bg-red-500' : 'bg-amber-400'}`}
-                                    style={{ width: `${wantsData.percent}%` }}
-                                />
-                            </div>
-                        </div>
 
-                        {/* Quick Link */}
-                        <div className="pt-2 flex justify-end">
-                            <Link to="/Settings" className="text-[10px] text-gray-400 hover:text-blue-600 flex items-center gap-1 transition-colors group">
-                                <Settings size={12} className="group-hover:rotate-45 transition-transform duration-300" />
-                                Adjust Goals
+                            <Link to="/Settings" className="flex items-center gap-1 hover:text-blue-600 transition-colors">
+                                <Target size={12} />
+                                <span>Adjust Goals</span>
                             </Link>
                         </div>
                     </div>
