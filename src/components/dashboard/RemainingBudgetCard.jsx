@@ -56,10 +56,20 @@ export default function RemainingBudgetCard({
     const MIN_VISIBILITY_PCT = 4; // 4% width minimum
 
     const rawNeedsPct = (needsSpent / safeIncome) * 100;
-    const needsPct = needsSpent > 0 ? Math.max(rawNeedsPct, MIN_VISIBILITY_PCT) : 0;
+    // const needsPct = needsSpent > 0 ? Math.max(rawNeedsPct, MIN_VISIBILITY_PCT) : 0;
+    // 1. Calculate Needs Visual Width (Min 15%)
+    const MIN_VISUAL_PCT = 15;
+    const needsVisualPct = needsSpent > 0 ? Math.max(rawNeedsPct, MIN_VISUAL_PCT) : 0;
 
     const rawWantsPct = (wantsSpent / safeIncome) * 100;
-    const wantsPct = wantsSpent > 0 ? Math.max(rawWantsPct, MIN_VISIBILITY_PCT) : 0;
+    // const wantsPct = wantsSpent > 0 ? Math.max(rawWantsPct, MIN_VISIBILITY_PCT) : 0;
+    const wantsVisualPct = wantsSpent > 0 ? Math.max(rawWantsPct, MIN_VISUAL_PCT) : 0;
+
+    // Calculate the total space required by the inflated visual bars
+    const totalVisualOccupied = Math.min(100, needsVisualPct + wantsVisualPct);
+
+    // Calculate the true remaining space (used for Savings visual bar calculation)
+    const trueSavingsSpace = Math.max(0, 100 - totalVisualOccupied);
 
     // Savings is strictly "Income minus Spending"
     // const savingsPct = Math.max(0, 100 - (totalSpent / income) * 100);
@@ -147,11 +157,11 @@ export default function RemainingBudgetCard({
                             {/* Essentials Segment (Blue/Red) */}
                             <Link
                                 to={needsBudget ? `/BudgetDetail?id=${needsBudget.id}` : '#'}
-                                className={`h-full transition-all duration-500 relative group hover:brightness-110 cursor-pointer border-r border-white/20 ${isNeedsOver ? 'bg-red-500' : 'bg-blue-500'}`}
-                                style={{ width: `${Math.min(needsPct, 100)}%` }}
+                                className={`h-full transition-all duration-500 relative group hover:brightness-110 cursor-pointer border-r border-white/20`}
+                                style={{ width: `${needsVisualPct}%`, backgroundColor: isNeedsOver ? '#EF4444' : '#3B82F6' }}
                             >
-                                {/* Show label always if bar is wide enough (>15%), otherwise hover only */}
-                                <div className={`absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white transition-opacity ${needsPct > 15 ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                {/* Show label always if bar is wide enough (>10%), otherwise hover only */}
+                                <div className={`absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white transition-opacity ${needsVisualPct > 10 ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                                     Needs
                                 </div>
                             </Link>
@@ -160,10 +170,10 @@ export default function RemainingBudgetCard({
                             {/* Stacks directly after Essentials */}
                             <Link
                                 to={wantsBudget ? `/BudgetDetail?id=${wantsBudget.id}` : '#'}
-                                className={`h-full transition-all duration-500 relative group hover:brightness-110 cursor-pointer border-r border-white/20 ${isWantsOver ? 'bg-red-400' : 'bg-amber-400'}`}
-                                style={{ width: `${Math.min(wantsPct, 100 - needsPct)}%` }}
+                                className={`h-full transition-all duration-500 relative group hover:brightness-110 cursor-pointer border-r border-white/20`}
+                                style={{ width: `${wantsVisualPct}%`, backgroundColor: isWantsOver ? '#F87171' : '#F59E0B' }}
                             >
-                                <div className={`absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white transition-opacity ${wantsPct > 15 ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                <div className={`absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white transition-opacity ${wantsVisualPct > 10 ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                                     Lifestyle
                                 </div>
                             </Link>
