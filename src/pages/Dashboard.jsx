@@ -139,7 +139,7 @@ export default function Dashboard() {
                                     onSubmit={transactionActions.handleSubmit}
                                     isSubmitting={transactionActions.isSubmitting}
                                     renderTrigger={true}
-                                    triggerVariant="primary"
+                                    triggerVariant="success"
                                     triggerSize="sm"
                                 />
                             }
