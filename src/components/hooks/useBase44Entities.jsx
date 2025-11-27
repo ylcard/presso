@@ -184,7 +184,15 @@ export const useSystemBudgetManagement = (
 
             // Allow CREATION for past months if missing, but restrict UPDATES to current month
             // This ensures historical data exists but preserves history from being overwritten by current goal changes
-            const isCurrentMonth = selectedMonth === currentMonth && selectedYear === currentYear;
+            // const isCurrentMonth = selectedMonth === currentMonth && selectedYear === currentYear;
+            // Allow CREATION for past months if missing.
+            // Allow UPDATES for Current and Future months (Planning Mode).
+            // Lock UPDATES for Past months to preserve history.
+            const isPastMonth =
+                selectedYear < currentYear ||
+                (selectedYear === currentYear && selectedMonth < currentMonth);
+
+            const allowUpdates = !isPastMonth;
 
             try {
                 const systemTypes = ['needs', 'wants', 'savings'];
@@ -199,7 +207,7 @@ export const useSystemBudgetManagement = (
                 }, {});
 
                 let needsInvalidation = false;
-                
+
                 // --- Fixed Lifestyle Logic ---
                 // Calculate raw amounts based on percentages
                 let amounts = {};
@@ -207,7 +215,7 @@ export const useSystemBudgetManagement = (
                     // const percentage = goalMap[type] || 0;
                     // amounts[type] = parseFloat(((currentMonthIncome * percentage) / 100).toFixed(2));
                     const goal = goals.find(g => g.priority === type);
-                    
+
                     // ABSOLUTE MODE CHECK (From Entity)
                     if (goal && goal.is_absolute) {
                         amounts[type] = parseFloat(goal.target_amount || 0);
@@ -224,7 +232,7 @@ export const useSystemBudgetManagement = (
                 const needsGoal = goals.find(g => g.priority === 'needs');
                 if ((!needsGoal || !needsGoal.is_absolute) && settings?.fixedLifestyleMode && systemBudgets) {
                     const existingNeeds = systemBudgets.find(sb => sb.systemBudgetType === 'needs');
-                    
+
                     // Only apply logic if we have a previous budget to compare against and income > 0
                     if (existingNeeds && existingNeeds.budgetAmount > 0 && currentMonthIncome > 0) {
                         // If the NEW calculated needs is higher than OLD needs, cap it.
@@ -246,7 +254,9 @@ export const useSystemBudgetManagement = (
                     if (existingBudget) {
                         // Only update if the calculated amount significantly differs to avoid unnecessary writes
                         // AND only if it's the current month (preserve history), OR if the existing amount is 0 (fix uninitialized history)
-                        const shouldUpdate = (isCurrentMonth || existingBudget.budgetAmount === 0) && Math.abs(existingBudget.budgetAmount - amount) > 0.01;
+                        // const shouldUpdate = (isCurrentMonth || existingBudget.budgetAmount === 0) && Math.abs(existingBudget.budgetAmount - amount) > 0.01;
+                        // AND only if it's NOT a past month (preserve history), OR if the existing amount is 0 (fix uninitialized history)
+                        const shouldUpdate = (allowUpdates || existingBudget.budgetAmount === 0) && Math.abs(existingBudget.budgetAmount - amount) > 0.01;
 
                         if (shouldUpdate) {
                             await base44.entities.SystemBudget.update(existingBudget.id, {
