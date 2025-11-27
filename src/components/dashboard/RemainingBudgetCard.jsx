@@ -17,6 +17,10 @@ export default function RemainingBudgetCard({
 }) {
     if (!settings) return null;
 
+    const { aggregateNeedsTotal, aggregateWantsTotal } = useMonthlyBreakdown(
+        transactions, categories, monthlyIncome, allCustomBudgets, selectedMonth, selectedYear
+    );
+
     // 1. Extract Data
     // const income = currentMonthIncome || 1; // Prevent division by zero
     // Use 'safeIncome' for calculations to avoid NaN (division by zero), but use 'currentMonthIncome' for display
