@@ -65,10 +65,6 @@ const filterExpenses = (transaction, categories, startDate, endDate, allCustomBu
 
     if (transaction.type !== 'expense') return false;
 
-    // Exclude "Withdrawals" (Transfers) so they don't count as spending
-    // Only needed if you have legacy data or still log withdrawals for some reason
-    if (transaction.cashTransactionType === 'withdrawal_to_wallet') return false
-
     // Filter by payment status
     if (isPaid !== undefined) {
         // Relaxed check: Just check isPaid status. Date range check will handle the date fallback.
@@ -309,7 +305,7 @@ const calculateTotalExpensesByPriority = (transactions, startDate, endDate, prio
         .filter(t => {
             // Must be an expense
             if (t.type !== 'expense') return false;
-            
+
             // Exclude cash wallet expenses (unless user wants them, but standard is to exclude)
             // if (isCashExpense(t)) return false;
 
@@ -382,11 +378,11 @@ export const getCustomBudgetStats = (customBudget, transactions, monthStart, mon
     const allocated = customBudget.allocatedAmount || 0;
 
     // Calculate totals
-    const spent = expenses.reduce((sum, t) => sum + (t.originalAmount || t.amount), 0);
-    const unpaid = expenses.filter(t => !t.isPaid).reduce((sum, t) => sum + (t.originalAmount || t.amount), 0);
+    const spent = expenses.reduce((sum, t) => sum + t.amount, 0);
+    const unpaid = expenses.filter(t => !t.isPaid).reduce((sum, t) => sum + t.amount, 0);
 
     // For compatibility with System Budget stats shape
-    const paidBase = expenses.filter(t => t.isPaid).reduce((sum, t) => sum + (t.originalAmount || t.amount), 0);
+    const paidBase = expenses.filter(t => t.isPaid).reduce((sum, t) => sum + t.amount, 0);
 
     return {
         allocated,
@@ -416,28 +412,55 @@ export const getSystemBudgetStats = (systemBudget, transactions, categories, all
     let paidAmount = 0;
     let unpaidAmount = 0;
 
-    if (systemBudget.systemBudgetType === 'needs') {
-        paidAmount = getPaidNeedsExpenses(transactions, categories, startDate, endDate, allCustomBudgets);
-        unpaidAmount = getUnpaidNeedsExpenses(transactions, categories, startDate, endDate, allCustomBudgets);
-    } else if (systemBudget.systemBudgetType === 'wants') {
-        const directPaid = getDirectPaidWantsExpenses(transactions, categories, startDate, endDate, allCustomBudgets);
-        const customPaid = getPaidCustomBudgetExpenses(transactions, allCustomBudgets, startDate, endDate);
-        paidAmount = directPaid + customPaid;
+    // Optimization: Calculate all aggregates in a single pass to avoid iterating 6+ times
+    // This is significantly faster for large transaction lists
+    const aggregates = transactions.reduce((acc, t) => {
+        // 1. Basic Filters
+        if (t.type !== 'expense') return acc;
+        if (!isTransactionInDateRange(t, startDate, endDate)) return acc;
 
-        const directUnpaid = getDirectUnpaidWantsExpenses(transactions, categories, startDate, endDate, allCustomBudgets);
-        const customUnpaid = getUnpaidCustomBudgetExpenses(transactions, allCustomBudgets, startDate, endDate);
-        unpaidAmount = directUnpaid + customUnpaid;
+        // 2. Determine Attributes
+        const isCustom = isActualCustomBudget(t.customBudgetId, allCustomBudgets);
+        const category = categories ? categories.find(c => c.id === t.category_id) : null;
+        const effectivePriority = t.financial_priority || category?.priority;
+
+        // 3. Bucket Accumulation
+        if (effectivePriority === 'needs' && !isCustom) {
+            if (t.isPaid) acc.needsPaid += t.amount;
+            else acc.needsUnpaid += t.amount;
+        }
+        else if (effectivePriority === 'wants' && !isCustom) {
+            if (t.isPaid) acc.wantsDirectPaid += t.amount;
+            else acc.wantsDirectUnpaid += t.amount;
+        }
+
+        // Custom budgets (usually counted as Wants in macro view, or separate)
+        if (isCustom) {
+            if (t.isPaid) acc.customPaid += t.amount;
+            else acc.customUnpaid += t.amount;
+        }
+
+        return acc;
+    }, {
+        needsPaid: 0,
+        needsUnpaid: 0,
+        wantsDirectPaid: 0,
+        wantsDirectUnpaid: 0,
+        customPaid: 0,
+        customUnpaid: 0
+    });
+
+    if (systemBudget.systemBudgetType === 'needs') {
+        paidAmount = aggregates.needsPaid;
+        unpaidAmount = aggregates.needsUnpaid;
+    } else if (systemBudget.systemBudgetType === 'wants') {
+        // "Wants" System Budget includes Direct Wants + Custom Budgets (e.g. Trips)
+        paidAmount = aggregates.wantsDirectPaid + aggregates.customPaid;
+        unpaidAmount = aggregates.wantsDirectUnpaid + aggregates.customUnpaid;
     } else if (systemBudget.systemBudgetType === 'savings') {
 
-        const totalNeeds =
-            getPaidNeedsExpenses(transactions, categories, startDate, endDate, allCustomBudgets) +
-            getUnpaidNeedsExpenses(transactions, categories, startDate, endDate, allCustomBudgets);
-
-        const totalWants =
-            getDirectPaidWantsExpenses(transactions, categories, startDate, endDate, allCustomBudgets) +
-            getDirectUnpaidWantsExpenses(transactions, categories, startDate, endDate, allCustomBudgets) +
-            getPaidCustomBudgetExpenses(transactions, allCustomBudgets, startDate, endDate) +
-            getUnpaidCustomBudgetExpenses(transactions, allCustomBudgets, startDate, endDate);
+        const totalNeeds = aggregates.needsPaid + aggregates.needsUnpaid;
+        const totalWants = aggregates.wantsDirectPaid + aggregates.wantsDirectUnpaid + aggregates.customPaid + aggregates.customUnpaid;
 
         // "Paid" in this context means "Actual Savings Achieved"
         paidAmount = Math.max(0, monthlyIncome - totalNeeds - totalWants);
@@ -501,7 +524,7 @@ export const calculateBonusSavingsPotential = (systemBudgets, transactions, cate
     let netPotential = 0;
 
     // Only consider Needs and Wants (Savings is a floor, not a ceiling)
-    const limitBudgets = systemBudgets.filter(sb => 
+    const limitBudgets = systemBudgets.filter(sb =>
         sb.systemBudgetType === 'needs' || sb.systemBudgetType === 'wants'
     );
 
