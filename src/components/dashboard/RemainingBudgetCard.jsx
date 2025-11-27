@@ -320,8 +320,8 @@ export default function RemainingBudgetCard({
                                     className="h-full bg-emerald-300 relative group border-r border-white/20"
                                     style={{ width: `${efficiencyBarPct}%` }}
                                 >
-                                    <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-emerald-800 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        Efficiency
+                                    <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-emerald-800 opacity-75 group-hover:opacity-100 transition-opacity">
+                                        Extra Savings
                                     </div>
                                 </div>
                             )}
@@ -333,8 +333,8 @@ export default function RemainingBudgetCard({
                                     className="h-full bg-emerald-500 relative group"
                                     style={{ width: `${targetSavingsBarPct}%` }}
                                 >
-                                    <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white transition-opacity opacity-0 group-hover:opacity-100">
-                                        Saved
+                                    <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white transition-opacity opacity-75 group-hover:opacity-100">
+                                        Target Savings
                                     </div>
                                 </div>
                             )}
