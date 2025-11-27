@@ -338,38 +338,6 @@ export default function RemainingBudgetCard({
                                     </div>
                                 </div>
                             )}
-
-
-                            {/* --- LIMIT MARKERS (The Ceilings) --- */}
-
-                            {/* Savings Barrier / Guardrail */}
-                            {totalLimitPct < 100 && (
-                                <div
-                                    className="absolute top-0 bottom-0 z-20 flex flex-col items-center"
-                                    style={{ left: `${totalLimitPct}%`, transform: 'translateX(-50%)' }}
-                                >
-                                    {/* The visual line */}
-                                    <div className="h-full w-0.5 border-l-2 border-red-400/60 border-dashed" />
-
-                                    {/* The warning label with Tooltip */}
-                                    <TooltipProvider>
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <div className="absolute -top-6 flex flex-col items-center cursor-help hover:scale-105 transition-transform">
-                                                    <div className="px-1.5 py-0.5 bg-red-50 border border-red-200 rounded text-[9px] font-bold text-red-600 shadow-sm whitespace-nowrap flex items-center gap-1">
-                                                        <span>🛡️ Savings Barrier</span>
-                                                    </div>
-                                                    {/* Little pointer triangle */}
-                                                    <div className="w-0 h-0 border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-red-200" />
-                                                </div>
-                                            </TooltipTrigger>
-                                            <TooltipContent className="max-w-[200px] text-xs">
-                                                <p>This line represents your Total Budget limit. Spending past this line means you are dipping into your planned savings.</p>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    </TooltipProvider>
-                                </div>
-                            )}
                         </div>
 
                         {/* Legend Row */}
