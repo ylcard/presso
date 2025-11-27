@@ -490,8 +490,12 @@ export const useBudgetBarsData = (
             // Calculate totals for BudgetBars
             const totalBudget = stats.allocated;
             const paidAmount = stats.paid.totalBaseCurrencyAmount;
-            const expectedAmount = stats.unpaid;
-            const totalSpent = paidAmount + expectedAmount;
+
+            // trying to fix 0% bug
+            // const expectedAmount = stats.unpaid;
+            // const totalSpent = paidAmount + expectedAmount;
+            const unpaidAmount = stats.unpaid.totalBaseCurrencyAmount;  // Fixed: use nested property
+            const totalSpent = paidAmount + unpaidAmount;
 
             const maxHeight = Math.max(totalBudget, totalSpent);
             const isOverBudget = totalSpent > totalBudget;
@@ -503,13 +507,17 @@ export const useBudgetBarsData = (
                 stats: {
                     paidAmount,
                     totalBudget,
-                    // totalAllocatedUnits: stats.allocated, // trying to fix 0%
+                    totalAllocatedUnits: stats.allocated,
                     totalSpentUnits: paidAmount,
                     totalSpentUnits: stats.spent,
-                    totalUnpaidUnits: stats.unpaid
+                    // trying to fix 0% bug
+                    // totalUnpaidUnits: stats.unpaid 
+                    totalUnpaidUnits: unpaidAmount
                 },
                 targetAmount: totalBudget,
-                expectedAmount,
+                // trying to fix 0% bug
+                // expectedAmount,
+                expectedAmount: unpaidAmount,
                 maxHeight,
                 isOverBudget,
                 overBudgetAmount
