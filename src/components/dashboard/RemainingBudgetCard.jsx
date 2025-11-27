@@ -19,7 +19,9 @@ export default function RemainingBudgetCard({
     if (!settings) return null;
 
     // 1. Extract Data
-    const income = currentMonthIncome || 1; // Prevent division by zero
+    // const income = currentMonthIncome || 1; // Prevent division by zero
+    // Use 'safeIncome' for calculations to avoid NaN (division by zero), but use 'currentMonthIncome' for display
+    const safeIncome = currentMonthIncome || 1;
 
     // Goal Summary Logic
     const isAbsolute = settings.goalAllocationMode === 'absolute';
@@ -46,20 +48,26 @@ export default function RemainingBudgetCard({
 
     // Percentages for the Bar (Relative to INCOME)
     // This visualizes: "How much of my Income have I given to Needs?"
-    const needsPct = (needsSpent / income) * 100;
-    const wantsPct = (wantsSpent / income) * 100;
+    // const needsPct = (needsSpent / income) * 100;
+    // const wantsPct = (wantsSpent / income) * 100;
+    const needsPct = (needsSpent / safeIncome) * 100;
+    const wantsPct = (wantsSpent / safeIncome) * 100;
 
     // Savings is strictly "Income minus Spending"
-    const savingsPct = Math.max(0, 100 - (totalSpent / income) * 100);
+    // const savingsPct = Math.max(0, 100 - (totalSpent / income) * 100);
+    const savingsPct = Math.max(0, 100 - (totalSpent / safeIncome) * 100);
 
     // Limit Markers (Where the ceilings sit relative to Income)
-    const needsLimitPct = (needsLimit / income) * 100;
-    const totalLimitPct = ((needsLimit + wantsLimit) / income) * 100;
+    // const needsLimitPct = (needsLimit / income) * 100;
+    // const totalLimitPct = ((needsLimit + wantsLimit) / income) * 100;
+    const needsLimitPct = (needsLimit / safeIncome) * 100;
+    const totalLimitPct = ((needsLimit + wantsLimit) / safeIncome) * 100;
 
     // Status Logic
     const isNeedsOver = needsSpent > needsLimit;
     const isWantsOver = wantsSpent > wantsLimit;
-    const isTotalOver = totalSpent > income;
+    // const isTotalOver = totalSpent > income;
+    const isTotalOver = totalSpent > currentMonthIncome; // Check against real income
 
     return (
         <Card className="border-none shadow-md bg-white overflow-hidden h-full flex flex-col">
@@ -96,7 +104,7 @@ export default function RemainingBudgetCard({
                             )}
 
                             <p className="text-sm text-gray-500 mt-1">
-                                You've spent <strong className={isTotalOver ? "text-red-600" : "text-gray-900"}>{formatCurrency(totalSpent, settings)}</strong> of your <strong>{formatCurrency(income, settings)}</strong> income.
+                                You've spent <strong className={isTotalOver ? "text-red-600" : "text-gray-900"}>{formatCurrency(totalSpent, settings)}</strong> of your <strong>{formatCurrency(currentMonthIncome, settings)}</strong> income.
                             </p>
                         </div>
 
