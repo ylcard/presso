@@ -458,8 +458,18 @@ export const useBudgetBarsData = (
             return {
                 ...sb,
                 stats: {
-                    ...stats,
+                    // Trying to fix showing 0%
+                    // ...stats,
                     // Map keys to match BudgetBar expectations if different
+                    totalAllocatedUnits: targetAmount,
+                    paid: {
+                        totalBaseCurrencyAmount: stats.paidAmount
+                    },
+                    unpaid: {
+                        totalBaseCurrencyAmount: stats.unpaidAmount
+                    },
+                    totalSpent: stats.totalSpent,
+                    paidAmount: stats.paidAmount,
                     unpaidAmount: stats.unpaidAmount
                 },
                 targetAmount,
@@ -493,7 +503,8 @@ export const useBudgetBarsData = (
                 stats: {
                     paidAmount,
                     totalBudget,
-                    totalAllocatedUnits: stats.allocated,
+                    // totalAllocatedUnits: stats.allocated, // trying to fix 0%
+                    totalSpentUnits: paidAmount,
                     totalSpentUnits: stats.spent,
                     totalUnpaidUnits: stats.unpaid
                 },
