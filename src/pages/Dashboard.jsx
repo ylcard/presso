@@ -159,7 +159,7 @@ export default function Dashboard() {
                             }
                             importDataButton={
                                 <ImportWizardDialog
-                                    triggerVariant="glass"
+                                    triggerVariant="primary"
                                     triggerSize="sm"
                                     triggerClassName="w-full justify-start"
                                 />
