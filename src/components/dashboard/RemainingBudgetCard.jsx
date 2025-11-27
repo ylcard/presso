@@ -19,7 +19,7 @@ export default function RemainingBudgetCard({
     if (!settings) return null;
 
     const { aggregateNeedsTotal, aggregateWantsTotal } = useMonthlyBreakdown(
-        transactions, categories, monthlyIncome, allCustomBudgets, selectedMonth, selectedYear
+        transactions, selectedMonth, selectedYear, priority
     );
 
     // 1. Extract Data
