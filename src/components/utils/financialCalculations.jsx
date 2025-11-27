@@ -1,40 +1,29 @@
 /**
  * @file Financial Calculations Utilities
  * @description Centralized functions for calculating expenses, income, and budget statistics.
- * @created 11-Nov-2025 - Consolidated from expenseCalculations
- * @updated 15-Nov-2025 - Exported isCashExpense helper function for use in other modules
+ * @created 11-Nov-2025
+ * @updated 27-Nov-2025 - Optimized performance (single-pass reducers), removed legacy wallet logic, fixed currency math.
  */
 
-import { isDateInRange, parseDate } from "./dateUtils";
+import { isDateInRange } from "./dateUtils";
 
 /**
- * Helper function to check if a transaction falls within a date range.
- * For paid expenses, uses paidDate; for unpaid expenses, uses transaction date.
- * @param {object} transaction - The transaction object.
- * @param {string} startDate - The start date of the range (inclusive).
- * @param {string} endDate - The end date of the range (inclusive).
- * @returns {boolean} True if the transaction falls within the range.
+ * Helper to check if a transaction falls within a date range.
  */
 export const isTransactionInDateRange = (transaction, startDate, endDate) => {
-    // Income always uses the transaction date
     if (transaction.type === 'income') {
         return isDateInRange(transaction.date, startDate, endDate);
     }
+    // Paid transactions use paidDate, fallback to date. Unpaid use date.
+    const effectiveDate = (transaction.isPaid && transaction.paidDate)
+        ? transaction.paidDate
+        : transaction.date;
 
-    // Paid transactions use paidDate, fallback to transaction date if missing
-    if (transaction.isPaid) {
-        return isDateInRange(transaction.paidDate || transaction.date, startDate, endDate);
-    } else {
-        // Unpaid transactions use transaction date
-        return isDateInRange(transaction.date, startDate, endDate);
-    }
+    return isDateInRange(effectiveDate, startDate, endDate);
 };
 
 /**
- * Helper function to determine if a budget ID corresponds to an actual custom budget (not a system budget).
- * @param {string} budgetId - The ID of the custom budget.
- * @param {Array<object>} allCustomBudgets - List of all custom budget objects.
- * @returns {boolean} True if the budget is a non-system custom budget.
+ * Helper to determine if a budget ID corresponds to an actual custom budget.
  */
 const isActualCustomBudget = (budgetId, allCustomBudgets) => {
     if (!budgetId) return false;
@@ -43,345 +32,115 @@ const isActualCustomBudget = (budgetId, allCustomBudgets) => {
 };
 
 /**
- * Helper function for centralized expense filter logic.
- * @private
- * @param {object} transaction - The transaction object.
- * @param {Array<object>} categories - List of all category objects.
- * @param {string} startDate - The start date of the range.
- * @param {string} endDate - The end date of the range.
- * @param {Array<object>} allCustomBudgets - List of all custom budget objects.
- * @param {object} options - Filtering options.
- * @param {boolean} [options.isPaid=undefined] - Filter by payment status (true/false) or ignore.
- * @param {('needs'|'wants'|'savings')} [options.priority=undefined] - Filter by category priority or ignore.
- * @param {boolean} [options.isCustomBudget=undefined] - Filter by custom budget assignment status or ignore.
- * @returns {boolean} True if the transaction passes all filters.
- */
-const filterExpenses = (transaction, categories, startDate, endDate, allCustomBudgets, options = {}) => {
-    const {
-        isPaid = undefined,
-        priority = undefined,
-        isCustomBudget = undefined
-    } = options;
-
-    if (transaction.type !== 'expense') return false;
-
-    // Filter by payment status
-    if (isPaid !== undefined) {
-        // Relaxed check: Just check isPaid status. Date range check will handle the date fallback.
-        if (isPaid && !transaction.isPaid) return false;
-        if (!isPaid && transaction.isPaid) return false;
-    }
-
-    // Filter by custom budget assignment
-    const actualCustomBudget = isActualCustomBudget(transaction.customBudgetId, allCustomBudgets);
-    if (isCustomBudget !== undefined) {
-        if (isCustomBudget && !actualCustomBudget) return false;
-        if (!isCustomBudget && actualCustomBudget) return false;
-    }
-
-    // Filter by category priority (only if not a custom budget transaction)
-    if (priority !== undefined && !actualCustomBudget) {
-        // CHECK TRANSACTION PRIORITY FIRST (Override), then fallback to Category default
-        const category = categories ? categories.find(c => c.id === transaction.category_id) : null;
-        const effectivePriority = transaction.financial_priority || category?.priority;
-
-        if (effectivePriority !== priority) return false;
-    }
-
-    return isTransactionInDateRange(transaction, startDate, endDate);
-};
-
-/**
- * Calculates paid "needs" expenses within a date range.
- * Excludes cash expenses and expenses assigned to custom budgets.
- * @param {Array<object>} transactions - List of all transaction objects.
- * @param {Array<object>} categories - List of all category objects.
- * @param {string} startDate - The start date of the range.
- * @param {string} endDate - The end date of the range.
- * @param {Array<object>} [allCustomBudgets=[]] - List of all custom budget objects.
- * @returns {number} The total sum of paid needs expenses.
- */
-export const getPaidNeedsExpenses = (transactions, categories, startDate, endDate, allCustomBudgets = []) => {
-    return transactions
-        .filter(t => {
-            return filterExpenses(t, categories, startDate, endDate, allCustomBudgets, {
-                isPaid: true,
-                priority: 'needs',
-                isCustomBudget: false
-            });
-        })
-        .reduce((sum, t) => sum + t.amount, 0);
-};
-
-/**
- * Calculates unpaid "needs" expenses within a date range.
- * Excludes cash expenses and expenses assigned to custom budgets.
- * @param {Array<object>} transactions - List of all transaction objects.
- * @param {Array<object>} categories - List of all category objects.
- * @param {string} startDate - The start date of the range.
- * @param {string} endDate - The end date of the range.
- * @param {Array<object>} [allCustomBudgets=[]] - List of all custom budget objects.
- * @returns {number} The total sum of unpaid needs expenses.
- */
-export const getUnpaidNeedsExpenses = (transactions, categories, startDate, endDate, allCustomBudgets = []) => {
-    return transactions
-        .filter(t => {
-            return filterExpenses(t, categories, startDate, endDate, allCustomBudgets, {
-                isPaid: false,
-                priority: 'needs',
-                isCustomBudget: false
-            });
-        })
-        .reduce((sum, t) => sum + t.amount, 0);
-};
-
-/**
- * Calculates DIRECT paid "wants" expenses (not part of any custom budget).
- * Excludes cash expenses and expenses assigned to custom budgets.
- * @param {Array<object>} transactions - List of all transaction objects.
- * @param {Array<object>} categories - List of all category objects.
- * @param {string} startDate - The start date of the range.
- * @param {string} endDate - The end date of the range.
- * @param {Array<object>} [allCustomBudgets=[]] - List of all custom budget objects.
- * @returns {number} The total sum of direct paid wants expenses.
- */
-export const getDirectPaidWantsExpenses = (transactions, categories, startDate, endDate, allCustomBudgets = []) => {
-    return transactions
-        .filter(t => {
-            return filterExpenses(t, categories, startDate, endDate, allCustomBudgets, {
-                isPaid: true,
-                priority: 'wants',
-                isCustomBudget: false
-            });
-        })
-        .reduce((sum, t) => sum + t.amount, 0);
-};
-
-/**
- * Calculates DIRECT unpaid "wants" expenses (not part of any custom budget).
- * Excludes cash expenses and expenses assigned to custom budgets.
- * @param {Array<object>} transactions - List of all transaction objects.
- * @param {Array<object>} categories - List of all category objects.
- * @param {string} startDate - The start date of the range.
- * @param {string} endDate - The end date of the range.
- * @param {Array<object>} [allCustomBudgets=[]] - List of all custom budget objects.
- * @returns {number} The total sum of direct unpaid wants expenses.
- */
-export const getDirectUnpaidWantsExpenses = (transactions, categories, startDate, endDate, allCustomBudgets = []) => {
-    return transactions
-        .filter(t => {
-            return filterExpenses(t, categories, startDate, endDate, allCustomBudgets, {
-                isPaid: false,
-                priority: 'wants',
-                isCustomBudget: false
-            });
-        })
-        .reduce((sum, t) => sum + t.amount, 0);
-};
-
-/**
- * Calculates paid expenses within actual custom budgets (during a date range).
- * Excludes cash expenses and system budgets.
- * @param {Array<object>} transactions - List of all transaction objects.
- * @param {Array<object>} allCustomBudgets - List of all custom budget objects.
- * @param {string} startDate - The start date of the range.
- * @param {string} endDate - The end date of the range.
- * @returns {number} The total sum of paid custom budget expenses.
- */
-export const getPaidCustomBudgetExpenses = (transactions, allCustomBudgets, startDate, endDate) => {
-    return transactions
-        .filter(t => {
-            return filterExpenses(t, null, startDate, endDate, allCustomBudgets, {
-                isPaid: true,
-                isCustomBudget: true
-            });
-        })
-        .reduce((sum, t) => sum + t.amount, 0);
-};
-
-/**
- * Calculates unpaid expenses within actual custom budgets (during a date range).
- * Excludes cash expenses and system budgets.
- * @param {Array<object>} transactions - List of all transaction objects.
- * @param {Array<object>} allCustomBudgets - List of all custom budget objects.
- * @param {string} startDate - The start date of the range.
- * @param {string} endDate - The end date of the range.
- * @returns {number} The total sum of unpaid custom budget expenses.
- */
-export const getUnpaidCustomBudgetExpenses = (transactions, allCustomBudgets, startDate, endDate) => {
-    return transactions
-        .filter(t => {
-            return filterExpenses(t, null, startDate, endDate, allCustomBudgets, {
-                isPaid: false,
-                isCustomBudget: true
-            });
-        })
-        .reduce((sum, t) => sum + t.amount, 0);
-};
-
-/**
- * Calculates paid "savings" expenses within a date range.
- * Excludes cash expenses and expenses assigned to custom budgets.
- * @param {Array<object>} transactions - List of all transaction objects.
- * @param {Array<object>} categories - List of all category objects.
- * @param {string} startDate - The start date of the range.
- * @param {string} endDate - The end date of the range.
- * @param {Array<object>} [allCustomBudgets=[]] - List of all custom budget objects.
- * @returns {number} The total sum of paid savings expenses.
- */
-export const getPaidSavingsExpenses = (transactions, categories, startDate, endDate, allCustomBudgets = []) => {
-    return transactions
-        .filter(t => {
-            return filterExpenses(t, categories, startDate, endDate, allCustomBudgets, {
-                isPaid: true,
-                priority: 'savings',
-                isCustomBudget: false
-            });
-        })
-        .reduce((sum, t) => sum + t.amount, 0);
-};
-
-/**
- * Calculates total monthly expenses (paid + unpaid, excluding cash).
- * Aggregates all non-cash expenses within the date range for a total figure.
- * @param {Array<object>} transactions - List of all transaction objects.
- * @param {Array<object>} categories - List of all category objects.
- * @param {Array<object>} allCustomBudgets - List of all custom budget objects.
- * @param {string} startDate - The start date of the range.
- * @param {string} endDate - The end date of the range.
- * @returns {number} The total sum of non-cash expenses.
- */
-export const getTotalMonthExpenses = (transactions, startDate, endDate) => {
-    const allExpenses = transactions.filter(t =>
-        t.type === 'expense' &&
-        isTransactionInDateRange(t, startDate, endDate)
-    );
-    return allExpenses.reduce((sum, t) => {
-        return sum + t.amount;
-    }, 0);
-};
-
-/**
  * Calculates total monthly income within a date range.
- * @param {Array<object>} transactions - List of all transaction objects.
- * @param {string} startDate - The start date of the range.
- * @param {string} endDate - The end date of the range.
- * @returns {number} The total sum of income transactions.
  */
 export const getMonthlyIncome = (transactions, startDate, endDate) => {
     return transactions
-        .filter(t => {
-            if (t.type !== 'income') return false;
-            return isTransactionInDateRange(t, startDate, endDate);
-        })
+        .filter(t => t.type === 'income' && isTransactionInDateRange(t, startDate, endDate))
         .reduce((sum, t) => sum + t.amount, 0);
 };
 
 /**
- * Calculates total monthly PAID expenses (excludes unpaid and cash expenses).
- * Filters based on the paidDate falling within the range.
- * @param {Array<object>} transactions - List of all transaction objects.
- * @param {string} startDate - The start date of the range.
- * @param {string} endDate - The end date of the range.
- * @returns {number} The total sum of paid, non-cash expenses.
+ * Calculates total monthly PAID expenses (excludes unpaid).
  */
 export const getMonthlyPaidExpenses = (transactions, startDate, endDate) => {
     return transactions
-        .filter(t => {
-            return filterExpenses(t, null, startDate, endDate, [], {
-                isPaid: true
-            });
-        })
+        .filter(t =>
+            t.type === 'expense' &&
+            t.isPaid &&
+            isTransactionInDateRange(t, startDate, endDate)
+        )
         .reduce((sum, t) => sum + t.amount, 0);
 };
 
 /**
- * Helper to calculate total expenses for a specific priority (needs/wants) within a date range.
- * Strictly uses transaction-level priority and ignores custom budget assignment.
- * @private
+ * Calculates total monthly expenses (paid + unpaid).
  */
-const calculateTotalExpensesByPriority = (transactions, startDate, endDate, priority) => {
+export const getTotalMonthExpenses = (transactions, startDate, endDate) => {
     return transactions
-        .filter(t => {
-            // Must be an expense
-            if (t.type !== 'expense') return false;
-
-            // Exclude cash wallet expenses (unless user wants them, but standard is to exclude)
-            // if (isCashExpense(t)) return false;
-
-            // Check priority directly on transaction (No category fallback needed)
-            if (t.financial_priority !== priority) return false;
-
-            // Check date range (handles paidDate vs date logic)
-            return isTransactionInDateRange(t, startDate, endDate);
-        })
+        .filter(t =>
+            t.type === 'expense' &&
+            isTransactionInDateRange(t, startDate, endDate)
+        )
         .reduce((sum, t) => sum + t.amount, 0);
 };
 
 /**
- * Calculates total "needs" expenses (paid + unpaid).
- * Relies solely on transaction.financial_priority.
- * @param {Array<object>} transactions - List of all transaction objects.
- * @param {string} startDate - The start date.
- * @param {string} endDate - The end date.
+ * CORE AGGREGATOR: Calculates granular breakdown of expenses in one pass.
+ * Replaces getPaidNeedsExpenses, getDirectPaidWantsExpenses, etc.
+ * * @returns {Object} { needs: { paid, unpaid, total }, wants: { directPaid, directUnpaid, customPaid, customUnpaid, total } }
  */
-export const getTotalNeedsExpenses = (transactions, startDate, endDate = []) => {
-    return calculateTotalExpensesByPriority(transactions, startDate, endDate, 'needs');
-};
-
-/**
- * Calculates total "wants" expenses (paid + unpaid).
- * Relies solely on transaction.financial_priority.
- * @param {Array<object>} transactions - List of all transaction objects.
- * @param {string} startDate - The start date.
- * @param {string} endDate - The end date.
- */
-export const getTotalWantsExpenses = (transactions, startDate, endDate) => {
-    return calculateTotalExpensesByPriority(transactions, startDate, endDate, 'wants');
-};
-
-/**
- * Calculates total monthly income and paid expenses within a date range.
- * This summary is optimized for use in trend visualizations.
- * @param {Array<object>} transactions - List of all transaction objects.
- * @param {string} startDate - The start date of the range.
- * @param {string} endDate - The end date of the range.
- * @returns {{income: number, expense: number}} Object containing total income and total paid expenses (as a positive number).
- */
-export const getMonthlyFinancialSummary = (transactions, startDate, endDate) => {
-    const income = getMonthlyIncome(transactions, startDate, endDate);
-
-    // Note: getMonthlyPaidExpenses returns a negative number for total expenses.
-    const expenseSum = getMonthlyPaidExpenses(transactions, startDate, endDate);
-
-    return {
-        income: income,
-        // Return absolute value for expense so it's ready for subtraction/comparison in the chart component
-        expense: Math.abs(expenseSum),
+export const getFinancialBreakdown = (transactions, categories, allCustomBudgets, startDate, endDate) => {
+    const result = {
+        needs: { paid: 0, unpaid: 0, total: 0 },
+        wants: {
+            directPaid: 0,
+            directUnpaid: 0,
+            customPaid: 0,
+            customUnpaid: 0,
+            total: 0
+        }
     };
+
+    transactions.forEach(t => {
+        if (t.type !== 'expense') return;
+        if (!isTransactionInDateRange(t, startDate, endDate)) return;
+
+        const isCustom = isActualCustomBudget(t.customBudgetId, allCustomBudgets);
+        const category = categories ? categories.find(c => c.id === t.category_id) : null;
+        // Priority hierarchy: Transaction > Category > Default 'wants'
+        const priority = t.financial_priority || category?.priority || 'wants';
+
+        // 1. NEEDS Logic
+        if (priority === 'needs') {
+            // Needs are usually system-only, but if a custom budget is tagged 'needs', we count it here
+            if (t.isPaid) result.needs.paid += t.amount;
+            else result.needs.unpaid += t.amount;
+        }
+        // 2. WANTS Logic
+        else if (priority === 'wants') {
+            if (isCustom) {
+                // "Indirect" Wants (Vacations, etc.)
+                if (t.isPaid) result.wants.customPaid += t.amount;
+                else result.wants.customUnpaid += t.amount;
+            } else {
+                // "Direct" Wants (Random shopping, dining)
+                if (t.isPaid) result.wants.directPaid += t.amount;
+                else result.wants.directUnpaid += t.amount;
+            }
+        }
+    });
+
+    // Compute Totals
+    result.needs.total = result.needs.paid + result.needs.unpaid;
+
+    result.wants.total =
+        result.wants.directPaid +
+        result.wants.directUnpaid +
+        result.wants.customPaid +
+        result.wants.customUnpaid;
+
+    return result;
 };
 
 /**
- * Calculates statistics for a single custom budget, filtering paid expenses by the selected month.
- * Unpaid expenses are totaled regardless of date (encumbrance view).
- * @param {object} customBudget - The custom budget object.
- * @param {Array<object>} transactions - List of all transactions.
- * @param {string|Date} monthStart - Start of the month (YYYY-MM-DD or Date).
- * @param {string|Date} monthEnd - End of the month (YYYY-MM-DD or Date).
- * @returns {object} Detailed statistics including allocated, spent, unpaid, and currency breakdown.
+ * Calculates statistics for a single custom budget.
+ * FIX: Now uses t.amount (Base Currency) strictly to avoid currency mixing.
  */
 export const getCustomBudgetStats = (customBudget, transactions, monthStart, monthEnd, baseCurrency = 'USD') => {
-    const budgetTransactions = transactions.filter(t => t.customBudgetId === customBudget.id);
+    // If dates provided, filter by range, otherwise take all for that budget ID
+    const budgetTransactions = transactions.filter(t => {
+        if (t.customBudgetId !== customBudget.id) return false;
+        if (monthStart && monthEnd) return isTransactionInDateRange(t, monthStart, monthEnd);
+        return true;
+    });
 
     const expenses = budgetTransactions.filter(t => t.type === 'expense');
-
     const allocated = customBudget.allocatedAmount || 0;
 
-    // Calculate totals
+    // Use t.amount (Base Currency) NOT t.originalAmount to avoid summing JPY + USD
     const spent = expenses.reduce((sum, t) => sum + t.amount, 0);
     const unpaid = expenses.filter(t => !t.isPaid).reduce((sum, t) => sum + t.amount, 0);
-
-    // For compatibility with System Budget stats shape
     const paidBase = expenses.filter(t => t.isPaid).reduce((sum, t) => sum + t.amount, 0);
 
     return {
@@ -406,64 +165,27 @@ export const getCustomBudgetStats = (customBudget, transactions, monthStart, mon
 
 /**
  * Calculates statistics for a system budget.
- * Leverages existing granular functions (getPaidNeedsExpenses, etc.) for consistency.
+ * Optimized to use getFinancialBreakdown for single-pass calculation.
  */
 export const getSystemBudgetStats = (systemBudget, transactions, categories, allCustomBudgets, startDate, endDate, monthlyIncome = 0) => {
+
+    // Get the granular data in one pass
+    const breakdown = getFinancialBreakdown(transactions, categories, allCustomBudgets, startDate, endDate);
+
     let paidAmount = 0;
     let unpaidAmount = 0;
 
-    // Optimization: Calculate all aggregates in a single pass to avoid iterating 6+ times
-    // This is significantly faster for large transaction lists
-    const aggregates = transactions.reduce((acc, t) => {
-        // 1. Basic Filters
-        if (t.type !== 'expense') return acc;
-        if (!isTransactionInDateRange(t, startDate, endDate)) return acc;
-
-        // 2. Determine Attributes
-        const isCustom = isActualCustomBudget(t.customBudgetId, allCustomBudgets);
-        const category = categories ? categories.find(c => c.id === t.category_id) : null;
-        const effectivePriority = t.financial_priority || category?.priority;
-
-        // 3. Bucket Accumulation
-        if (effectivePriority === 'needs' && !isCustom) {
-            if (t.isPaid) acc.needsPaid += t.amount;
-            else acc.needsUnpaid += t.amount;
-        }
-        else if (effectivePriority === 'wants' && !isCustom) {
-            if (t.isPaid) acc.wantsDirectPaid += t.amount;
-            else acc.wantsDirectUnpaid += t.amount;
-        }
-
-        // Custom budgets (usually counted as Wants in macro view, or separate)
-        if (isCustom) {
-            if (t.isPaid) acc.customPaid += t.amount;
-            else acc.customUnpaid += t.amount;
-        }
-
-        return acc;
-    }, {
-        needsPaid: 0,
-        needsUnpaid: 0,
-        wantsDirectPaid: 0,
-        wantsDirectUnpaid: 0,
-        customPaid: 0,
-        customUnpaid: 0
-    });
-
     if (systemBudget.systemBudgetType === 'needs') {
-        paidAmount = aggregates.needsPaid;
-        unpaidAmount = aggregates.needsUnpaid;
+        paidAmount = breakdown.needs.paid;
+        unpaidAmount = breakdown.needs.unpaid;
     } else if (systemBudget.systemBudgetType === 'wants') {
-        // "Wants" System Budget includes Direct Wants + Custom Budgets (e.g. Trips)
-        paidAmount = aggregates.wantsDirectPaid + aggregates.customPaid;
-        unpaidAmount = aggregates.wantsDirectUnpaid + aggregates.customUnpaid;
+        // Wants System Budget aggregates Direct + Custom
+        paidAmount = breakdown.wants.directPaid + breakdown.wants.customPaid;
+        unpaidAmount = breakdown.wants.directUnpaid + breakdown.wants.customUnpaid;
     } else if (systemBudget.systemBudgetType === 'savings') {
-
-        const totalNeeds = aggregates.needsPaid + aggregates.needsUnpaid;
-        const totalWants = aggregates.wantsDirectPaid + aggregates.wantsDirectUnpaid + aggregates.customPaid + aggregates.customUnpaid;
-
-        // "Paid" in this context means "Actual Savings Achieved"
-        paidAmount = Math.max(0, monthlyIncome - totalNeeds - totalWants);
+        // Savings = Income - (Needs + Wants)
+        const totalExpenses = breakdown.needs.total + breakdown.wants.total;
+        paidAmount = Math.max(0, monthlyIncome - totalExpenses);
         unpaidAmount = 0;
     }
 
@@ -486,7 +208,8 @@ export const getSystemBudgetStats = (systemBudget, transactions, categories, all
         unpaidAmount,
         remaining,
         percentageUsed,
-        transactionCount: 0
+        // Pass granular stats back if UI needs them (e.g. for Direct vs Custom split)
+        breakdown
     };
 };
 
@@ -497,42 +220,55 @@ export const getCustomBudgetAllocationStats = (customBudget, allocations, transa
     const budgetTransactions = transactions.filter(t => t.customBudgetId === customBudget.id);
     const totalAllocated = allocations.reduce((sum, a) => sum + a.allocatedAmount, 0);
     const unallocated = customBudget.allocatedAmount - totalAllocated;
+
     const categorySpending = {};
     allocations.forEach(allocation => {
-        const spent = budgetTransactions.filter(t => t.type === 'expense' && t.category_id === allocation.categoryId).reduce((sum, t) => sum + t.amount, 0);
-        const remaining = allocation.allocatedAmount - spent;
-        categorySpending[allocation.categoryId] = { allocated: allocation.allocatedAmount, spent, remaining, percentageUsed: allocation.allocatedAmount > 0 ? (spent / allocation.allocatedAmount) * 100 : 0 };
+        const spent = budgetTransactions
+            .filter(t => t.type === 'expense' && t.category_id === allocation.categoryId)
+            .reduce((sum, t) => sum + t.amount, 0);
+
+        categorySpending[allocation.categoryId] = {
+            allocated: allocation.allocatedAmount,
+            spent,
+            remaining: allocation.allocatedAmount - spent,
+            percentageUsed: allocation.allocatedAmount > 0 ? (spent / allocation.allocatedAmount) * 100 : 0
+        };
     });
+
     const allocatedCategoryIds = allocations.map(a => a.categoryId);
-    const unallocatedSpent = budgetTransactions.filter(t => t.type === 'expense' && (!t.category_id || !allocatedCategoryIds.includes(t.category_id))).reduce((sum, t) => sum + t.amount, 0);
-    return { totalAllocated, unallocated, unallocatedSpent, unallocatedRemaining: unallocated - unallocatedSpent, categorySpending };
+    const unallocatedSpent = budgetTransactions
+        .filter(t => t.type === 'expense' && (!t.category_id || !allocatedCategoryIds.includes(t.category_id)))
+        .reduce((sum, t) => sum + t.amount, 0);
+
+    return {
+        totalAllocated,
+        unallocated,
+        unallocatedSpent,
+        unallocatedRemaining: unallocated - unallocatedSpent,
+        categorySpending
+    };
 };
 
-
 /**
- * Calculates the net "Bonus Savings Potential" by aggregating unspent budget
- * from the Needs and Wants categories (treating them as ceilings).
- * + * @param {Array<object>} systemBudgets - List of system budgets.
- * @param {Array<object>} transactions - List of all transactions.
- * @param {Array<object>} categories - List of categories.
- * @param {Array<object>} allCustomBudgets - List of all custom budgets.
- * @param {string} startDate - Range start date (YYYY-MM-DD).
- * @param {string} endDate - Range end date (YYYY-MM-DD).
- * @returns {number} The net unspent amount (can be negative if overspent).
+ * Calculates the net "Bonus Savings Potential".
+ * (Needs Limit + Wants Limit) - Actual Spending
  */
 export const calculateBonusSavingsPotential = (systemBudgets, transactions, categories, allCustomBudgets, startDate, endDate) => {
     let netPotential = 0;
 
-    // Only consider Needs and Wants (Savings is a floor, not a ceiling)
-    const limitBudgets = systemBudgets.filter(sb =>
-        sb.systemBudgetType === 'needs' || sb.systemBudgetType === 'wants'
-    );
+    // Calculate everything once
+    const breakdown = getFinancialBreakdown(transactions, categories, allCustomBudgets, startDate, endDate);
 
-    limitBudgets.forEach(budget => {
-        // 0 passed for monthlyIncome as it's irrelevant for Needs/Wants stats calculation
-        const stats = getSystemBudgetStats(budget, transactions, categories, allCustomBudgets, startDate, endDate, 0);
-        netPotential += stats.remaining;
-    });
+    const needsBudget = systemBudgets.find(sb => sb.systemBudgetType === 'needs');
+    const wantsBudget = systemBudgets.find(sb => sb.systemBudgetType === 'wants');
+
+    if (needsBudget) {
+        netPotential += (needsBudget.budgetAmount || 0) - breakdown.needs.total;
+    }
+
+    if (wantsBudget) {
+        netPotential += (wantsBudget.budgetAmount || 0) - breakdown.wants.total;
+    }
 
     return netPotential;
 };
