@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { ArrowRight, Banknote, ExternalLink } from "lucide-react";
-import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { createPageUrl } from "@/utils";
