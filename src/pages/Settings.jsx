@@ -10,28 +10,14 @@ import { useSettingsForm, useGoalActions } from "../components/hooks/useActions"
 import { useGoals } from "../components/hooks/useBase44Entities";
 import { formatCurrency } from "../components/utils/currencyUtils";
 import { Settings as SettingsIcon, Target, GripVertical, Lock, Save, AlertCircle } from "lucide-react";
-import { CURRENCY_OPTIONS } from "../components/utils/constants";
+import {
+    CURRENCY_OPTIONS,
+    FINANCIAL_PRIORITIES,
+    SETTINGS_KEYS
+} from "../components/utils/constants";
 import AmountInput from "../components/ui/AmountInput";
 import { Skeleton } from "@/components/ui/skeleton";
 import { showToast } from "@/components/ui/use-toast";
-
-const priorityConfig = {
-    needs: { label: "Needs", color: "#EF4444", description: "Essential expenses" },
-    wants: { label: "Wants", color: "#F59E0B", description: "Discretionary spending" },
-    savings: { label: "Savings", color: "#10B981", description: "Savings and investments" }
-};
-
-const SETTINGS_KEYS = [
-    'baseCurrency',
-    'currencyPosition',
-    'budgetViewMode',
-    'thousandSeparator',
-    'decimalSeparator',
-    'decimalPlaces',
-    'hideTrailingZeros',
-    'fixedLifestyleMode'
-];
-
 
 export default function Settings() {
     const { settings, updateSettings, user } = useSettings();
@@ -136,7 +122,7 @@ export default function Settings() {
         if (localGoalMode !== (settings.goalMode ?? true)) return true;
 
         // 2. Goals
-        return Object.keys(priorityConfig).some(p => {
+        return Object.keys(FINANCIAL_PRIORITIES).some(p => {
             const goal = goals.find(g => g.priority === p);
             if (!localGoalMode) { // Absolute
                 return (Number(absoluteValues[p]) || 0) !== (goal?.target_amount || 0);
@@ -168,7 +154,7 @@ export default function Settings() {
             }
 
             // B. Goal Updates (if changed)
-            Object.keys(priorityConfig).forEach((priority) => {
+            Object.keys(FINANCIAL_PRIORITIES).forEach((priority) => {
                 const existingGoal = goals.find(g => g.priority === priority);
                 let payload = {};
                 let hasGoalChanged = false;
@@ -340,9 +326,9 @@ export default function Settings() {
                                     <div className="pt-6 pb-2 px-2 animate-in fade-in slide-in-from-top-2 duration-300">
                                         <div ref={containerRef} className="relative h-6 w-full bg-gray-100 rounded-full select-none touch-none">
                                             {/* Zones */}
-                                            <div className="absolute top-0 left-0 h-full rounded-l-full" style={{ width: `${splits.split1}%`, backgroundColor: priorityConfig.needs.color }} />
-                                            <div className="absolute top-0 h-full" style={{ left: `${splits.split1}%`, width: `${splits.split2 - splits.split1}%`, backgroundColor: priorityConfig.wants.color }} />
-                                            <div className="absolute top-0 h-full rounded-r-full" style={{ left: `${splits.split2}%`, width: `${100 - splits.split2}%`, backgroundColor: priorityConfig.savings.color }} />
+                                            <div className="absolute top-0 left-0 h-full rounded-l-full" style={{ width: `${splits.split1}%`, backgroundColor: FINANCIAL_PRIORITIES.needs.color }} />
+                                            <div className="absolute top-0 h-full" style={{ left: `${splits.split1}%`, width: `${splits.split2 - splits.split1}%`, backgroundColor: FINANCIAL_PRIORITIES.wants.color }} />
+                                            <div className="absolute top-0 h-full rounded-r-full" style={{ left: `${splits.split2}%`, width: `${100 - splits.split2}%`, backgroundColor: FINANCIAL_PRIORITIES.savings.color }} />
 
                                             {/* Thumb 1 */}
                                             <div onPointerDown={(e) => handlePointerDown(e, 1)} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} className={`absolute top-0 bottom-0 w-4 -ml-2 bg-white shadow-sm rounded-full border flex items-center justify-center z-10 hover:scale-110 transition-transform ${activeThumb === 1 ? 'cursor-grabbing' : 'cursor-grab'}`} style={{ left: `${splits.split1}%` }}>
@@ -358,22 +344,25 @@ export default function Settings() {
                                     /* INPUT VIEW (Absolute) */
                                     <div className="pt-2 animate-in fade-in slide-in-from-top-2 duration-300 space-y-4">
                                         <div className="grid grid-cols-1 gap-4">
-                                            {Object.entries(priorityConfig).map(([key, config]) => (
-                                                <div key={key} className="space-y-1.5">
-                                                    <Label className="text-xs font-semibold uppercase tracking-wider text-gray-500 flex items-center gap-2">
-                                                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: config.color }} />
-                                                        {config.label}
-                                                    </Label>
-                                                    <div>
-                                                        <AmountInput
-                                                            value={absoluteValues[key]}
-                                                            onChange={(val) => setAbsoluteValues(prev => ({ ...prev, [key]: val }))}
-                                                            placeholder="0.00"
-                                                            className="font-mono"
-                                                        />
+                                            {Object.entries(FINANCIAL_PRIORITIES)
+                                                // Optional: Sort by order property if you want a specific display order independent of object keys
+                                                .sort(([, a], [, b]) => a.order - b.order)
+                                                .map(([key, config]) => (
+                                                    <div key={key} className="space-y-1.5">
+                                                        <Label className="text-xs font-semibold uppercase tracking-wider text-gray-500 flex items-center gap-2">
+                                                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: config.color }} />
+                                                            {config.label}
+                                                        </Label>
+                                                        <div>
+                                                            <AmountInput
+                                                                value={absoluteValues[key]}
+                                                                onChange={(val) => setAbsoluteValues(prev => ({ ...prev, [key]: val }))}
+                                                                placeholder="0.00"
+                                                                className="font-mono"
+                                                            />
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            ))}
+                                                ))}
                                         </div>
                                         <div className="flex justify-between items-center pt-2 border-t border-gray-100">
                                             <span className="text-sm font-medium text-gray-500">Total Allocated</span>
@@ -407,7 +396,7 @@ export default function Settings() {
                                 {/* Percentage Legend */}
                                 {!isAbsoluteMode && (
                                     <div className="grid grid-cols-3 gap-4 animate-in fade-in">
-                                        {Object.entries(priorityConfig).map(([key, config]) => (
+                                        {Object.entries(FINANCIAL_PRIORITIES).sort(([, a], [, b]) => a.order - b.order).map(([key, config]) => (
                                             <div key={key} className="text-center space-y-1">
                                                 <div className="flex items-center justify-center gap-2 mb-1">
                                                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: config.color }} />
