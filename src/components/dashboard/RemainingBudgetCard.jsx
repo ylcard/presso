@@ -197,16 +197,16 @@ export default function RemainingBudgetCard({
                 >
                     <Link
                         to={needsBudget ? `/BudgetDetail?id=${needsBudget.id}` : '#'}
-                        className="block h-full w-full relative group hover:brightness-110 overflow-hidden"
+                        className="flex h-full w-full relative group hover:brightness-110 overflow-hidden"
                     >
                         {needsSegs.safePaid > 0 && (
-                            <motion.div initial={{ width: 0 }} animate={{ width: `${(needsSegs.safePaid / needsSegs.total) * 100}%` }} transition={fluidSpring} className="h-full float-left" style={{ backgroundColor: needsColor }} />
+                            <motion.div initial={{ width: 0 }} animate={{ width: `${(needsSegs.safePaid / needsSegs.total) * 100}%` }} transition={fluidSpring} className="h-full" style={{ backgroundColor: needsColor }} />
                         )}
                         {needsSegs.safeUnpaid > 0 && (
-                            <motion.div initial={{ width: 0 }} animate={{ width: `${(needsSegs.safeUnpaid / needsSegs.total) * 100}%` }} transition={fluidSpring} className="h-full float-left bg-blue-500 opacity-60" style={stripePattern} />
+                            <motion.div initial={{ width: 0 }} animate={{ width: `${(needsSegs.safeUnpaid / needsSegs.total) * 100}%` }} transition={fluidSpring} className="h-full bg-blue-500 opacity-60" style={stripePattern} />
                         )}
                         {needsSegs.overflow > 0 && (
-                            <motion.div initial={{ width: 0 }} animate={{ width: `${(needsSegs.overflow / needsSegs.total) * 100}%` }} transition={fluidSpring} className="h-full float-left opacity-60" style={{ backgroundColor: 'red', ...stripePattern }} />
+                            <motion.div initial={{ width: 0 }} animate={{ width: `${(needsSegs.overflow / needsSegs.total) * 100}%` }} transition={fluidSpring} className="h-full opacity-60" style={{ backgroundColor: 'red', ...stripePattern }} />
                         )}
                         <div className={`absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white transition-opacity ${needsVisualPct > 10 ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>Needs</div>
                     </Link>
@@ -221,16 +221,16 @@ export default function RemainingBudgetCard({
                 >
                     <Link
                         to={wantsBudget ? `/BudgetDetail?id=${wantsBudget.id}` : '#'}
-                        className="block h-full w-full relative group hover:brightness-110 overflow-hidden"
+                        className="flex h-full w-full relative group hover:brightness-110 overflow-hidden"
                     >
                         {wantsSegs.safePaid > 0 && (
-                            <motion.div initial={{ width: 0 }} animate={{ width: `${(wantsSegs.safePaid / wantsSegs.total) * 100}%` }} transition={fluidSpring} className="h-full float-left" style={{ backgroundColor: wantsColor }} />
+                            <motion.div initial={{ width: 0 }} animate={{ width: `${(wantsSegs.safePaid / wantsSegs.total) * 100}%` }} transition={fluidSpring} className="h-full" style={{ backgroundColor: wantsColor }} />
                         )}
                         {wantsSegs.safeUnpaid > 0 && (
-                            <motion.div initial={{ width: 0 }} animate={{ width: `${(wantsSegs.safeUnpaid / wantsSegs.total) * 100}%` }} transition={fluidSpring} className="h-full float-left opacity-60" style={{ backgroundColor: wantsColor, ...stripePattern }} />
+                            <motion.div initial={{ width: 0 }} animate={{ width: `${(wantsSegs.safeUnpaid / wantsSegs.total) * 100}%` }} transition={fluidSpring} className="h-full opacity-60" style={{ backgroundColor: wantsColor, ...stripePattern }} />
                         )}
                         {wantsSegs.overflow > 0 && (
-                            <motion.div initial={{ width: 0 }} animate={{ width: `${(wantsSegs.overflow / wantsSegs.total) * 100}%` }} transition={fluidSpring} className="h-full float-left bg-red-500" style={stripePattern} />
+                            <motion.div initial={{ width: 0 }} animate={{ width: `${(wantsSegs.overflow / wantsSegs.total) * 100}%` }} transition={fluidSpring} className="h-full bg-red-500" style={stripePattern} />
                         )}
                         <div className={`absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white transition-opacity ${wantsVisualPct > 10 ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>Lifestyle</div>
                     </Link>
