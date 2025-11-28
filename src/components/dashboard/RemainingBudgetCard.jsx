@@ -602,9 +602,9 @@ export default function RemainingBudgetCard({
                     <div className="flex flex-col-reverse sm:flex-row items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
                         <ViewToggle />
                         <div className="flex items-center gap-2">
-                            {addIncomeButton}
-                            {addExpenseButton}
                             {importDataButton}
+                            {addExpenseButton}
+                            {addIncomeButton}
                         </div>
                     </div>
                 </div>
