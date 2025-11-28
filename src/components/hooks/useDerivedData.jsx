@@ -3,16 +3,14 @@ import { parseDate, getFirstDayOfMonth, getLastDayOfMonth, getMonthBoundaries } 
 import { createEntityMap } from "../utils/generalUtils";
 import {
     getTotalMonthExpenses,
-    getPaidNeedsExpenses,
-    getUnpaidNeedsExpenses,
-    getDirectPaidWantsExpenses,
-    getDirectUnpaidWantsExpenses,
-    getPaidCustomBudgetExpenses,
-    getUnpaidCustomBudgetExpenses,
+    getFinancialBreakdown,
     getMonthlyIncome,
     getMonthlyPaidExpenses,
     getSystemBudgetStats,
     getCustomBudgetStats,
+    calculateBonusSavingsPotential,
+    resolveBudgetLimit,
+    getHistoricalAverageIncome
 } from "../utils/financialCalculations";
 import { FINANCIAL_PRIORITIES } from "../utils/constants";
 import { getCategoryIcon } from "../utils/iconMapConfig";
@@ -132,6 +130,16 @@ export const useMonthlyIncome = (transactions, selectedMonth, selectedYear) => {
 };
 
 /**
+ * NEW HOOK: Calculates historical average for Inflation Protection
+ */
+export const useHistoricalIncome = (transactions, selectedMonth, selectedYear) => {
+    return useMemo(() => {
+        if (selectedMonth === undefined || selectedYear === undefined) return 0;
+        return getHistoricalAverageIncome(transactions, selectedMonth, selectedYear, 3);
+    }, [transactions, selectedMonth, selectedYear]);
+};
+
+/**
  * Hook for calculating the key financial summary metrics for the dashboard view.
  * @param {Array<Object>} transactions - The source array of all transactions.
  * @param {number} selectedMonth - The zero-indexed month (0-11).
@@ -139,15 +147,19 @@ export const useMonthlyIncome = (transactions, selectedMonth, selectedYear) => {
  * @param {Array<Object>} allCustomBudgets - List of all custom budget objects.
  * @param {Array<Object>} systemBudgets - List of all system budget objects (unused in current logic, but passed).
  * @param {Array<Object>} categories - List of all category objects.
+ * @param {Object} settings - User settings containing goalMode.
  * @returns {{
  * remainingBudget: number,
  * currentMonthIncome: number,
  * currentMonthExpenses: number
  * }} Dashboard summary metrics.
  */
-export const useDashboardSummary = (transactions, selectedMonth, selectedYear, allCustomBudgets, systemBudgets, categories) => {
+export const useDashboardSummary = (transactions, selectedMonth, selectedYear, allCustomBudgets, systemBudgets, categories, settings) => {
     // Centralized hook call for Income (must remain at top level)
     const currentMonthIncome = useMonthlyIncome(transactions, selectedMonth, selectedYear);
+
+    // 1. Calculate Historical Average
+    const historicalAverage = useHistoricalIncome(transactions, selectedMonth, selectedYear);
 
     // Memoize the month boundaries (used by all calculations)
     const { monthStartStr, monthEndStr, monthStartDate, monthEndDate } = useMemo(() => {
@@ -194,13 +206,28 @@ export const useDashboardSummary = (transactions, selectedMonth, selectedYear, a
 
         if (!monthStartStr || !monthEndStr) return 0;
 
-        return getTotalMonthExpenses(transactions, categories, allCustomBudgets, monthStartStr, monthEndStr);
+        return getTotalMonthExpenses(transactions, monthStartStr, monthEndStr);
     }, [transactions, allCustomBudgets, categories, monthStartStr, monthEndStr, getTotalMonthExpenses]);
+
+    // POSSIBLE DEADCODE
+    // const goalMode = settings?.goalMode ?? true;
+
+    // NEW: Calculate the behavioral "Bonus Savings" (Unspent Needs + Unspent Wants)
+    // This is distinct from actual bank account remaining; it's the amount "saved by budgeting".
+    const bonusSavingsPotential = useMemo(() => {
+        if (!monthStartStr || !monthEndStr || !systemBudgets) return 0;
+        //     return calculateBonusSavingsPotential(systemBudgets, transactions, categories, allCustomBudgets, monthStartStr, monthEndStr, currentMonthIncome, goalMode);
+        // }, [systemBudgets, transactions, categories, allCustomBudgets, monthStartStr, monthEndStr, currentMonthIncome, goalMode]);
+
+        // 2. Pass settings and historicalAverage
+        return calculateBonusSavingsPotential(systemBudgets, transactions, categories, allCustomBudgets, monthStartStr, monthEndStr, currentMonthIncome, settings, historicalAverage);
+    }, [systemBudgets, transactions, categories, allCustomBudgets, monthStartStr, monthEndStr, currentMonthIncome, settings, historicalAverage]);
 
     return {
         remainingBudget,
         currentMonthIncome,
         currentMonthExpenses,
+        bonusSavingsPotential
     };
 };
 
@@ -297,8 +324,13 @@ export const useBudgetsAggregates = (
     allCustomBudgets,
     systemBudgets,
     selectedMonth,
-    selectedYear
+    selectedYear,
+    settings
 ) => {
+
+    // POSSIBLE DEADCODE
+    // const goalMode = settings?.goalMode ?? true;
+
     // Filter custom budgets based on date overlap
     const customBudgets = useMemo(() => {
         const { monthStart, monthEnd } = getMonthBoundaries(selectedMonth, selectedYear);
@@ -317,13 +349,19 @@ export const useBudgetsAggregates = (
     // Get monthly income for savings calculation
     const monthlyIncome = useMonthlyIncome(transactions, selectedMonth, selectedYear);
 
+    // Get Historical Average
+    const historicalAverage = useHistoricalIncome(transactions, selectedMonth, selectedYear);
+
     const systemBudgetsWithStats = useMemo(() => {
         const monthStart = getFirstDayOfMonth(selectedMonth, selectedYear);
         const monthEnd = getLastDayOfMonth(selectedMonth, selectedYear);
 
         return systemBudgets.map(sb => {
             // Use centralized calculation
-            const stats = getSystemBudgetStats(sb, transactions, categories, allCustomBudgets, monthStart, monthEnd, monthlyIncome);
+            // const stats = getSystemBudgetStats(sb, transactions, categories, allCustomBudgets, monthStart, monthEnd, monthlyIncome, goalMode);
+
+            // Pass settings and historicalAverage
+            const stats = getSystemBudgetStats(sb, transactions, categories, allCustomBudgets, monthStart, monthEnd, monthlyIncome, settings, historicalAverage);
 
             return {
                 ...sb,
@@ -331,7 +369,8 @@ export const useBudgetsAggregates = (
                 preCalculatedStats: stats
             };
         });
-    }, [systemBudgets, transactions, categories, allCustomBudgets, selectedMonth, selectedYear, monthlyIncome]);
+        // }, [systemBudgets, transactions, categories, allCustomBudgets, selectedMonth, selectedYear, monthlyIncome, goalMode]);
+    }, [systemBudgets, transactions, categories, allCustomBudgets, selectedMonth, selectedYear, monthlyIncome, settings, historicalAverage]);
 
     // Group custom budgets by status
     const groupedCustomBudgets = useMemo(() => {
@@ -413,9 +452,14 @@ export const useBudgetBarsData = (
     categories,
     goals,
     monthlyIncome,
-    baseCurrency
+    baseCurrency,
+    settings
 ) => {
     return useMemo(() => {
+        const goalMode = settings?.goalMode ?? true;
+
+        const historicalAverage = getHistoricalAverageIncome(transactions, (new Date().getMonth()), (new Date().getFullYear())); // Fallback if no month selected, though BudgetBars usually has context
+
         const system = systemBudgets.sort((a, b) => {
             const orderA = FINANCIAL_PRIORITIES[a.systemBudgetType]?.order ?? 99;
             const orderB = FINANCIAL_PRIORITIES[b.systemBudgetType]?.order ?? 99;
@@ -424,7 +468,8 @@ export const useBudgetBarsData = (
 
         const custom = customBudgets;
 
-        const goalMap = createEntityMap(goals, 'priority', (goal) => goal.target_percentage);
+        // Map to full goal object so we can access percentage OR amount
+        const goalMap = createEntityMap(goals, 'priority', (goal) => goal);
 
         // Get date range from first system budget (they should all have the same range)
         const startDate = system.length > 0 ? system[0].startDate : null;
@@ -435,11 +480,28 @@ export const useBudgetBarsData = (
         const monthEndDate = endDate ? parseDate(endDate) : null;
 
         const systemBudgetsData = system.map(sb => {
-            const targetPercentage = goalMap[sb.systemBudgetType] || 0;
-            const targetAmount = sb.budgetAmount;
+            const goal = goalMap[sb.systemBudgetType];
+
+            // 1. Resolve the Limit (Amount) based on mode
+            // const targetAmount = resolveBudgetLimit(goal, monthlyIncome, goalMode);
+
+            // Pass settings and historicalAverage
+            const targetAmount = resolveBudgetLimit(goal, monthlyIncome, settings, historicalAverage);
+
+            // 2. Resolve the Percentage for display
+            // If Absolute Mode: Calculate back-percentage (Amount / Income)
+            // If Percentage Mode: Use the stored percentage
+            let targetPercentage = 0;
+            if (goalMode === false) { // Absolute
+                targetPercentage = monthlyIncome > 0 ? (targetAmount / monthlyIncome) * 100 : 0;
+            } else { // Percentage
+                targetPercentage = goal?.target_percentage || 0;
+            }
 
             // Use centralized calculation
-            const stats = getSystemBudgetStats(sb, transactions, categories, allCustomBudgets, startDate, endDate, monthlyIncome);
+            // const stats = getSystemBudgetStats(sb, transactions, categories, allCustomBudgets, startDate, endDate, monthlyIncome, goalMode);
+            const stats = getSystemBudgetStats(sb, transactions, categories, allCustomBudgets, startDate, endDate, monthlyIncome, settings, historicalAverage);
+
             const maxHeight = Math.max(targetAmount, stats.totalSpent);
             const isOverBudget = stats.totalSpent > targetAmount;
             const overBudgetAmount = isOverBudget ? stats.totalSpent - targetAmount : 0;
@@ -447,6 +509,12 @@ export const useBudgetBarsData = (
             return {
                 ...sb,
                 stats: {
+<<<<<<< HEAD
+=======
+                    // Trying to fix showing 0%
+                    // ...stats,
+                    // Map keys to match BudgetBar expectations if different
+>>>>>>> upstream/main
                     totalAllocatedUnits: targetAmount,
                     paid: {
                         totalBaseCurrencyAmount: stats.paidAmount
@@ -476,6 +544,13 @@ export const useBudgetBarsData = (
             // Calculate totals for BudgetBars
             const totalBudget = stats.allocated;
             const paidAmount = stats.paid.totalBaseCurrencyAmount;
+<<<<<<< HEAD
+=======
+
+            // trying to fix 0% bug
+            // const expectedAmount = stats.unpaid;
+            // const totalSpent = paidAmount + expectedAmount;
+>>>>>>> upstream/main
             const unpaidAmount = stats.unpaid.totalBaseCurrencyAmount;  // Fixed: use nested property
             const totalSpent = paidAmount + unpaidAmount;
 
@@ -490,16 +565,30 @@ export const useBudgetBarsData = (
                     paidAmount,
                     totalBudget,
                     totalAllocatedUnits: stats.allocated,
+<<<<<<< HEAD
                     totalSpentUnits: paidAmount,  // This should be paid amount only, not total spent
                     totalUnpaidUnits: unpaidAmount  // Fixed: use the correct unpaid amount
                 },
                 targetAmount: totalBudget,
                 expectedAmount: unpaidAmount,  // Fixed: use unpaidAmount variable
+=======
+                    totalSpentUnits: paidAmount,
+                    totalSpentUnits: stats.spent,
+                    // trying to fix 0% bug
+                    // totalUnpaidUnits: stats.unpaid 
+                    totalUnpaidUnits: unpaidAmount
+                },
+                targetAmount: totalBudget,
+                // trying to fix 0% bug
+                // expectedAmount,
+                expectedAmount: unpaidAmount,
+>>>>>>> upstream/main
                 maxHeight,
                 isOverBudget,
                 overBudgetAmount
             };
         };
+<<<<<<< HEAD
     });
 
     const savingsBudget = systemBudgetsData.find(sb => sb.systemBudgetType === 'savings');
@@ -522,6 +611,10 @@ export const useBudgetBarsData = (
         savingsShortfall
     };
 }, [systemBudgets, customBudgets, allCustomBudgets, transactions, categories, goals, monthlyIncome, baseCurrency]);
+=======
+        // }, [systemBudgets, customBudgets, allCustomBudgets, transactions, categories, goals, monthlyIncome, baseCurrency, settings]);
+    }, [systemBudgets, customBudgets, allCustomBudgets, transactions, categories, goals, monthlyIncome, baseCurrency, settings]);
+>>>>>>> upstream/main
 };
 
 // Hook for monthly breakdown calculations
@@ -563,33 +656,30 @@ export const useMonthlyBreakdown = (transactions, categories, monthlyIncome, all
             })
             .sort((a, b) => b.amount - a.amount);
 
-        // 3. Calculate Needs & Wants using centralized financialCalculations
-        // Needs = Paid + Unpaid Needs
-        const paidNeeds = getPaidNeedsExpenses(transactions, categories, monthStart, monthEnd, allCustomBudgets);
-        const unpaidNeeds = getUnpaidNeedsExpenses(transactions, categories, monthStart, monthEnd, allCustomBudgets);
-        const needsTotal = paidNeeds + unpaidNeeds;
-
-        // Wants = Direct Paid/Unpaid Wants + Custom Budgets (Paid/Unpaid)
-        const directPaidWants = getDirectPaidWantsExpenses(transactions, categories, monthStart, monthEnd, allCustomBudgets);
-        const directUnpaidWants = getDirectUnpaidWantsExpenses(transactions, categories, monthStart, monthEnd, allCustomBudgets);
-        const customPaid = getPaidCustomBudgetExpenses(transactions, allCustomBudgets, monthStart, monthEnd);
-        const customUnpaid = getUnpaidCustomBudgetExpenses(transactions, allCustomBudgets, monthStart, monthEnd);
-        const wantsTotal = directPaidWants + directUnpaidWants + customPaid + customUnpaid;
+        // 3. Calculate Aggregates in ONE PASS using the new optimizer
+        const breakdown = getFinancialBreakdown(transactions, categories, allCustomBudgets, monthStart, monthEnd);
 
         return {
             categoryBreakdown,
             totalExpenses,
-            needsTotal,
-            wantsTotal
+            needsTotal: breakdown.needs.total,
+            wantsTotal: breakdown.wants.total,
+            // The aggregate totals are now identical to the breakdown totals
+            aggregateNeedsTotal: breakdown.needs.total,
+            aggregateWantsTotal: breakdown.wants.total,
+            // We can also return the detailed breakdown if the UI needs it later
+            detailedBreakdown: breakdown
         };
     }, [transactions, categories, monthlyIncome, allCustomBudgets, selectedMonth, selectedYear]);
 };
 
 // Hook for priority chart data calculations
-export const usePriorityChartData = (transactions, categories, goals, monthlyIncome) => {
+export const usePriorityChartData = (transactions, categories, goals, monthlyIncome, settings) => {
     return useMemo(() => {
+        const goalMode = settings?.goalMode ?? true;
         const categoryMap = createEntityMap(categories);
-        const goalMap = createEntityMap(goals, 'priority', (goal) => goal.target_percentage);
+        // Map to full object
+        const goalMap = createEntityMap(goals, 'priority', (goal) => goal);
 
         const expensesByPriority = transactions
             .filter(t => t.type === 'expense' && t.category_id)
@@ -608,7 +698,17 @@ export const usePriorityChartData = (transactions, categories, goals, monthlyInc
             .map(([key, config]) => {
                 const amount = expensesByPriority[key] || 0;
                 const actual = monthlyIncome > 0 ? (amount / monthlyIncome) * 100 : 0;
-                const target = goalMap[key] || 0;
+
+                const goal = goalMap[key];
+                let target = 0;
+
+                // Normalize target to percentage for the chart
+                if (goalMode === false && goal?.target_amount) {
+                    // Absolute Mode: Convert Amount to %
+                    target = monthlyIncome > 0 ? (goal.target_amount / monthlyIncome) * 100 : 0;
+                } else {
+                    target = goal?.target_percentage || 0;
+                }
 
                 return {
                     name: config.label,
@@ -620,7 +720,7 @@ export const usePriorityChartData = (transactions, categories, goals, monthlyInc
             .filter(item => item.actual > 0 || item.target > 0);
 
         return chartData;
-    }, [transactions, categories, goals, monthlyIncome]);
+    }, [transactions, categories, goals, monthlyIncome, settings]);
 };
 
 /**

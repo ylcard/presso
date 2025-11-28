@@ -79,8 +79,8 @@ export default function CustomBudgetForm({
                 </Alert>
             )}
 
-            <div className="grid grid-cols-2 gap-3 items-end">
-                <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-3 items-start">
+                <div className="flex flex-col space-y-2">
                     <Label htmlFor="name">Budget Name</Label>
                     <Input
                         id="name"
@@ -93,7 +93,7 @@ export default function CustomBudgetForm({
                     />
                 </div>
 
-                <div className="space-y-2">
+                <div className="flex flex-col space-y-2">
                     <Label>Date Range</Label>
                     <DateRangePicker
                         startDate={formData.startDate}

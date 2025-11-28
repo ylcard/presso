@@ -2,12 +2,12 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Plus, ChevronLeft, ChevronRight, AlertTriangle } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { formatCurrency } from "../utils/currencyUtils";
 import { useBudgetBarsData } from "../hooks/useDerivedData";
 import BudgetBar from "../custombudgets/BudgetBar";
 import BudgetCard from "../budgets/BudgetCard";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 
 export default function BudgetBars({
     systemBudgets,
@@ -19,23 +19,44 @@ export default function BudgetBars({
     goals,
     monthlyIncome,
     baseCurrency,
-    onCreateBudget
+    onCreateBudget,
+    preCalculatedSystemData,
+    preCalculatedCustomData,
+    preCalculatedSavings,
+    showSystem = true
 }) {
 
-    // Initialize state from global settings, defaulting to 'bars'
-    // This acts as a temporary override that resets on page reload
+    // 1. Initialize local state with global setting (Default to 'bars' if undefined)
     const [viewMode, setViewMode] = useState(settings.budgetViewMode || 'bars');
+
+    // 2. Sync local state when global settings update (e.g. from Settings page or DB load)
+    useEffect(() => {
+        if (settings.budgetViewMode) {
+            setViewMode(settings.budgetViewMode);
+        }
+    }, [settings.budgetViewMode]);
 
     const [customStartIndex, setCustomStartIndex] = useState(0);
     const barsPerPage = viewMode === 'cards' ? 4 : 7;
 
-    // Use the extracted hook for all calculations
-    const { systemBudgetsData, customBudgetsData, totalActualSavings, savingsTarget, savingsShortfall } =
-        useBudgetBarsData(systemBudgets, customBudgets, allCustomBudgets, transactions, categories, goals, monthlyIncome, baseCurrency); // Pass baseCurrency to hook
+    const calculatedData = useBudgetBarsData(systemBudgets, customBudgets, allCustomBudgets, transactions, categories, goals, monthlyIncome, baseCurrency, settings);
+
+    const systemBudgetsData = preCalculatedSystemData || calculatedData.systemBudgetsData;
+    const customBudgetsData = preCalculatedCustomData || calculatedData.customBudgetsData;
+    const totalActualSavings = preCalculatedSavings?.totalActualSavings ?? calculatedData.totalActualSavings;
+    const savingsTarget = preCalculatedSavings?.savingsTarget ?? calculatedData.savingsTarget;
+    const savingsShortfall = preCalculatedSavings?.savingsShortfall ?? calculatedData.savingsShortfall;
 
     const visibleCustomBudgets = customBudgetsData.slice(customStartIndex, customStartIndex + barsPerPage);
     const canScrollLeft = customStartIndex > 0;
     const canScrollRight = customStartIndex + barsPerPage < customBudgetsData.length;
+
+    // 3. Local-only toggle handler
+    // This allows the user to temporarily switch views without affecting their saved preference
+    const handleViewModeChange = (checked) => {
+        const newMode = checked ? 'cards' : 'bars';
+        setViewMode(newMode);
+    };
 
     return (
         <div className="space-y-6">
@@ -58,7 +79,7 @@ export default function BudgetBars({
                 </Card>
             )}
 
-            {systemBudgetsData.length > 0 && (
+            {showSystem && systemBudgetsData.length > 0 && (
                 <Card className="border-none shadow-lg">
                     <CardHeader className="flex flex-row items-center justify-between">
                         <CardTitle className="flex items-center gap-2">
@@ -66,18 +87,18 @@ export default function BudgetBars({
                                 System Budgets
                             </span>
                         </CardTitle>
-                        <div className="flex items-center gap-2">
-                            <Label htmlFor="view-mode" className="text-sm text-gray-500 cursor-pointer min-w-[65px] text-right">
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex items-center justify-end gap-2 mb-4">
+                            <Label htmlFor="view-mode-custom" className="text-sm text-gray-500 cursor-pointer min-w-[65px] text-right">
                                 {viewMode === 'cards' ? 'Card View' : 'Bar View'}
                             </Label>
                             <Switch
-                                id="view-mode"
+                                id="view-mode-custom"
                                 checked={viewMode === 'cards'}
-                                onCheckedChange={(checked) => setViewMode(checked ? 'cards' : 'bars')}
+                                onCheckedChange={handleViewModeChange}
                             />
                         </div>
-                    </CardHeader>
-                    <CardContent>
                         <div className={`flex ${viewMode === 'cards' ? 'w-full gap-4' : 'flex-wrap justify-center gap-4'}`}>
                             {systemBudgetsData.map((budget) => (
                                 viewMode === 'bars' ? (
@@ -85,7 +106,7 @@ export default function BudgetBars({
                                         key={budget.id}
                                         budget={budget}
                                         isCustom={false}
-                                        isSystemSavings={budget.systemBudgetType === 'savings'}
+                                        isSavings={budget.systemBudgetType === 'savings'}
                                         settings={settings}
                                         hideActions={true}
                                     />
@@ -145,6 +166,16 @@ export default function BudgetBars({
                         </div>
                     </CardHeader>
                     <CardContent>
+                        <div className="flex items-center justify-end gap-2 mb-4">
+                            <Label htmlFor="view-mode-custom" className="text-sm text-gray-500 cursor-pointer min-w-[65px] text-right">
+                                {viewMode === 'cards' ? 'Card View' : 'Bar View'}
+                            </Label>
+                            <Switch
+                                id="view-mode-custom"
+                                checked={viewMode === 'cards'}
+                                onCheckedChange={handleViewModeChange}
+                            />
+                        </div>
                         <div className={`flex ${viewMode === 'cards' ? 'w-full gap-4' : 'flex-wrap justify-center gap-4'}`}>
                             {visibleCustomBudgets.map((budget) => (
                                 viewMode === 'bars' ? (
@@ -181,6 +212,24 @@ export default function BudgetBars({
                                 ))}
                             </div>
                         )}
+                    </CardContent>
+                </Card>
+            )}
+            {customBudgetsData.length === 0 && (
+                <Card className="border-2 border-dashed border-gray-200 bg-gray-50/50 shadow-sm hover:border-purple-200 hover:bg-purple-50/30 transition-all duration-300">
+                    <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                        <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mb-4">
+                            <Plus className="w-6 h-6 text-purple-600" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">No Custom Budgets</h3>
+                        <p className="text-sm text-gray-500 max-w-sm mb-6">
+                            You haven't set up any custom budgets for this month yet.
+                            Create one to track specific spending categories.
+                        </p>
+                        <CustomButton variant="create" onClick={onCreateBudget} className="min-w-[200px] shadow-md hover:shadow-lg transition-shadow">
+                            <Plus className="w-4 h-4 mr-2" />
+                            Create First Budget
+                        </CustomButton>
                     </CardContent>
                 </Card>
             )}

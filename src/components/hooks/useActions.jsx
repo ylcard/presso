@@ -8,6 +8,7 @@ import { useDeleteEntity } from "./useDeleteEntity";
 import { QUERY_KEYS } from "./queryKeys";
 import { parseDate } from "../utils/dateUtils";
 import { createPageUrl } from "@/utils";
+import { useSettings } from "../utils/SettingsContext";
 
 // Hook for transaction actions (CRUD operations - Transactions page)
 export const useTransactionActions = (config = {}) => {
@@ -143,7 +144,7 @@ export const useGoalActions = (user, goals) => {
         },
     });
 
-    const handleGoalUpdate = async (priority, percentage) => {
+    const handleGoalUpdate = async (priority, percentage, extraData = {}) => {
         const existingGoal = goals.find(g => g.priority === priority);
 
         try {
@@ -151,14 +152,18 @@ export const useGoalActions = (user, goals) => {
                 // Return the promise directly, allowing the caller (GoalSettings) to handle resolution status
                 return updateGoalMutation.mutateAsync({
                     id: existingGoal.id,
-                    data: { target_percentage: percentage }
+                    data: {
+                        target_percentage: percentage,
+                        ...extraData
+                    }
                 });
             } else if (user) {
                 // Return the promise directly
                 return createGoalMutation.mutateAsync({
                     priority,
                     target_percentage: percentage,
-                    user_email: user.email
+                    user_email: user.email,
+                    ...extraData
                 });
             }
 
@@ -181,6 +186,7 @@ export const useGoalActions = (user, goals) => {
 // Hook for custom budget actions (CRUD operations)
 // export const useCustomBudgetActions = (user, transactions, options = {}) => {
 export const useCustomBudgetActions = (config = {}) => {
+    const { user } = useSettings();
     const { transactions, ...options } = config;
     const [showForm, setShowForm] = useState(false);
     const [editingBudget, setEditingBudget] = useState(null);
@@ -246,7 +252,6 @@ export const useCustomBudgetActions = (config = {}) => {
 
             // Delete all associated transactions
             const budgetTransactions = transactions.filter(t => t.customBudgetId === budgetId);
-            console.log(`Deleting ${budgetTransactions.length} transactions for budget ${budgetId}`);
 
             for (const transaction of budgetTransactions) {
                 await base44.entities.Transaction.delete(transaction.id);
@@ -341,6 +346,10 @@ export const useSettingsForm = (settings, updateSettings) => {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
 
+    const resetForm = (newValues) => {
+        setFormData(newValues);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsSaving(true);
@@ -369,6 +378,7 @@ export const useSettingsForm = (settings, updateSettings) => {
     return {
         formData,
         handleFormChange,
+        resetForm,
         handleSubmit,
         isSaving,
         saveSuccess,

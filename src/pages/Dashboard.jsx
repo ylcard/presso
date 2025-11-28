@@ -15,12 +15,13 @@ import {
     useMonthlyIncome,
     useDashboardSummary,
     useActiveBudgets,
+    useBudgetBarsData,
+    useMonthlyBreakdown
 } from "../components/hooks/useDerivedData";
 import {
     useTransactionActions,
     useCustomBudgetActions,
 } from "../components/hooks/useActions";
-import { useExchangeRates } from "../components/hooks/useExchangeRates";
 import MonthNavigator from "../components/ui/MonthNavigator";
 import RemainingBudgetCard from "../components/dashboard/RemainingBudgetCard";
 import BudgetBars from "../components/dashboard/BudgetBars";
@@ -56,13 +57,25 @@ export default function Dashboard() {
     const monthlyIncome = useMonthlyIncome(transactions, selectedMonth, selectedYear);
 
     // Dashboard summary with categories parameter for granular expense calculations
-    const { remainingBudget, currentMonthIncome, currentMonthExpenses } = useDashboardSummary(
+    // const { remainingBudget, currentMonthIncome, currentMonthExpenses } = useDashboardSummary(
+    const { remainingBudget, currentMonthIncome, currentMonthExpenses, bonusSavingsPotential } = useDashboardSummary(
         transactions,
         selectedMonth,
         selectedYear,
         allCustomBudgets,
         systemBudgets,
-        categories
+        categories,
+        settings
+    );
+
+    // NEW: Calculate the aggregated "Needs" and "Wants" totals using the new simplified logic
+    const { aggregateNeedsTotal, aggregateWantsTotal, detailedBreakdown } = useMonthlyBreakdown(
+        transactions,
+        categories,
+        monthlyIncome,
+        allCustomBudgets,
+        selectedMonth,
+        selectedYear
     );
 
     const { activeCustomBudgets } = useActiveBudgets(
@@ -71,6 +84,20 @@ export default function Dashboard() {
         selectedMonth,
         selectedYear
     );
+
+    // LIFTED STATE: Calculate budget stats here so we can pass them to RemainingBudgetCard
+    const { systemBudgetsData, customBudgetsData, totalActualSavings, savingsTarget, savingsShortfall } =
+        useBudgetBarsData(
+            systemBudgets,
+            activeCustomBudgets,
+            allCustomBudgets,
+            transactions,
+            categories,
+            goals,
+            monthlyIncome,
+            settings.baseCurrency,
+            settings
+        );
 
     const transactionActions = useTransactionActions({
         onSuccess: () => {
@@ -99,10 +126,17 @@ export default function Dashboard() {
                 <div className="grid md:grid-cols-3 gap-6">
                     <div className="md:col-span-3">
                         <RemainingBudgetCard
-                            remainingBudget={remainingBudget}
+                            breakdown={detailedBreakdown}
+                            systemBudgets={systemBudgetsData} // NEW: Budgets with calculated stats
+                            bonusSavingsPotential={bonusSavingsPotential}
                             currentMonthIncome={currentMonthIncome}
                             currentMonthExpenses={currentMonthExpenses}
+                            goals={goals}
                             settings={settings}
+                            selectedMonth={selectedMonth}
+                            selectedYear={selectedYear}
+                            // aggregateNeedsTotal={aggregateNeedsTotal}
+                            // aggregateWantsTotal={aggregateWantsTotal}
                             monthNavigator={
                                 <MonthNavigator
                                     currentMonth={selectedMonth}
@@ -117,17 +151,21 @@ export default function Dashboard() {
                             addIncomeButton={
                                 <QuickAddIncome
                                     open={showQuickAddIncome}
+                                    selectedMonth={selectedMonth}
+                                    selectedYear={selectedYear}
                                     onOpenChange={setShowQuickAddIncome}
                                     onSubmit={transactionActions.handleSubmit}
                                     isSubmitting={transactionActions.isSubmitting}
                                     renderTrigger={true}
-                                    triggerVariant="seamless"
+                                    triggerVariant="success"
                                     triggerSize="sm"
                                 />
                             }
                             addExpenseButton={
                                 <QuickAddTransaction
                                     open={showQuickAdd}
+                                    selectedMonth={selectedMonth}
+                                    selectedYear={selectedYear}
                                     onOpenChange={setShowQuickAdd}
                                     categories={categories}
                                     customBudgets={activeCustomBudgets}
@@ -135,13 +173,13 @@ export default function Dashboard() {
                                     isSubmitting={transactionActions.isSubmitting}
                                     transactions={transactions}
                                     renderTrigger={true}
-                                    triggerVariant="seamless"
+                                    triggerVariant="warning"
                                     triggerSize="sm"
                                 />
                             }
                             importDataButton={
                                 <ImportWizardDialog
-                                    triggerVariant="seamless"
+                                    triggerVariant="primary"
                                     triggerSize="sm"
                                     triggerClassName="w-full justify-start"
                                 />
@@ -156,7 +194,12 @@ export default function Dashboard() {
                             systemBudgets={systemBudgets}
                             customBudgets={activeCustomBudgets}
                             allCustomBudgets={allCustomBudgets}
+                            // Pass pre-calculated data to avoid double calculation
+                            preCalculatedSystemData={systemBudgetsData}
+                            preCalculatedCustomData={customBudgetsData}
+                            preCalculatedSavings={{ totalActualSavings, savingsTarget, savingsShortfall }}
                             transactions={transactions}
+                            showSystem={false}
                             categories={categories}
                             currentMonth={selectedMonth}
                             currentYear={selectedYear}
@@ -175,6 +218,7 @@ export default function Dashboard() {
                             transactions={paidTransactions}
                             categories={categories}
                             settings={settings}
+                            customBudgets={allCustomBudgets}
                         />
                     </div>
                 </div>

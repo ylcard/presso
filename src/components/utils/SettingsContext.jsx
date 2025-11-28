@@ -14,7 +14,12 @@ const defaultSettings = {
     decimalPlaces: 2,
     hideTrailingZeros: false,
     dateFormat: 'MMM dd, yyyy',
-    budgetViewMode: 'bars'
+    budgetViewMode: 'bars',
+    fixedLifestyleMode: false,
+    barViewMode: true,
+    // goalAllocationMode: 'percentage', // 'percentage' or 'absolute'
+    // absoluteGoals: { needs: 0, wants: 0, savings: 0 }, // Store absolute amounts
+    goalMode: true // true = percentage, false = absolute
 };
 
 export const useSettings = () => {
@@ -40,6 +45,7 @@ export const SettingsProvider = ({ children }) => {
     });
 
     const [user, setUser] = useState(null);
+    const [settingsId, setSettingsId] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -56,6 +62,7 @@ export const SettingsProvider = ({ children }) => {
             const userSettings = userSettingsArray[0];
 
             if (userSettings) {
+                setSettingsId(userSettings.id);
                 const newSettings = {
                     baseCurrency: userSettings.baseCurrency || 'USD',
                     currencySymbol: userSettings.currencySymbol || '$',
@@ -63,9 +70,14 @@ export const SettingsProvider = ({ children }) => {
                     thousandSeparator: userSettings.thousandSeparator || ',',
                     decimalSeparator: userSettings.decimalSeparator || '.',
                     decimalPlaces: userSettings.decimalPlaces || 2,
-                    hideTrailingZeros: userSettings.hideTrailingZeros || false,
+                    hideTrailingZeros: userSettings.hideTrailingZeros ?? false,
                     dateFormat: userSettings.dateFormat || 'MMM dd, yyyy',
-                    budgetViewMode: userSettings.budgetViewMode || 'bars'
+                    budgetViewMode: userSettings.budgetViewMode || 'bars',
+                    fixedLifestyleMode: userSettings.fixedMode ?? false,
+                    barViewMode: userSettings.barViewMode ?? true,
+                    // goalAllocationMode: userSettings.goalAllocationMode || 'percentage',
+                    // absoluteGoals: userSettings.absoluteGoals || { needs: 0, wants: 0, savings: 0 }
+                    goalMode: userSettings.goalMode ?? true
                 };
 
                 // Update state and localStorage
@@ -90,17 +102,38 @@ export const SettingsProvider = ({ children }) => {
             setSettings(updatedSettings);
             localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedSettings));
 
-            // Then sync to database. Filter by email again to get the record ID
-            const userSettingsArray = await base44.entities.UserSettings.filter({ user_email: user.email });
-            const userSettings = userSettingsArray[0];
+            // Prepare payload for DB (Map frontend keys to DB keys)
+            const dbPayload = {
+                ...updatedSettings,
+                fixedMode: updatedSettings.fixedLifestyleMode // Map UI 'fixedLifestyleMode' to DB 'fixedMode'
+            };
+            // Remove the UI-only key to be clean (optional, but good practice if DB is strict)
+            delete dbPayload.fixedLifestyleMode;
 
-            if (userSettings) {
-                await base44.entities.UserSettings.update(userSettings.id, newSettings);
-            } else {
-                await base44.entities.UserSettings.create({
+            // --- DATABASE SYNC ---
+            // Safety: Ensure we have an ID. If state is empty, fetch it one last time.
+            let targetId = settingsId;
+
+            if (!targetId && user?.email) {
+                const existing = await base44.entities.UserSettings.filter({ user_email: user.email });
+                if (existing && existing[0]) {
+                    targetId = existing[0].id;
+                    setSettingsId(targetId); // Update state for next time
+                }
+            }
+
+            if (targetId) {
+                // Trying to apply a bug fix for the fixed mode not saving
+                // await base44.entities.UserSettings.update(targetId, updatedSettings);
+                await base44.entities.UserSettings.update(targetId, dbPayload);
+            } else if (user?.email) {
+                // Only create if we genuinely couldn't find an existing record
+                const created = await base44.entities.UserSettings.create({
                     ...updatedSettings, // CRITICAL: Use full, merged settings for creation
+                    ...dbPayload,
                     user_email: user.email
                 });
+                if (created) setSettingsId(created.id);
             }
         } catch (error) {
             console.error('Error updating settings:', error);

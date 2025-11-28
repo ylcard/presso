@@ -10,6 +10,7 @@ import { CustomButton } from "@/components/ui/CustomButton";
 import { Plus, Pencil } from "lucide-react";
 import { useSettings } from "../utils/SettingsContext";
 import { useAllBudgets } from "../hooks/useBase44Entities";
+import { formatDateString, getFirstDayOfMonth } from "../utils/dateUtils";
 import TransactionFormContent from "./TransactionFormContent";
 
 export default function QuickAddTransaction({
@@ -25,7 +26,9 @@ export default function QuickAddTransaction({
     trigger = null, // Custom trigger element
     triggerVariant = "default",
     triggerSize = "default",
-    triggerClassName = ""
+    triggerClassName = "",
+    selectedMonth,
+    selectedYear
 }) {
     const { user } = useSettings();
     const { allBudgets } = useAllBudgets(user);
@@ -71,6 +74,17 @@ export default function QuickAddTransaction({
         </CustomButton>
     );
 
+    // Calculate default date
+    const getInitialDate = () => {
+        const now = new Date();
+        // If selected month/year matches current real-time, use today
+        if (selectedMonth === now.getMonth() && selectedYear === now.getFullYear()) {
+            return formatDateString(now);
+        }
+        // Otherwise default to the 1st of the selected month
+        return getFirstDayOfMonth(selectedMonth, selectedYear);
+    };
+
     return (
         <Dialog open={showDialog} onOpenChange={handleOpenChange}>
             {renderTrigger && (
@@ -90,8 +104,9 @@ export default function QuickAddTransaction({
                 <TransactionFormContent
                     initialTransaction={isEditMode ? transaction : (defaultCustomBudgetId ? {
                         amount: null,
+                        date: getInitialDate(),
                         customBudgetId: defaultCustomBudgetId
-                    } : null)}
+                    } : { date: getInitialDate() })}
                     categories={categories}
                     allBudgets={allBudgets}
                     onSubmit={handleSubmit}

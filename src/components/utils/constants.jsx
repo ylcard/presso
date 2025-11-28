@@ -2,22 +2,22 @@
 // Unified Source of Truth for Financial Priorities
 export const FINANCIAL_PRIORITIES = {
     needs: {
-        label: "Needs",
+        label: "Essentials",
         description: "Essential expenses",
-        color: "#EF4444",
-        bg: "bg-red-50",
+        color: "#3B82F6",
+        bg: "bg-blue-50",
         order: 0
     },
     wants: {
-        label: "Wants",
-        description: "Discretionary spending",
+        label: "Lifestyle",
+        description: "Lifestyle expenses",
         color: "#F59E0B",
         bg: "bg-orange-50",
         order: 1
     },
     savings: {
         label: "Savings",
-        description: "Savings and investments",
+        description: "Savings after expenses",
         color: "#10B981",
         bg: "bg-green-50",
         order: 2
@@ -94,3 +94,29 @@ export const SUPPORTED_CURRENCIES = [
     { code: 'TWD', name: 'Taiwan Dollar', symbol: 'NT$' },
     { code: 'TRY', name: 'Turkish Lira', symbol: '₺' },
 ];
+
+// Fields monitored for changes in the Settings Page
+export const SETTINGS_KEYS = [
+    'baseCurrency',
+    'currencyPosition',
+    'budgetViewMode',
+    'thousandSeparator',
+    'decimalSeparator',
+    'decimalPlaces',
+    'hideTrailingZeros',
+    'fixedLifestyleMode',
+    'goalMode'
+];
+
+// Default "Factory" Settings
+export const DEFAULT_SETTINGS = {
+    baseCurrency: 'USD',
+    currencyPosition: 'before',
+    budgetViewMode: 'bars',
+    thousandSeparator: ',',
+    decimalSeparator: '.',
+    decimalPlaces: 2,
+    hideTrailingZeros: false,
+    fixedLifestyleMode: false,
+    goalMode: true // true = Percentage, false = Absolute
+};

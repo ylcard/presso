@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
-import { ArrowRight, Banknote } from "lucide-react";
+import { ArrowRight, Banknote, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { createPageUrl } from "@/utils";
@@ -102,19 +102,32 @@ export default function RecentTransactions({ transactions, categories, customBud
                                                     </p>
                                                 </>
                                             )}
-                                            {customBudget && (
+                                            {/* Standard Budget Badge: Gray Theme (Exact same structure as Orange) */}
+                                            {customBudget && !crossPeriodInfo.isCrossPeriod && (
                                                 <>
                                                     <span className="text-gray-300">•</span>
-                                                    <Badge variant="outline" className="text-xs">
-                                                        {customBudget.name}
+                                                    {/* Standard Badge: Gray Theme (Exact same structure as Orange) */}
+                                                    <Badge variant="outline" className="text-xs bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-200 hover:border-gray-300 hover:text-gray-900 transition-all cursor-pointer px-2 py-0.5 font-medium">
+                                                        <Link to={`/BudgetDetail?id=${customBudget.id}`} className="flex items-center gap-1">
+                                                            {customBudget.name}
+                                                            <ExternalLink className="w-2.5 h-2.5 opacity-60" />
+                                                        </Link>
                                                     </Badge>
                                                 </>
                                             )}
                                             {crossPeriodInfo.isCrossPeriod && (
                                                 <>
                                                     <span className="text-gray-300">•</span>
-                                                    <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200">
-                                                        Linked to {crossPeriodInfo.bucketName}
+                                                    {/* Cross-Period Badge: Orange Theme */}
+                                                    <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-200 hover:border-orange-300 hover:text-orange-900 transition-all cursor-pointer px-2 py-0.5 font-medium">
+                                                        {crossPeriodInfo.bucketId ? (
+                                                            <Link to={`/BudgetDetail?id=${crossPeriodInfo.bucketId}`} className="flex items-center gap-1">
+                                                                {crossPeriodInfo.bucketName}
+                                                                <ExternalLink className="w-2.5 h-2.5 opacity-60" />
+                                                            </Link>
+                                                        ) : (
+                                                            <span>{crossPeriodInfo.bucketName}</span>
+                                                        )}
                                                     </Badge>
                                                 </>
                                             )}

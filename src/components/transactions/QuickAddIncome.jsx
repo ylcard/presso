@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Dialog,
     DialogContent,
@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Plus } from "lucide-react";
 import AmountInput from "../ui/AmountInput";
 import DatePicker from "../ui/DatePicker";
-import { formatDateString } from "../utils/dateUtils";
+import { formatDateString, getFirstDayOfMonth } from "../utils/dateUtils";
 import { normalizeAmount } from "../utils/generalUtils";
 
 export default function QuickAddIncome({
@@ -23,14 +23,37 @@ export default function QuickAddIncome({
     renderTrigger = true,
     triggerVariant = "default",
     triggerSize = "default",
-    triggerClassName = ""
+    triggerClassName = "",
+    selectedMonth,
+    selectedYear
 }) {
+
+    // Helper to determine initial date based on context
+    const getInitialDate = () => {
+        const now = new Date();
+        // If selected month/year matches current real-time, use today
+        if (selectedMonth === now.getMonth() && selectedYear === now.getFullYear()) {
+            return formatDateString(now);
+        }
+        // Otherwise default to the 1st of the selected month
+        return getFirstDayOfMonth(selectedMonth, selectedYear);
+    };
+   
+
     const [formData, setFormData] = useState({
         title: '',
         amount: null,
         type: 'income',
-        date: formatDateString(new Date())
+        // date: formatDateString(new Date())
+        date: getInitialDate()
     });
+    
+    // CRITICAL: Ensure form date updates when the component opens or the selected month changes
+    useEffect(() => {
+        if (open) {
+            setFormData(prev => ({ ...prev, date: getInitialDate() }));
+        }
+    }, [open, selectedMonth, selectedYear]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -45,7 +68,8 @@ export default function QuickAddIncome({
             title: '',
             amount: null,
             type: 'income',
-            date: formatDateString(new Date())
+            // date: formatDateString(new Date())
+            date: getInitialDate()
         });
     };
 

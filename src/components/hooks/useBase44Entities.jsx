@@ -2,7 +2,8 @@ import { useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { QUERY_KEYS } from "./queryKeys";
-import { getMonthlyIncome } from "../utils/financialCalculations";
+import { getMonthlyIncome, resolveBudgetLimit } from "../utils/financialCalculations";
+import { useSettings } from "../utils/SettingsContext";
 
 // Hook to fetch transactions
 export const useTransactions = () => {
@@ -170,6 +171,7 @@ export const useSystemBudgetManagement = (
     monthEnd
 ) => {
     const queryClient = useQueryClient();
+    const { settings } = useSettings();
 
     useEffect(() => {
         const ensureSystemBudgets = async () => {
@@ -182,31 +184,88 @@ export const useSystemBudgetManagement = (
 
             // Allow CREATION for past months if missing, but restrict UPDATES to current month
             // This ensures historical data exists but preserves history from being overwritten by current goal changes
-            const isCurrentMonth = selectedMonth === currentMonth && selectedYear === currentYear;
+            // const isCurrentMonth = selectedMonth === currentMonth && selectedYear === currentYear;
+            // Allow CREATION for past months if missing.
+            // Allow UPDATES for Current and Future months (Planning Mode).
+            // Lock UPDATES for Past months to preserve history.
+            const isPastMonth =
+                selectedYear < currentYear ||
+                (selectedYear === currentYear && selectedMonth < currentMonth);
+
+            const allowUpdates = !isPastMonth;
 
             try {
                 const systemTypes = ['needs', 'wants', 'savings'];
-                const colors = { needs: '#EF4444', wants: '#F59E0B', savings: '#10B981' };
+                const colors = { needs: '#448eefff', wants: '#F59E0B', savings: '#10B981' };
 
                 // Use getMonthlyIncome from financialCalculations
                 const currentMonthIncome = getMonthlyIncome(transactions, monthStart, monthEnd);
 
-                const goalMap = goals.reduce((acc, goal) => {
-                    acc[goal.priority] = goal.target_percentage;
-                    return acc;
-                }, {});
+                // DEPRECATED
+                // const goalMap = goals.reduce((acc, goal) => {
+                //     acc[goal.priority] = goal.target_percentage;
+                //     return acc;
+                // }, {});
 
                 let needsInvalidation = false;
 
+                // --- Fixed Lifestyle Logic ---
+                // Calculate raw amounts based on current Settings Mode (Absolute vs Percentage)
+                let amounts = {};
+                systemTypes.forEach(type => {
+                    const goal = goals.find(g => g.priority === type);
+
+                    // DEPRECATED BLOCK
+                    // ABSOLUTE MODE CHECK (From Entity)
+                    // if (goal && goal.is_absolute) {
+                    //     amounts[type] = parseFloat(goal.target_amount || 0);
+                    // } else {
+                    //     // STANDARD PERCENTAGE MODE
+                    //     const percentage = goalMap[type] || 0;
+                    //     amounts[type] = parseFloat(((currentMonthIncome * percentage) / 100).toFixed(2));
+                    // }
+
+                    // Use centralized helper to determine the amount based on settings.goalMode
+                    const rawAmount = resolveBudgetLimit(goal, currentMonthIncome, settings.goalMode);
+                    amounts[type] = parseFloat(rawAmount.toFixed(2));
+                });
+
+                // DEPRECATED BLOCK
+                // If Mode is ON, check if we should cap 'needs' and move surplus to 'savings'
+                // if (settings?.fixedLifestyleMode && systemBudgets) {
+                // Only applies if 'needs' is NOT absolute
+                // const needsGoal = goals.find(g => g.priority === 'needs');
+                // if ((!needsGoal || !needsGoal.is_absolute) && settings?.fixedLifestyleMode && systemBudgets) {
+
+                // This logic ONLY applies in Percentage Mode. In Absolute Mode, the budget is already fixed by definition.
+                const isPercentageMode = settings.goalMode !== false; // Default to true
+                if (isPercentageMode && settings?.fixedLifestyleMode && systemBudgets) {
+                    const existingNeeds = systemBudgets.find(sb => sb.systemBudgetType === 'needs');
+
+                    // Only apply logic if we have a previous budget to compare against and income > 0
+                    if (existingNeeds && existingNeeds.budgetAmount > 0 && currentMonthIncome > 0) {
+                        // If the NEW calculated needs is higher than OLD needs, cap it.
+                        if (amounts['needs'] > existingNeeds.budgetAmount) {
+                            const surplus = amounts['needs'] - existingNeeds.budgetAmount;
+                            amounts['needs'] = existingNeeds.budgetAmount; // Cap Needs
+                            amounts['savings'] += surplus; // Move surplus to Savings
+                            // 'wants' stays as calculated (percentage based)
+                        }
+                    }
+                }
+
                 for (const type of systemTypes) {
                     const existingBudget = systemBudgets.find(sb => sb.systemBudgetType === type);
-                    const percentage = goalMap[type] || 0;
-                    const amount = parseFloat(((currentMonthIncome * percentage) / 100).toFixed(2));
+                    // const percentage = goalMap[type] || 0;
+                    // const amount = parseFloat(((currentMonthIncome * percentage) / 100).toFixed(2));
+                    const amount = amounts[type];
 
                     if (existingBudget) {
                         // Only update if the calculated amount significantly differs to avoid unnecessary writes
                         // AND only if it's the current month (preserve history), OR if the existing amount is 0 (fix uninitialized history)
-                        const shouldUpdate = (isCurrentMonth || existingBudget.budgetAmount === 0) && Math.abs(existingBudget.budgetAmount - amount) > 0.01;
+                        // const shouldUpdate = (isCurrentMonth || existingBudget.budgetAmount === 0) && Math.abs(existingBudget.budgetAmount - amount) > 0.01;
+                        // AND only if it's NOT a past month (preserve history), OR if the existing amount is 0 (fix uninitialized history)
+                        const shouldUpdate = (allowUpdates || existingBudget.budgetAmount === 0) && Math.abs(existingBudget.budgetAmount - amount) > 0.01;
 
                         if (shouldUpdate) {
                             await base44.entities.SystemBudget.update(existingBudget.id, {
