@@ -102,11 +102,17 @@ export default function RecentTransactions({ transactions, categories, customBud
                                                     </p>
                                                 </>
                                             )}
-                                            {customBudget && (
+                                            {/* Standard Budget Badge: Show ONLY if not a cross-period settlement */}
+                                            {customBudget && !crossPeriodInfo.isCrossPeriod && (
                                                 <>
                                                     <span className="text-gray-300">•</span>
-                                                    <Badge variant="outline" className="text-xs">
-                                                        {customBudget.name}
+                                                    <Badge variant="secondary" className="text-xs bg-gray-100/80 text-gray-600 hover:bg-gray-200 border border-gray-200 transition-colors cursor-pointer">
+                                                        <Link
+                                                            to={`/BudgetDetail?id=${customBudget.id}`}
+                                                            className="hover:text-gray-900 flex items-center gap-1"
+                                                        >
+                                                            {customBudget.name}
+                                                        </Link>
                                                     </Badge>
                                                 </>
                                             )}
