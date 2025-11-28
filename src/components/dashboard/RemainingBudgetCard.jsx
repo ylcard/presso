@@ -4,6 +4,7 @@ import { formatCurrency } from "../utils/currencyUtils";
 import { Link } from "react-router-dom";
 import { useSettings } from "../utils/SettingsContext";
 import { motion } from "framer-motion";
+import { FINANCIAL_PRIORITIES } from "../utils/constants";
 
 export default function RemainingBudgetCard({
     bonusSavingsPotential,
@@ -48,18 +49,30 @@ export default function RemainingBudgetCard({
     const wantsTotal = wantsData.total;
     const totalSpent = currentMonthExpenses;
 
-    const needsColor = needsBudget?.color || '#3B82F6';
-    const wantsColor = wantsBudget?.color || '#F59E0B';
+    const needsColor = FINANCIAL_PRIORITIES.needs.color;
+    const wantsColor = FINANCIAL_PRIORITIES.wants.color;
+    const savingsColor = FINANCIAL_PRIORITIES.savings.color;
 
     // --- GOAL SUMMARY TEXT ---
-    const isAbsolute = settings.goalAllocationMode === 'absolute';
-    const needsGoal = goals.find(g => g.priority === 'needs');
-    const wantsGoal = goals.find(g => g.priority === 'wants');
-    const savingsGoal = goals.find(g => g.priority === 'savings');
+    const GoalSummary = () => {
+        const isAbsolute = settings.goalAllocationMode === 'absolute';
 
-    const goalSummary = isAbsolute
-        ? `${formatCurrency(needsGoal?.target_amount || 0, settings)} / ${formatCurrency(wantsGoal?.target_amount || 0, settings)} / ${formatCurrency(savingsGoal?.target_amount || 0, settings)}`
-        : `${needsGoal?.target_percentage || 50}% / ${wantsGoal?.target_percentage || 30}% / ${savingsGoal?.target_percentage || 20}%`;
+        const getValue = (priority) => {
+            const goal = goals.find(g => g.priority === priority);
+            if (isAbsolute) return formatCurrency(goal?.target_amount || 0, settings);
+            return `${goal?.target_percentage || (priority === 'needs' ? 50 : priority === 'wants' ? 30 : 20)}%`;
+        };
+
+        return (
+            <div className="flex items-center gap-1 text-[10px] font-medium hidden sm:flex">
+                <span style={{ color: needsColor }}>{getValue('needs')}</span>
+                <span className="text-gray-300">/</span>
+                <span style={{ color: wantsColor }}>{getValue('wants')}</span>
+                <span className="text-gray-300">/</span>
+                <span style={{ color: savingsColor }}>{getValue('savings')}</span>
+            </div>
+        );
+    };
 
 
     // --- SEGMENT LOGIC (Detailed View) ---
@@ -136,7 +149,7 @@ export default function RemainingBudgetCard({
                     {needsPct > 8 && (
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className={`text-xs sm:text-sm z-10 whitespace-nowrap ${getStatusStyles(needsTotal, needsLimit, 'needs')}`}>
                             {needsTotal > needsLimit && <AlertCircle className="w-3 h-3 inline mr-1" />}
-                            Needs {needsLabel}
+                            {FINANCIAL_PRIORITIES.needs.label} {needsLabel}
                         </motion.div>
                     )}
                 </AnimatedSegment>
@@ -147,7 +160,7 @@ export default function RemainingBudgetCard({
                             {(wantsTotal / wantsLimit) > 0.9 && !(isCurrentMonth && isEndOfMonth && (wantsTotal / wantsLimit) <= 1) && (
                                 <Zap className="w-3 h-3 inline mr-1 fill-current" />
                             )}
-                            Wants {wantsLabel}
+                            {FINANCIAL_PRIORITIES.wants.label} {wantsLabel}
                         </motion.div>
                     )}
                 </AnimatedSegment>
@@ -208,7 +221,7 @@ export default function RemainingBudgetCard({
                         {needsSegs.overflow > 0 && (
                             <motion.div initial={{ width: 0 }} animate={{ width: `${(needsSegs.overflow / needsSegs.total) * 100}%` }} transition={fluidSpring} className="h-full opacity-60" style={{ backgroundColor: 'red', ...stripePattern }} />
                         )}
-                        <div className={`absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white transition-opacity ${needsVisualPct > 10 ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>Needs</div>
+                        <div className={`absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white transition-opacity ${needsVisualPct > 10 ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>{FINANCIAL_PRIORITIES.needs.label}</div>
                     </Link>
                 </motion.div>
 
@@ -232,7 +245,7 @@ export default function RemainingBudgetCard({
                         {wantsSegs.overflow > 0 && (
                             <motion.div initial={{ width: 0 }} animate={{ width: `${(wantsSegs.overflow / wantsSegs.total) * 100}%` }} transition={fluidSpring} className="h-full bg-red-500" style={stripePattern} />
                         )}
-                        <div className={`absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white transition-opacity ${wantsVisualPct > 10 ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>Lifestyle</div>
+                        <div className={`absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white transition-opacity ${wantsVisualPct > 10 ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>{FINANCIAL_PRIORITIES.wants.label}</div>
                     </Link>
                 </motion.div>
 
@@ -351,11 +364,11 @@ export default function RemainingBudgetCard({
                             <div className="flex gap-4 items-center">
                                 <span className="flex items-center gap-1.5">
                                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: needsColor }}></div>
-                                    Essentials
+                                    {FINANCIAL_PRIORITIES.needs.label}
                                 </span>
                                 <span className="flex items-center gap-1.5">
                                     <div className="w-2 h-2 rounded-full" style={{ backgroundColor: wantsColor }}></div>
-                                    Lifestyle
+                                    {FINANCIAL_PRIORITIES.wants.label}
                                 </span>
                                 {!isSimpleView && (
                                     <>
@@ -369,7 +382,7 @@ export default function RemainingBudgetCard({
                                 )}
                             </div>
                             <div className="flex items-center gap-2">
-                                <span className="hidden sm:inline font-medium text-gray-400/80">{goalSummary}</span>
+                                <GoalSummary />
                                 <Link to="/Settings" className="flex items-center gap-1 text-[10px] hover:text-blue-600 transition-colors">
                                     <Target size={12} />
                                     <span>Goals</span>
