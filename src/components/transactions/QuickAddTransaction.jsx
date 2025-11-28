@@ -28,7 +28,7 @@ export default function QuickAddTransaction({
     triggerSize = "default",
     triggerClassName = "",
     selectedMonth,
-    selectedYea
+    selectedYear
 }) {
     const { user } = useSettings();
     const { allBudgets } = useAllBudgets(user);
