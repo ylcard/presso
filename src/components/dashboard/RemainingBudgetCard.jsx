@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { TrendingUp, AlertCircle, Target, Zap, LayoutList, BarChart3, GripVertical } from "lucide-react";
+import { TrendingUp, AlertCircle, Target, Zap, LayoutList, BarChart3, GripVertical, Calendar } from "lucide-react";
 import { formatCurrency } from "../utils/currencyUtils";
 import { Link } from "react-router-dom";
 import { useSettings } from "../utils/SettingsContext";
@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useGoalActions } from "../hooks/useActions";
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, cloneElement } from "react";
 
 // --- COMPACT GOAL EDITOR COMPONENT ---
 const QuickGoalsEditor = ({ goals, settings, updateSettings, user, onClose }) => {
@@ -363,6 +363,12 @@ export default function RemainingBudgetCard({
     const currentDay = now.getDate();
     const isEndOfMonth = currentDay >= (daysInMonth - 3);
 
+    // Detect "Clean Slate" State (No income AND no expenses)
+    const isEmptyMonth = (!currentMonthIncome || currentMonthIncome === 0) && (!currentMonthExpenses || currentMonthExpenses === 0);
+
+    // Get explicit month name for the empty state message
+    const monthName = new Date(settings.selectedYear, settings.selectedMonth).toLocaleString('default', { month: 'long' });
+
     const getStatusStyles = (used, limit, type) => {
         if (!limit || limit === 0) return "text-white/90 font-medium";
         const ratio = used / limit;
@@ -610,88 +616,112 @@ export default function RemainingBudgetCard({
                 </div>
 
                 <div className="flex flex-col gap-6">
-                    <div className="flex items-end justify-between">
-                        <div>
-                            {isTotalOver ? (
-                                <h2 className="text-3xl font-bold text-red-600 flex items-center gap-2">
-                                    Over Limit <AlertCircle className="w-6 h-6" />
-                                </h2>
-                            ) : (
-                                <h2 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-                                    {Math.round(savingsPctDisplay)}% <span className="text-lg font-medium text-gray-500">Saved</span>
-                                </h2>
-                            )}
-                            <div className="text-sm text-gray-500 mt-1">
-                                {currentMonthIncome > 0 ? (
-                                    <>Spent <strong className={isTotalOver ? "text-red-600" : "text-gray-900"}>{formatCurrency(totalSpent, settings)}</strong> of <strong>{formatCurrency(currentMonthIncome, settings)}</strong></>
-                                ) : "No income recorded."}
+                    {isEmptyMonth ? (
+                        <div className="flex flex-col items-center justify-center py-10 text-center space-y-5 animate-in fade-in zoom-in-95 duration-500">
+                            <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center shadow-sm">
+                                <Calendar className="w-8 h-8 text-emerald-600" />
+                            </div>
+                            <div className="space-y-2 max-w-sm">
+                                <h3 className="text-xl font-bold text-gray-900">Ready to plan for {monthName}?</h3>
+                                <p className="text-gray-500 text-sm leading-relaxed">
+                                    Start by adding your expected income to see your savings potential and unlock your budget goals.
+                                </p>
+                            </div>
+                            <div className="pt-2">
+                                {addIncomeButton && cloneElement(addIncomeButton, {
+                                    className: "shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 px-8 py-2 h-auto text-base"
+                                })}
                             </div>
                         </div>
 
-                        {!isSimpleView && bonusSavingsPotential > 0 && !isTotalOver && (
-                            <div className="text-right hidden sm:block">
-                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-100">
-                                    <TrendingUp className="w-3 h-3 text-emerald-600" />
-                                    <span className="text-xs font-medium text-emerald-700">Efficiency: +{formatCurrency(bonusSavingsPotential, settings)}</span>
+                    ) : (
+                        <>
+                            <div className="flex items-end justify-between">
+                                <div>
+                                    {isTotalOver ? (
+                                        <h2 className="text-3xl font-bold text-red-600 flex items-center gap-2">
+                                            Over Limit <AlertCircle className="w-6 h-6" />
+                                        </h2>
+                                    ) : (
+                                        <h2 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
+                                            {Math.round(savingsPctDisplay)}% <span className="text-lg font-medium text-gray-500">Saved</span>
+                                        </h2>
+                                    )}
+                                    <div className="text-sm text-gray-500 mt-1">
+                                        {currentMonthIncome > 0 ? (
+                                            <>Spent <strong className={isTotalOver ? "text-red-600" : "text-gray-900"}>{formatCurrency(totalSpent, settings)}</strong> of <strong>{formatCurrency(currentMonthIncome, settings)}</strong></>
+                                        ) : "No income recorded."}
+                                    </div>
                                 </div>
-                            </div>
-                        )}
-                        {isSimpleView && !isTotalOver && (
-                            <div className="text-right hidden sm:block">
-                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-50 border border-gray-100">
-                                    <Target className="w-3 h-3 text-gray-500" />
-                                    <span className="text-xs font-medium text-gray-600">Left: {formatCurrency(savingsAmount, settings)}</span>
-                                </div>
-                            </div>
-                        )}
-                    </div>
 
-                    <div className="space-y-2">
-                        {isSimpleView ? renderSimpleBar() : renderDetailedBar()}
-
-                        <div className="flex flex-col sm:flex-row justify-between text-xs text-gray-400 pt-1 gap-2">
-                            <div className="flex gap-4 items-center">
-                                <span className="flex items-center gap-1.5">
-                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: needsColor }}></div>
-                                    {FINANCIAL_PRIORITIES.needs.label}
-                                </span>
-                                <span className="flex items-center gap-1.5">
-                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: wantsColor }}></div>
-                                    {FINANCIAL_PRIORITIES.wants.label}
-                                </span>
-                                {!isSimpleView && (
-                                    <>
-                                        <span className="flex items-center gap-1 ml-2">
-                                            <div className="w-2 h-2 bg-gray-400 rounded-sm"></div> Paid
-                                        </span>
-                                        <span className="flex items-center gap-1">
-                                            <div className="w-2 h-2 bg-gray-400/50 rounded-sm" style={{ backgroundImage: 'linear-gradient(45deg,rgba(255,255,255,.3) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.3) 50%,rgba(255,255,255,.3) 75%,transparent 75%,transparent)', backgroundSize: '8px 8px' }}></div> Plan
-                                        </span>
-                                    </>
+                                {!isSimpleView && bonusSavingsPotential > 0 && !isTotalOver && (
+                                    <div className="text-right hidden sm:block">
+                                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-100">
+                                            <TrendingUp className="w-3 h-3 text-emerald-600" />
+                                            <span className="text-xs font-medium text-emerald-700">Efficiency: +{formatCurrency(bonusSavingsPotential, settings)}</span>
+                                        </div>
+                                    </div>
+                                )}
+                                {isSimpleView && !isTotalOver && (
+                                    <div className="text-right hidden sm:block">
+                                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-50 border border-gray-100">
+                                            <Target className="w-3 h-3 text-gray-500" />
+                                            <span className="text-xs font-medium text-gray-600">Left: {formatCurrency(savingsAmount, settings)}</span>
+                                        </div>
+                                    </div>
                                 )}
                             </div>
-                            <div className="flex items-center gap-2">
-                                <GoalSummary />
-                                <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-                                    <PopoverTrigger asChild>
-                                        <button className="flex items-center gap-1 text-xs hover:text-blue-600 transition-colors outline-none">
-                                            <Target size={14} />
-                                            <span>Goals</span>
-                                        </button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-3" align="end">
-                                        <QuickGoalsEditor
-                                            goals={goals}
-                                            settings={settings}
-                                            updateSettings={updateSettings}
-                                            user={user}
-                                            onClose={() => setIsPopoverOpen(false)}
-                                        />
-                                    </PopoverContent>
-                                </Popover>
+
+                            <div className="space-y-2">
+                                {isSimpleView ? renderSimpleBar() : renderDetailedBar()}
+
+                                <div className="flex flex-col sm:flex-row justify-between text-xs text-gray-400 pt-1 gap-2">
+                                    <div className="flex gap-4 items-center">
+                                        <span className="flex items-center gap-1.5">
+                                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: needsColor }}></div>
+                                            {FINANCIAL_PRIORITIES.needs.label}
+                                        </span>
+                                        <span className="flex items-center gap-1.5">
+                                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: wantsColor }}></div>
+                                            {FINANCIAL_PRIORITIES.wants.label}
+                                        </span>
+                                        {!isSimpleView && (
+                                            <>
+                                                <span className="flex items-center gap-1 ml-2">
+                                                    <div className="w-2 h-2 bg-gray-400 rounded-sm"></div> Paid
+                                                </span>
+                                                <span className="flex items-center gap-1">
+                                                    <div className="w-2 h-2 bg-gray-400/50 rounded-sm" style={{ backgroundImage: 'linear-gradient(45deg,rgba(255,255,255,.3) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.3) 50%,rgba(255,255,255,.3) 75%,transparent 75%,transparent)', backgroundSize: '8px 8px' }}></div> Plan
+                                                </span>
+                                            </>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <GoalSummary />
+                                        <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+                                            <PopoverTrigger asChild>
+                                                <button className="flex items-center gap-1 text-xs hover:text-blue-600 transition-colors outline-none">
+                                                    <Target size={14} />
+                                                    <span>Goals</span>
+                                                </button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-3" align="end">
+                                                <QuickGoalsEditor
+                                                    goals={goals}
+                                                    settings={settings}
+                                                    updateSettings={updateSettings}
+                                                    user={user}
+                                                    onClose={() => setIsPopoverOpen(false)}
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
+                                    </div>
+
+
+                                </div>
                             </div>
-                        </div>
-                    </div>
+                        </>
+                    )}
                 </div>
             </CardContent>
         </Card>
