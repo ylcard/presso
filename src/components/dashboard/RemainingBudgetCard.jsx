@@ -3,7 +3,7 @@ import { TrendingUp, AlertCircle, Target, Zap, LayoutList, BarChart3, GripVertic
 import { formatCurrency } from "../utils/currencyUtils";
 import { Link } from "react-router-dom";
 import { useSettings } from "../utils/SettingsContext";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { FINANCIAL_PRIORITIES } from "../utils/constants";
 import { resolveBudgetLimit } from "../utils/financialCalculations";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -13,7 +13,7 @@ import { useGoalActions } from "../hooks/useActions";
 import React, { useState, useEffect, useRef, cloneElement } from "react";
 import { getMonthName } from "../utils/dateUtils";
 import confetti from "canvas-confetti";
-import { motion, AnimatePresence } from "framer-motion";
+
 
 // --- COMPACT GOAL EDITOR COMPONENT ---
 const QuickGoalsEditor = ({ goals, settings, updateSettings, user, onClose }) => {
