@@ -612,7 +612,15 @@ export default function RemainingBudgetCard({
                         <div className="flex items-center gap-2">
                             {importDataButton}
                             {addExpenseButton}
-                            {addIncomeButton}
+                            {/* Conditionally highlight the Add Income button if the month is empty */}
+                            {isEmptyMonth && addIncomeButton ? (
+                                cloneElement(addIncomeButton, {
+                                    // Add a pulsing glow ring and shadow to draw attention
+                                    className: "ring-4 ring-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.4)] animate-pulse transition-all duration-500"
+                                })
+                            ) : (
+                                addIncomeButton
+                            )}
                         </div>
                     </div>
                 </div>
@@ -629,14 +637,9 @@ export default function RemainingBudgetCard({
                                     Start by adding your expected income to see your savings potential and unlock your budget goals.
                                 </p>
                             </div>
-                            <div className="pt-2">
-                                {addIncomeButton && cloneElement(addIncomeButton, {
-                                    className: "shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 px-8 py-2 h-auto text-base"
-                                })}
-                            </div>
                         </div>
 
-                    ) : (
+                    ) : ( // Non-empty state continues below
                         <>
                             <div className="flex items-end justify-between">
                                 <div>
