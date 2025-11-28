@@ -9,7 +9,8 @@ import {
     getSystemBudgetStats,
     getCustomBudgetStats,
     calculateBonusSavingsPotential,
-    resolveBudgetLimit
+    resolveBudgetLimit,
+    getHistoricalAverageIncome
 } from "../utils/financialCalculations";
 import { FINANCIAL_PRIORITIES } from "../utils/constants";
 import { getCategoryIcon } from "../utils/iconMapConfig";
@@ -129,6 +130,16 @@ export const useMonthlyIncome = (transactions, selectedMonth, selectedYear) => {
 };
 
 /**
+ * NEW HOOK: Calculates historical average for Inflation Protection
+ */
+export const useHistoricalIncome = (transactions, selectedMonth, selectedYear) => {
+    return useMemo(() => {
+        if (selectedMonth === undefined || selectedYear === undefined) return 0;
+        return getHistoricalAverageIncome(transactions, selectedMonth, selectedYear, 3);
+    }, [transactions, selectedMonth, selectedYear]);
+};
+
+/**
  * Hook for calculating the key financial summary metrics for the dashboard view.
  * @param {Array<Object>} transactions - The source array of all transactions.
  * @param {number} selectedMonth - The zero-indexed month (0-11).
@@ -146,6 +157,9 @@ export const useMonthlyIncome = (transactions, selectedMonth, selectedYear) => {
 export const useDashboardSummary = (transactions, selectedMonth, selectedYear, allCustomBudgets, systemBudgets, categories, settings) => {
     // Centralized hook call for Income (must remain at top level)
     const currentMonthIncome = useMonthlyIncome(transactions, selectedMonth, selectedYear);
+
+    // 1. Calculate Historical Average
+    const historicalAverage = useHistoricalIncome(transactions, selectedMonth, selectedYear);
 
     // Memoize the month boundaries (used by all calculations)
     const { monthStartStr, monthEndStr, monthStartDate, monthEndDate } = useMemo(() => {
@@ -200,8 +214,12 @@ export const useDashboardSummary = (transactions, selectedMonth, selectedYear, a
     // This is distinct from actual bank account remaining; it's the amount "saved by budgeting".
     const bonusSavingsPotential = useMemo(() => {
         if (!monthStartStr || !monthEndStr || !systemBudgets) return 0;
-        return calculateBonusSavingsPotential(systemBudgets, transactions, categories, allCustomBudgets, monthStartStr, monthEndStr, currentMonthIncome, goalMode);
-    }, [systemBudgets, transactions, categories, allCustomBudgets, monthStartStr, monthEndStr, currentMonthIncome, goalMode]);
+        //     return calculateBonusSavingsPotential(systemBudgets, transactions, categories, allCustomBudgets, monthStartStr, monthEndStr, currentMonthIncome, goalMode);
+        // }, [systemBudgets, transactions, categories, allCustomBudgets, monthStartStr, monthEndStr, currentMonthIncome, goalMode]);
+
+        // 2. Pass settings and historicalAverage
+        return calculateBonusSavingsPotential(systemBudgets, transactions, categories, allCustomBudgets, monthStartStr, monthEndStr, currentMonthIncome, settings, historicalAverage);
+    }, [systemBudgets, transactions, categories, allCustomBudgets, monthStartStr, monthEndStr, currentMonthIncome, settings, historicalAverage]);
 
     return {
         remainingBudget,
@@ -327,13 +345,19 @@ export const useBudgetsAggregates = (
     // Get monthly income for savings calculation
     const monthlyIncome = useMonthlyIncome(transactions, selectedMonth, selectedYear);
 
+    // Get Historical Average
+    const historicalAverage = useHistoricalIncome(transactions, selectedMonth, selectedYear);
+
     const systemBudgetsWithStats = useMemo(() => {
         const monthStart = getFirstDayOfMonth(selectedMonth, selectedYear);
         const monthEnd = getLastDayOfMonth(selectedMonth, selectedYear);
 
         return systemBudgets.map(sb => {
             // Use centralized calculation
-            const stats = getSystemBudgetStats(sb, transactions, categories, allCustomBudgets, monthStart, monthEnd, monthlyIncome, goalMode);
+            // const stats = getSystemBudgetStats(sb, transactions, categories, allCustomBudgets, monthStart, monthEnd, monthlyIncome, goalMode);
+
+            // Pass settings and historicalAverage
+            const stats = getSystemBudgetStats(sb, transactions, categories, allCustomBudgets, monthStart, monthEnd, monthlyIncome, settings, historicalAverage);
 
             return {
                 ...sb,
@@ -341,7 +365,8 @@ export const useBudgetsAggregates = (
                 preCalculatedStats: stats
             };
         });
-    }, [systemBudgets, transactions, categories, allCustomBudgets, selectedMonth, selectedYear, monthlyIncome, goalMode]);
+        // }, [systemBudgets, transactions, categories, allCustomBudgets, selectedMonth, selectedYear, monthlyIncome, goalMode]);
+    }, [systemBudgets, transactions, categories, allCustomBudgets, selectedMonth, selectedYear, monthlyIncome, settings, historicalAverage]);
 
     // Group custom budgets by status
     const groupedCustomBudgets = useMemo(() => {
@@ -429,6 +454,8 @@ export const useBudgetBarsData = (
     return useMemo(() => {
         const goalMode = settings?.goalMode ?? true;
 
+        const historicalAverage = getHistoricalAverageIncome(transactions, (new Date().getMonth()), (new Date().getFullYear())); // Fallback if no month selected, though BudgetBars usually has context
+
         const system = systemBudgets.sort((a, b) => {
             const orderA = FINANCIAL_PRIORITIES[a.systemBudgetType]?.order ?? 99;
             const orderB = FINANCIAL_PRIORITIES[b.systemBudgetType]?.order ?? 99;
@@ -452,7 +479,10 @@ export const useBudgetBarsData = (
             const goal = goalMap[sb.systemBudgetType];
 
             // 1. Resolve the Limit (Amount) based on mode
-            const targetAmount = resolveBudgetLimit(goal, monthlyIncome, goalMode);
+            // const targetAmount = resolveBudgetLimit(goal, monthlyIncome, goalMode);
+
+            // Pass settings and historicalAverage
+            const targetAmount = resolveBudgetLimit(goal, monthlyIncome, settings, historicalAverage);
 
             // 2. Resolve the Percentage for display
             // If Absolute Mode: Calculate back-percentage (Amount / Income)
@@ -465,7 +495,9 @@ export const useBudgetBarsData = (
             }
 
             // Use centralized calculation
-            const stats = getSystemBudgetStats(sb, transactions, categories, allCustomBudgets, startDate, endDate, monthlyIncome, goalMode);
+            // const stats = getSystemBudgetStats(sb, transactions, categories, allCustomBudgets, startDate, endDate, monthlyIncome, goalMode);
+            const stats = getSystemBudgetStats(sb, transactions, categories, allCustomBudgets, startDate, endDate, monthlyIncome, settings, historicalAverage);
+
             const maxHeight = Math.max(targetAmount, stats.totalSpent);
             const isOverBudget = stats.totalSpent > targetAmount;
             const overBudgetAmount = isOverBudget ? stats.totalSpent - targetAmount : 0;
@@ -558,6 +590,7 @@ export const useBudgetBarsData = (
             savingsTarget: savingsTargetAmount,
             savingsShortfall
         };
+        // }, [systemBudgets, customBudgets, allCustomBudgets, transactions, categories, goals, monthlyIncome, baseCurrency, settings]);
     }, [systemBudgets, customBudgets, allCustomBudgets, transactions, categories, goals, monthlyIncome, baseCurrency, settings]);
 };
 
