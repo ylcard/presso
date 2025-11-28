@@ -146,6 +146,8 @@ export default function Settings() {
             const settingsChanged = settingsKeys.some(k => formData[k] !== settings[k]);
             const modeChanged = localGoalMode !== (settings.goalMode ?? true);
 
+            console.log('DEBUG SAVE PAYLOAD:', { ...formData, goalMode: localGoalMode });
+
             if (settingsChanged || modeChanged) {
                 promises.push(updateSettings({
                     ...formData,
