@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { useSettings } from "../utils/SettingsContext";
 import { motion } from "framer-motion";
 import { FINANCIAL_PRIORITIES } from "../utils/constants";
+import { resolveBudgetLimit } from "../utils/financialCalculations";
 
 export default function RemainingBudgetCard({
     bonusSavingsPotential,
@@ -17,7 +18,8 @@ export default function RemainingBudgetCard({
     importDataButton,
     systemBudgets = [],
     goals = [],
-    breakdown = null
+    breakdown = null,
+    historicalAverage = 0
 }) {
     const { updateSettings } = useSettings();
 
@@ -52,8 +54,14 @@ export default function RemainingBudgetCard({
         const goal = goals.find(g => g.priority === type);
         if (!goal) return 0;
 
-        if (settings.goalMode === false) return goal.target_amount || 0; // Absolute Mode
-        return (safeIncome * (goal.target_percentage || 0)) / 100;       // Percentage Mode
+        // implenting the logic for fixed mode
+        // if (settings.goalMode === false) return goal.target_amount || 0; // Absolute Mode
+        // return (safeIncome * (goal.target_percentage || 0)) / 100;       // Percentage Mode
+        
+        // 3. Use centralized logic (Handles Absolute, Percentage AND Inflation Protection)
+        // Note: 'safeIncome' here acts as the 'monthlyIncome' argument
+        return resolveBudgetLimit(goal, safeIncome, settings, historicalAverage);
+
     };
 
     const needsLimit = resolveLimit('needs');
