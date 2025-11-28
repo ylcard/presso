@@ -37,10 +37,10 @@ export default function Settings() {
 
     return (
         <div className="min-h-screen p-4 md:p-8">
-            <div className="max-w-4xl mx-auto space-y-6">
+            <div className="max-w-4xl mx-auto space-y-8">
                 <div>
                     <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Settings</h1>
-                    <p className="text-gray-500 mt-1">Customize your currency and number formatting</p>
+                    <p className="text-gray-500 mt-1">Manage your preferences and financial goals</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -195,17 +195,7 @@ export default function Settings() {
                                 </p>
                             </div>
 
-                            <div className="pt-6 border-t border-gray-200">
-                                <h2 className="text-2xl font-bold text-gray-900 mb-4">Category Budgets</h2>
-                                <GoalSettings
-                                    goals={goals}
-                                    onGoalUpdate={handleGoalUpdate}
-                                    isLoading={loadingGoals}
-                                    isSaving={isGoalSaving}
-                                />
-                            </div>
-
-                            <div className="flex justify-end gap-3 pt-4">
+                            <div className="flex justify-end gap-3 pt-4 border-t">
                                 <CustomButton
                                     type="submit"
                                     disabled={isSaving}
@@ -216,12 +206,22 @@ export default function Settings() {
                                             <Check className="w-4 h-4 mr-2" />
                                             Saved!
                                         </>
-                                    ) : 'Save Settings'}
+                                    ) : 'Save Preferences'}
                                 </CustomButton>
                             </div>
                         </CardContent>
                     </Card>
                 </form>
+
+                {/* Budget Goals - Separated from the main form to avoid conflicts */}
+                <section className="space-y-4">
+                    <GoalSettings
+                        goals={goals}
+                        onGoalUpdate={handleGoalUpdate}
+                        isLoading={loadingGoals}
+                        isSaving={isGoalSaving}
+                    />
+                </section>
             </div>
         </div>
     );
