@@ -262,7 +262,12 @@ export default function RemainingBudgetCard({
                 className={`relative flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded transition-colors w-24 z-10 ${isSimpleView ? "text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
             >
                 {isSimpleView && (
-                    <motion.div layoutId="active-view-pill" className="absolute inset-0 bg-white rounded-md shadow-[0_1px_3px_rgba(0,0,0,0.1)] -z-10" transition={{ type: "spring", stiffness: 300, damping: 25, mass: 1.2 }} />
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }} // Start slightly "back" (Z-depth)
+                        animate={{ opacity: 1, scale: 1 }}    // Snap to front
+                        transition={{ type: "spring", stiffness: 500, damping: 30 }} // Snappy pop effect
+                        className="absolute inset-0 bg-white rounded-md shadow-[0_1px_3px_rgba(0,0,0,0.1)] -z-10"
+                    />
                 )}
                 <LayoutList className="w-3.5 h-3.5" />
                 Simple
@@ -272,7 +277,12 @@ export default function RemainingBudgetCard({
                 className={`relative flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded transition-colors w-24 z-10 ${!isSimpleView ? "text-gray-900" : "text-gray-500 hover:text-gray-700"}`}
             >
                 {!isSimpleView && (
-                    <motion.div layoutId="active-view-pill" className="absolute inset-0 bg-white rounded-md shadow-[0_1px_3px_rgba(0,0,0,0.1)] -z-10" transition={{ type: "spring", stiffness: 300, damping: 25, mass: 1.2 }} />
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                        className="absolute inset-0 bg-white rounded-md shadow-[0_1px_3px_rgba(0,0,0,0.1)] -z-10"
+                    />
                 )}
                 <BarChart3 className="w-3.5 h-3.5" />
                 Detailed
