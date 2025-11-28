@@ -13,6 +13,7 @@ import { useGoalActions } from "../hooks/useActions";
 import React, { useState, useEffect, useRef, cloneElement } from "react";
 import { getMonthName } from "../utils/dateUtils";
 import confetti from "canvas-confetti";
+import { motion, AnimatePresence } from "framer-motion";
 
 // --- COMPACT GOAL EDITOR COMPONENT ---
 const QuickGoalsEditor = ({ goals, settings, updateSettings, user, onClose }) => {
