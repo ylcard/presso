@@ -1,9 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { TrendingUp, AlertCircle, Target, Zap } from "lucide-react";
+import { TrendingUp, AlertCircle, Target, Zap, LayoutList, BarChart3 } from "lucide-react";
 import { formatCurrency } from "../utils/currencyUtils";
 import { Link } from "react-router-dom";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { useSettings } from "../utils/SettingsContext"; // Import context hook
 
 export default function RemainingBudgetCard({
@@ -244,6 +242,37 @@ export default function RemainingBudgetCard({
     const savingsPct = (savingsAmount / safeIncome) * 100;
     const isTotalOver = totalSpent > currentMonthIncome;
 
+    // --- RENDER: VIEW TOGGLE (Segmented Control) ---
+    const ViewToggle = () => (
+        <div className="flex bg-gray-100/80 p-1 rounded-lg border border-gray-200/50 relative">
+            {/* The Active Pill (Animated Background) */}
+            <div
+                className={`absolute inset-y-1 w-[50%] bg-white rounded shadow-sm transition-all duration-200 ease-out ${isSimpleView ? "left-1" : "left-[calc(50%-4px)] translate-x-1"
+                    }`}
+            />
+
+            {/* Simple Button */}
+            <button
+                onClick={() => handleViewToggle(true)}
+                className={`relative z-10 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded transition-colors w-24 ${isSimpleView ? "text-gray-900" : "text-gray-500 hover:text-gray-700"
+                    }`}
+            >
+                <LayoutList className="w-3.5 h-3.5" />
+                Simple
+            </button>
+
+            {/* Detailed Button */}
+            <button
+                onClick={() => handleViewToggle(false)}
+                className={`relative z-10 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded transition-colors w-24 ${!isSimpleView ? "text-gray-900" : "text-gray-500 hover:text-gray-700"
+                    }`}
+            >
+                <BarChart3 className="w-3.5 h-3.5" />
+                Detailed
+            </button>
+        </div>
+    );
+
     return (
         <Card className="border-none shadow-md bg-white overflow-hidden h-full flex flex-col">
             <CardContent className="p-5 flex-1 flex flex-col">
@@ -253,21 +282,9 @@ export default function RemainingBudgetCard({
                     <div className="flex-1 w-full sm:w-auto">
                         {monthNavigator}
                     </div>
-
-                    <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
-                        {/* THE TOGGLE */}
-                        <div className="flex items-center gap-2">
-                            <Label htmlFor="simple-view" className="text-xs text-gray-500 font-medium cursor-pointer">
-                                {isSimpleView ? 'Simple' : 'Detailed'}
-                            </Label>
-                            <Switch
-                                id="simple-view"
-                                checked={isSimpleView}
-                                onCheckedChange={handleViewToggle}
-                                className="scale-90"
-                            />
-                        </div>
-
+                    <div className="flex flex-col-reverse sm:flex-row items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
+                        {/* NEW SEGMENTED CONTROL REPLACES SWITCH */}
+                        <ViewToggle />
                         <div className="flex items-center gap-2">
                             {addIncomeButton}
                             {addExpenseButton}
