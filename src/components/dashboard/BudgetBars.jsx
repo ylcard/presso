@@ -215,6 +215,24 @@ export default function BudgetBars({
                     </CardContent>
                 </Card>
             )}
+            {customBudgetsData.length === 0 && (
+                <Card className="border-2 border-dashed border-gray-200 bg-gray-50/50 shadow-sm hover:border-purple-200 hover:bg-purple-50/30 transition-all duration-300">
+                    <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                        <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mb-4">
+                            <Plus className="w-6 h-6 text-purple-600" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">No Custom Budgets</h3>
+                        <p className="text-sm text-gray-500 max-w-sm mb-6">
+                            You haven't set up any custom budgets for this month yet.
+                            Create one to track specific spending categories.
+                        </p>
+                        <CustomButton variant="create" onClick={onCreateBudget} className="min-w-[200px] shadow-md hover:shadow-lg transition-shadow">
+                            <Plus className="w-4 h-4 mr-2" />
+                            Create First Budget
+                        </CustomButton>
+                    </CardContent>
+                </Card>
+            )}
         </div>
     );
 }
