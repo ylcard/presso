@@ -66,6 +66,23 @@ export const getTotalMonthExpenses = (transactions, startDate, endDate) => {
 };
 
 /**
+ * Helper: Resolves the budget limit (Goal) based on the active mode.
+ * This centralizes the logic so we don't repeat (Income * %) everywhere.
+ * + * @param {Object} goal - The budget goal (needs target_percentage and/or target_amount)
+ * @param {number} monthlyIncome - The total monthly income
+ * @param {boolean} goalMode - true = Percentage Mode, false = Absolute Mode
+ */
+export const resolveBudgetLimit = (goal, monthlyIncome, goalMode) => {
+    if (!goal) return 0;
+
+    // If goalMode is False (Absolute), return the flat amount
+    if (goalMode === false) return goal.target_amount || 0;
+
+    // Default to Percentage Mode (true or undefined)
+    return (monthlyIncome * (goal.target_percentage || 0)) / 100;
+};
+
+/**
  * CORE AGGREGATOR: Calculates granular breakdown of expenses in one pass.
  * Replaces getPaidNeedsExpenses, getDirectPaidWantsExpenses, etc.
  * * @returns {Object} { needs: { paid, unpaid, total }, wants: { directPaid, directUnpaid, customPaid, customUnpaid, total } }
@@ -166,9 +183,9 @@ export const getCustomBudgetStats = (customBudget, transactions, monthStart, mon
 /**
  * Calculates statistics for a system budget.
  * Optimized to use getFinancialBreakdown for single-pass calculation.
+ * UPDATED: Accepts goalMode to correctly resolve the budget limit.
  */
-export const getSystemBudgetStats = (systemBudget, transactions, categories, allCustomBudgets, startDate, endDate, monthlyIncome = 0) => {
-
+export const getSystemBudgetStats = (systemBudget, transactions, categories, allCustomBudgets, startDate, endDate, monthlyIncome = 0, goalMode = true) => {
     // Get the granular data in one pass
     const breakdown = getFinancialBreakdown(transactions, categories, allCustomBudgets, startDate, endDate);
 
@@ -189,7 +206,9 @@ export const getSystemBudgetStats = (systemBudget, transactions, categories, all
         unpaidAmount = 0;
     }
 
-    const totalBudget = systemBudget.budgetAmount || 0;
+    // Use the helper to resolve the limit based on mode
+    const totalBudget = resolveBudgetLimit(systemBudget, monthlyIncome, goalMode);
+
     const totalSpent = paidAmount + unpaidAmount;
     const remaining = totalBudget - totalSpent;
     const percentageUsed = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
@@ -252,8 +271,9 @@ export const getCustomBudgetAllocationStats = (customBudget, allocations, transa
 /**
  * Calculates the net "Bonus Savings Potential".
  * (Needs Limit + Wants Limit) - Actual Spending
+ * UPDATED: Accepts goalMode to correctly resolve the limits.
  */
-export const calculateBonusSavingsPotential = (systemBudgets, transactions, categories, allCustomBudgets, startDate, endDate) => {
+export const calculateBonusSavingsPotential = (systemBudgets, transactions, categories, allCustomBudgets, startDate, endDate, monthlyIncome = 0, goalMode = true) => {
     let netPotential = 0;
 
     // Calculate everything once
@@ -263,11 +283,13 @@ export const calculateBonusSavingsPotential = (systemBudgets, transactions, cate
     const wantsBudget = systemBudgets.find(sb => sb.systemBudgetType === 'wants');
 
     if (needsBudget) {
-        netPotential += (needsBudget.budgetAmount || 0) - breakdown.needs.total;
+        const limit = resolveBudgetLimit(needsBudget, monthlyIncome, goalMode);
+        netPotential += limit - breakdown.needs.total;
     }
 
     if (wantsBudget) {
-        netPotential += (wantsBudget.budgetAmount || 0) - breakdown.wants.total;
+        const limit = resolveBudgetLimit(wantsBudget, monthlyIncome, goalMode);
+        netPotential += limit - breakdown.wants.total;
     }
 
     return netPotential;
