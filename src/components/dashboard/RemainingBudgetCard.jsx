@@ -248,7 +248,7 @@ export default function RemainingBudgetCard({
     const fluidSpring = {
         type: "spring",
         stiffness: 100,
-        damping: 10,
+        damping: 25,
         mass: 1.2
     };
 
