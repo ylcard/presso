@@ -24,17 +24,24 @@ export default function GoalSettings({ goals, onGoalUpdate, isLoading, isSaving 
     const containerRef = useRef(null);
     const [activeThumb, setActiveThumb] = useState(null);
 
+    // Determine initial mode from Settings (default to 'percentage')
+    const [localGoalMode, setLocalGoalMode] = useState(settings.goalMode ?? true);
+    const isAbsoluteMode = !localGoalMode;
+
     // Local state for Absolute Mode inputs
     // Initialize from the goals prop (which comes from DB)
-    const needsGoal = goals.find(g => g.priority === 'needs');
+    // const needsGoal = goals.find(g => g.priority === 'needs');
     const [absoluteValues, setAbsoluteValues] = useState({
-        needs: goals.find(g => g.priority === 'needs')?.target_amount || 0,
-        wants: goals.find(g => g.priority === 'wants')?.target_amount || 0,
-        savings: goals.find(g => g.priority === 'savings')?.target_amount || 0
+        // needs: goals.find(g => g.priority === 'needs')?.target_amount || 0,
+        // wants: goals.find(g => g.priority === 'wants')?.target_amount || 0,
+        // savings: goals.find(g => g.priority === 'savings')?.target_amount || 0
+        needs: goals.find(g => g.priority === 'needs')?.target_amount ?? '',
+        wants: goals.find(g => g.priority === 'wants')?.target_amount ?? '',
+        savings: goals.find(g => g.priority === 'savings')?.target_amount ?? ''
     });
 
-    // Track mode based on the 'needs' goal (assuming all follow same mode or just using needs as master)
-    const [isAbsoluteMode, setIsAbsoluteMode] = useState(needsGoal?.is_absolute || false);
+    // BEING DEPRECATED - Track mode based on the 'needs' goal (assuming all follow same mode or just using needs as master)
+    // const [isAbsoluteMode, setIsAbsoluteMode] = useState(needsGoal?.is_absolute || false);
 
     useEffect(() => {
         const map = { needs: 0, wants: 0, savings: 0 };
@@ -60,20 +67,35 @@ export default function GoalSettings({ goals, onGoalUpdate, isLoading, isSaving 
 
     const handleSave = async () => {
         try {
-            // Update global settings for Mode and Absolute Values
-            // await updateSettings({
-            //     absoluteGoals: absoluteValues
-            // });
+            // 1. Save the strictly typed boolean mode to settings
+            await updateSettings({
+                goalMode: localGoalMode
+            });
 
-            // Execute all goal updates
-            // We now save target_amount and is_absolute to the entity directly
-            const promises = Object.entries(currentValues).map(([priority, percentage]) =>
-                // onGoalUpdate(priority, percentage)
-                onGoalUpdate(priority, percentage, {
-                    target_amount: absoluteValues[priority],
-                    is_absolute: isAbsoluteMode
-                })
-            );
+            // 2. Update goals, preserving the inactive mode's values
+            const promises = Object.keys(priorityConfig).map((priority) => {
+                const existingGoal = goals.find(g => g.priority === priority);
+
+                let payload = {};
+
+                if (isAbsoluteMode) {
+                    // ABSOLUTE MODE: 
+                    // Save new Amount, preserve existing Percentage (non-destructive)
+                    payload = {
+                        target_amount: absoluteValues[priority] === '' ? 0 : Number(absoluteValues[priority]),
+                        target_percentage: existingGoal?.target_percentage || 0
+                    };
+                } else {
+                    // PERCENTAGE MODE: 
+                    // Save new Percentage, preserve existing Amount (non-destructive)
+                    payload = {
+                        target_amount: existingGoal?.target_amount || 0,
+                        target_percentage: currentValues[priority]
+                    };
+                }
+
+                return onGoalUpdate(priority, payload.target_percentage, payload);
+            });
 
             // Wait for all updates to complete
             await Promise.all(promises);
@@ -152,14 +174,14 @@ export default function GoalSettings({ goals, onGoalUpdate, isLoading, isSaving 
                 <div className="flex items-center justify-center p-1 bg-gray-100 rounded-lg">
                     <button
                         type="button"
-                        onClick={() => setIsAbsoluteMode(false)}
+                        onClick={() => setLocalGoalMode(true)}
                         className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${!isAbsoluteMode ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                     >
                         Percentage
                     </button>
                     <button
                         type="button"
-                        onClick={() => setIsAbsoluteMode(true)}
+                        onClick={() => setLocalGoalMode(false)}
                         className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${isAbsoluteMode ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                     >
                         Absolute Values
@@ -224,23 +246,32 @@ export default function GoalSettings({ goals, onGoalUpdate, isLoading, isSaving 
                     </div>
                 ) : (
                     /* Absolute Mode Inputs */
-                    <div className="grid grid-cols-1 gap-4 pt-2 animate-in fade-in slide-in-from-top-2 duration-300">
-                        {Object.entries(priorityConfig).map(([key, config]) => (
-                            <div key={key} className="space-y-1.5">
-                                <Label className="text-xs font-semibold uppercase tracking-wider text-gray-500 flex items-center gap-2">
-                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: config.color }} />
-                                    {config.label}
-                                </Label>
-                                <div>
-                                    <AmountInput
-                                        value={absoluteValues[key]}
-                                        onChange={(val) => setAbsoluteValues(prev => ({ ...prev, [key]: val || 0 }))}
-                                        placeholder="0.00"
-                                        className="font-mono"
-                                    />
+                    <div className="pt-2 animate-in fade-in slide-in-from-top-2 duration-300 space-y-4">
+                        <div className="grid grid-cols-1 gap-4">
+                            {Object.entries(priorityConfig).map(([key, config]) => (
+                                <div key={key} className="space-y-1.5">
+                                    <Label className="text-xs font-semibold uppercase tracking-wider text-gray-500 flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: config.color }} />
+                                        {config.label}
+                                    </Label>
+                                    <div>
+                                        <AmountInput
+                                            value={absoluteValues[key]}
+                                            onChange={(val) => setAbsoluteValues(prev => ({ ...prev, [key]: val }))}
+                                            placeholder="0.00"
+                                            className="font-mono"
+                                        />
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
+                        {/* Simple helper to see total budget allocation */}
+                        <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+                            <span className="text-sm font-medium text-gray-500">Total Allocated</span>
+                            <span className="text-lg font-bold text-gray-900">
+                                $ {Object.values(absoluteValues).reduce((acc, val) => acc + (Number(val) || 0), 0).toLocaleString()}
+                            </span>
+                        </div>
                     </div>
                 )}
 
