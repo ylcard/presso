@@ -101,10 +101,16 @@ export default function RemainingBudgetCard({
         updateSettings({ barViewMode: checked });
     };
 
-    // Calculate common percentages
+    // 1. WIDTH CALCULATIONS (Relative to Income)
+    // This determines how much physical space the bar takes up in the container
     const needsPct = (needsTotal / safeIncome) * 100;
     const wantsPct = (wantsTotal / safeIncome) * 100;
     const savingsPct = Math.max(0, 100 - needsPct - wantsPct);
+
+    // 2. LABEL CALCULATIONS (Relative to Budget Limit)
+    // This determines the % text shown to the user (Utilization)
+    const needsUtil = needsLimit > 0 ? (needsTotal / needsLimit) * 100 : 0;
+    const wantsUtil = wantsLimit > 0 ? (wantsTotal / wantsLimit) * 100 : 0;
 
     // Date Context
     const now = new Date();
@@ -143,8 +149,10 @@ export default function RemainingBudgetCard({
 
     // --- RENDER: SIMPLE BAR ---
     const renderSimpleBar = () => {
-        const needsLabel = `${Math.round(needsPct)}%`;
-        const wantsLabel = `${Math.round(wantsPct)}%`;
+        // const needsLabel = `${Math.round(needsPct)}%`;
+        // const wantsLabel = `${Math.round(wantsPct)}%`;
+        const needsLabel = `${Math.round(needsUtil)}%`;
+        const wantsLabel = `${Math.round(wantsUtil)}%`;
         const savingsLabel = `${Math.round(savingsPct)}%`;
 
         return (
