@@ -136,7 +136,7 @@ export default function Settings() {
                         target_percentage: currentValues[priority]
                     };
                 }
-                return onGoalUpdate(priority, payload.target_percentage, payload);
+                return handleGoalUpdate(priority, payload.target_percentage, payload);
             });
 
             await Promise.all(promises);
