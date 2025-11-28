@@ -447,8 +447,15 @@ export const useBudgetBarsData = (
             return {
                 ...sb,
                 stats: {
-                    ...stats,
-                    // Map keys to match BudgetBar expectations if different
+                    totalAllocatedUnits: targetAmount,
+                    paid: {
+                        totalBaseCurrencyAmount: stats.paidAmount
+                    },
+                    unpaid: {
+                        totalBaseCurrencyAmount: stats.unpaidAmount
+                    },
+                    totalSpent: stats.totalSpent,
+                    paidAmount: stats.paidAmount,
                     unpaidAmount: stats.unpaidAmount
                 },
                 targetAmount,
@@ -469,8 +476,8 @@ export const useBudgetBarsData = (
             // Calculate totals for BudgetBars
             const totalBudget = stats.allocated;
             const paidAmount = stats.paid.totalBaseCurrencyAmount;
-            const expectedAmount = stats.unpaid;
-            const totalSpent = paidAmount + expectedAmount;
+            const unpaidAmount = stats.unpaid.totalBaseCurrencyAmount;  // Fixed: use nested property
+            const totalSpent = paidAmount + unpaidAmount;
 
             const maxHeight = Math.max(totalBudget, totalSpent);
             const isOverBudget = totalSpent > totalBudget;
@@ -483,37 +490,38 @@ export const useBudgetBarsData = (
                     paidAmount,
                     totalBudget,
                     totalAllocatedUnits: stats.allocated,
-                    totalSpentUnits: stats.spent,
-                    totalUnpaidUnits: stats.unpaid
+                    totalSpentUnits: paidAmount,  // This should be paid amount only, not total spent
+                    totalUnpaidUnits: unpaidAmount  // Fixed: use the correct unpaid amount
                 },
                 targetAmount: totalBudget,
-                expectedAmount,
+                expectedAmount: unpaidAmount,  // Fixed: use unpaidAmount variable
                 maxHeight,
                 isOverBudget,
                 overBudgetAmount
             };
-        });
-
-        const savingsBudget = systemBudgetsData.find(sb => sb.systemBudgetType === 'savings');
-        const savingsTargetAmount = savingsBudget ? savingsBudget.targetAmount : 0;
-        const totalActualSavings = savingsBudget ? savingsBudget.stats.paidAmount : 0;
-        const savingsShortfall = Math.max(0, savingsTargetAmount - totalActualSavings);
-
-        // Properly integrate totalActualSavings into savingsBudget for BudgetBar rendering
-        if (savingsBudget) {
-            savingsBudget.actualSavings = totalActualSavings;
-            savingsBudget.savingsTarget = savingsTargetAmount;
-            savingsBudget.maxHeight = Math.max(savingsTargetAmount, totalActualSavings);
-        }
-
-        return {
-            systemBudgetsData,
-            customBudgetsData,
-            totalActualSavings,
-            savingsTarget: savingsTargetAmount,
-            savingsShortfall
         };
-    }, [systemBudgets, customBudgets, allCustomBudgets, transactions, categories, goals, monthlyIncome, baseCurrency]);
+    });
+
+    const savingsBudget = systemBudgetsData.find(sb => sb.systemBudgetType === 'savings');
+    const savingsTargetAmount = savingsBudget ? savingsBudget.targetAmount : 0;
+    const totalActualSavings = savingsBudget ? savingsBudget.stats.paidAmount : 0;
+    const savingsShortfall = Math.max(0, savingsTargetAmount - totalActualSavings);
+
+    // Properly integrate totalActualSavings into savingsBudget for BudgetBar rendering
+    if (savingsBudget) {
+        savingsBudget.actualSavings = totalActualSavings;
+        savingsBudget.savingsTarget = savingsTargetAmount;
+        savingsBudget.maxHeight = Math.max(savingsTargetAmount, totalActualSavings);
+    }
+
+    return {
+        systemBudgetsData,
+        customBudgetsData,
+        totalActualSavings,
+        savingsTarget: savingsTargetAmount,
+        savingsShortfall
+    };
+}, [systemBudgets, customBudgets, allCustomBudgets, transactions, categories, goals, monthlyIncome, baseCurrency]);
 };
 
 // Hook for monthly breakdown calculations

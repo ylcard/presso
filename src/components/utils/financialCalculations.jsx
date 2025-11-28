@@ -332,96 +332,53 @@ export const getMonthlyFinancialSummary = (transactions, startDate, endDate) => 
  */
 export const getCustomBudgetStats = (customBudget, transactions, monthStart, monthEnd, baseCurrency = 'USD') => {
     const budgetTransactions = transactions.filter(t => t.customBudgetId === customBudget.id);
+} else if (systemBudget.systemBudgetType === 'wants') {
+    const directPaid = getDirectPaidWantsExpenses(transactions, categories, startDate, endDate, allCustomBudgets);
+    const customPaid = getPaidCustomBudgetExpenses(transactions, allCustomBudgets, startDate, endDate);
+    paidAmount = directPaid + customPaid;
 
-    const expenses = budgetTransactions.filter(t => t.type === 'expense');
+    const directUnpaid = getDirectUnpaidWantsExpenses(transactions, categories, startDate, endDate, allCustomBudgets);
+    const customUnpaid = getUnpaidCustomBudgetExpenses(transactions, allCustomBudgets, startDate, endDate);
+    unpaidAmount = directUnpaid + customUnpaid;
+} else if (systemBudget.systemBudgetType === 'savings') {
 
-    const allocated = customBudget.allocatedAmount || 0;
+    const totalNeeds =
+        getPaidNeedsExpenses(transactions, categories, startDate, endDate, allCustomBudgets) +
+        getUnpaidNeedsExpenses(transactions, categories, startDate, endDate, allCustomBudgets);
 
-    // Calculate totals
-    const spent = expenses.reduce((sum, t) => sum + (t.originalAmount || t.amount), 0);
-    const unpaid = expenses.filter(t => !t.isPaid).reduce((sum, t) => sum + (t.originalAmount || t.amount), 0);
+    const totalWants =
+        getDirectPaidWantsExpenses(transactions, categories, startDate, endDate, allCustomBudgets) +
+        getDirectUnpaidWantsExpenses(transactions, categories, startDate, endDate, allCustomBudgets) +
+        getPaidCustomBudgetExpenses(transactions, allCustomBudgets, startDate, endDate) +
+        getUnpaidCustomBudgetExpenses(transactions, allCustomBudgets, startDate, endDate);
 
-    // For compatibility with System Budget stats shape
-    const paidBase = expenses.filter(t => t.isPaid).reduce((sum, t) => sum + (t.originalAmount || t.amount), 0);
+    // "Paid" in this context means "Actual Savings Achieved"
+    paidAmount = Math.max(0, monthlyIncome - totalNeeds - totalWants);
+    unpaidAmount = 0;
+}
 
-    return {
-        allocated,
-        spent,
-        unpaid,
-        remaining: allocated - spent,
-        paid: {
-            totalBaseCurrencyAmount: paidBase,
-            foreignCurrencyDetails: []
-        },
-        unpaid: {
-            totalBaseCurrencyAmount: unpaid,
-            foreignCurrencyDetails: []
-        },
-        totalAllocatedUnits: allocated,
-        totalSpentUnits: spent,
-        totalUnpaidUnits: unpaid,
-        totalTransactionCount: expenses.length
-    };
+const totalBudget = systemBudget.budgetAmount || 0;
+const totalSpent = paidAmount + unpaidAmount;
+const remaining = totalBudget - totalSpent;
+const percentageUsed = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
+
+return {
+    paid: {
+        totalBaseCurrencyAmount: paidAmount,
+        foreignCurrencyDetails: []
+    },
+    unpaid: {
+        totalBaseCurrencyAmount: unpaidAmount,
+        foreignCurrencyDetails: []
+    },
+    totalSpent,
+    paidAmount,
+    unpaidAmount,
+    remaining,
+    percentageUsed,
+    transactionCount: 0
 };
-
-/**
- * Calculates statistics for a system budget.
- * Leverages existing granular functions (getPaidNeedsExpenses, etc.) for consistency.
- */
-export const getSystemBudgetStats = (systemBudget, transactions, categories, allCustomBudgets, startDate, endDate, monthlyIncome = 0) => {
-    let paidAmount = 0;
-    let unpaidAmount = 0;
-
-    if (systemBudget.systemBudgetType === 'needs') {
-        paidAmount = getPaidNeedsExpenses(transactions, categories, startDate, endDate, allCustomBudgets);
-        unpaidAmount = getUnpaidNeedsExpenses(transactions, categories, startDate, endDate, allCustomBudgets);
-    } else if (systemBudget.systemBudgetType === 'wants') {
-        const directPaid = getDirectPaidWantsExpenses(transactions, categories, startDate, endDate, allCustomBudgets);
-        const customPaid = getPaidCustomBudgetExpenses(transactions, allCustomBudgets, startDate, endDate);
-        paidAmount = directPaid + customPaid;
-
-        const directUnpaid = getDirectUnpaidWantsExpenses(transactions, categories, startDate, endDate, allCustomBudgets);
-        const customUnpaid = getUnpaidCustomBudgetExpenses(transactions, allCustomBudgets, startDate, endDate);
-        unpaidAmount = directUnpaid + customUnpaid;
-    } else if (systemBudget.systemBudgetType === 'savings') {
-
-        const totalNeeds =
-            getPaidNeedsExpenses(transactions, categories, startDate, endDate, allCustomBudgets) +
-            getUnpaidNeedsExpenses(transactions, categories, startDate, endDate, allCustomBudgets);
-
-        const totalWants =
-            getDirectPaidWantsExpenses(transactions, categories, startDate, endDate, allCustomBudgets) +
-            getDirectUnpaidWantsExpenses(transactions, categories, startDate, endDate, allCustomBudgets) +
-            getPaidCustomBudgetExpenses(transactions, allCustomBudgets, startDate, endDate) +
-            getUnpaidCustomBudgetExpenses(transactions, allCustomBudgets, startDate, endDate);
-
-        // "Paid" in this context means "Actual Savings Achieved"
-        paidAmount = Math.max(0, monthlyIncome - totalNeeds - totalWants);
-        unpaidAmount = 0;
-    }
-
-    const totalBudget = systemBudget.budgetAmount || 0;
-    const totalSpent = paidAmount + unpaidAmount;
-    const remaining = totalBudget - totalSpent;
-    const percentageUsed = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
-
-    return {
-        paid: {
-            totalBaseCurrencyAmount: paidAmount,
-            foreignCurrencyDetails: []
-        },
-        unpaid: {
-            totalBaseCurrencyAmount: unpaidAmount,
-            foreignCurrencyDetails: []
-        },
-        totalSpent,
-        paidAmount,
-        unpaidAmount,
-        remaining,
-        percentageUsed,
-        transactionCount: 0
     };
-};
 
 /**
  * Calculates allocation statistics for a custom budget's categories.
