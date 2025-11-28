@@ -79,7 +79,7 @@ export default function CustomBudgetForm({
                 </Alert>
             )}
 
-            <div className="grid grid-cols-2 gap-3 items-end">
+            <div className="grid grid-cols-2 gap-3 items-start">
                 <div className="space-y-2">
                     <Label htmlFor="name">Budget Name</Label>
                     <Input
