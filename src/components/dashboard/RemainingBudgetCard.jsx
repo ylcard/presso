@@ -676,7 +676,21 @@ export default function RemainingBudgetCard({
                         {monthNavigator}
                     </div>
                     <div className="flex flex-col-reverse sm:flex-row items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
-                        {!isEmptyMonth && <ViewToggle />}
+                        <motion.div layout>
+                            <AnimatePresence>
+                                {!isEmptyMonth && (
+                                    <motion.div
+                                        key="view-toggle"
+                                        initial={{ opacity: 0, scale: 0.8, x: 20 }}
+                                        animate={{ opacity: 1, scale: 1, x: 0 }}
+                                        exit={{ opacity: 0, scale: 0.8, x: 20 }}
+                                        transition={fluidSpring}
+                                    >
+                                        <ViewToggle />
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </motion.div>
                         <div className="flex items-center gap-2">
                             {importDataButton}
                             {addExpenseButton}
