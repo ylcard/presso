@@ -10,7 +10,7 @@ import { CustomButton } from "@/components/ui/CustomButton";
 import { Plus, Pencil } from "lucide-react";
 import { useSettings } from "../utils/SettingsContext";
 import { useAllBudgets } from "../hooks/useBase44Entities";
-import { formatDateString } from "../utils/dateUtils";
+import { formatDateString, getFirstDayOfMonth } from "../utils/dateUtils";
 import TransactionFormContent from "./TransactionFormContent";
 
 export default function QuickAddTransaction({
@@ -82,7 +82,7 @@ export default function QuickAddTransaction({
             return formatDateString(now);
         }
         // Otherwise default to the 1st of the selected month
-        return formatDateString(new Date(selectedYear, selectedMonth, 1));
+        return getFirstDayOfMonth(selectedMonth, selectedYear);
     };
 
     return (
