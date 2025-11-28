@@ -1,7 +1,10 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { TrendingUp, AlertCircle, Target } from "lucide-react";
+import { TrendingUp, AlertCircle, Target, Zap } from "lucide-react";
 import { formatCurrency } from "../utils/currencyUtils";
 import { Link } from "react-router-dom";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { useSettings } from "../utils/SettingsContext"; // Import context hook
 
 export default function RemainingBudgetCard({
     bonusSavingsPotential,
@@ -14,64 +17,43 @@ export default function RemainingBudgetCard({
     importDataButton,
     systemBudgets = [],
     goals = [],
-    breakdown = null // Now expecting the granular breakdown object
+    breakdown = null
 }) {
+    // Access updateSettings to toggle the view mode
+    const { updateSettings } = useSettings();
+
     if (!settings) return null;
 
-    // 1. Safe Income Calculation (Prevent Division by Zero)
     const safeIncome = currentMonthIncome || 1;
+    const isSimpleView = settings.simpleBudgetView;
 
-    // 2. Goal Summary Text (Top Right)
-    const isAbsolute = settings.goalAllocationMode === 'absolute';
-    const needsGoal = goals.find(g => g.priority === 'needs');
-    const wantsGoal = goals.find(g => g.priority === 'wants');
-    const savingsGoal = goals.find(g => g.priority === 'savings');
-
-    const goalSummary = isAbsolute
-        ? `${formatCurrency(needsGoal?.target_amount || 0, settings)} / ${formatCurrency(wantsGoal?.target_amount || 0, settings)} / ${formatCurrency(savingsGoal?.target_amount || 0, settings)}`
-        : `${needsGoal?.target_percentage || 50}% / ${wantsGoal?.target_percentage || 30}% / ${savingsGoal?.target_percentage || 20}%`;
-
-    // 3. Extract Budget Limits & Colors
+    // --- DATA EXTRACTION ---
     const needsBudget = systemBudgets.find(sb => sb.systemBudgetType === 'needs');
     const wantsBudget = systemBudgets.find(sb => sb.systemBudgetType === 'wants');
-
-    const needsColor = needsBudget?.color || '#3B82F6'; // Default Blue
-    const wantsColor = wantsBudget?.color || '#F59E0B'; // Default Amber
 
     const needsLimit = needsBudget?.budgetAmount || 0;
     const wantsLimit = wantsBudget?.budgetAmount || 0;
 
-    // 4. Extract Actual Spending (Paid vs Unpaid)
-    // Fallback to 0s if breakdown isn't ready yet
     const needsData = breakdown?.needs || { paid: 0, unpaid: 0, total: 0 };
-    const wantsData = breakdown?.wants || { total: 0, directPaid: 0, directUnpaid: 0, customPaid: 0, customUnpaid: 0 };
+    const wantsData = breakdown?.wants || { total: 0 };
 
-    // Aggregate Wants (Direct + Custom)
-    const wantsPaidTotal = (wantsData.directPaid || 0) + (wantsData.customPaid || 0);
-    const wantsUnpaidTotal = (wantsData.directUnpaid || 0) + (wantsData.customUnpaid || 0);
+    // Aggregates
+    const needsTotal = needsData.total;
+    const wantsTotal = wantsData.total;
+    const totalSpent = needsTotal + wantsTotal;
 
-    /**
-     * CORE LOGIC: Calculate Bar Segments
-     * Splits spending into: 
-     * 1. Safe Paid (Solid)
-     * 2. Safe Unpaid (Striped)
-     * 3. Overflow (Red Striped)
-     */
+    // --- SHARED HELPERS ---
+    const needsColor = needsBudget?.color || '#3B82F6';
+    const wantsColor = wantsBudget?.color || '#F59E0B';
+
+    // --- DETAILED VIEW LOGIC (Segments) ---
+    // (Only calculated if we are in detailed mode or for background data)
     const calculateSegments = (paid, unpaid, limit) => {
         const total = paid + unpaid;
+        if (!limit || limit <= 0) return { safePaid: paid, safeUnpaid: unpaid, overflow: 0, total };
 
-        // If no limit is set (0), treat everything as "Safe" spending (no overflow possible)
-        if (!limit || limit <= 0) {
-            return { safePaid: paid, safeUnpaid: unpaid, overflow: 0, total };
-        }
-
-        // Calculate Overflow
         const overflow = Math.max(0, total - limit);
-
-        // Calculate what fits inside the Limit
         const safeTotal = total - overflow;
-
-        // Within the safe limit, fill with Paid first, then Unpaid
         const safePaid = Math.min(paid, safeTotal);
         const safeUnpaid = Math.max(0, safeTotal - safePaid);
 
@@ -79,64 +61,218 @@ export default function RemainingBudgetCard({
     };
 
     const needsSegs = calculateSegments(needsData.paid, needsData.unpaid, needsLimit);
+
+    // Aggregate wants parts for detailed view
+    const wantsPaidTotal = (wantsData.directPaid || 0) + (wantsData.customPaid || 0);
+    const wantsUnpaidTotal = (wantsData.directUnpaid || 0) + (wantsData.customUnpaid || 0);
     const wantsSegs = calculateSegments(wantsPaidTotal, wantsUnpaidTotal, wantsLimit);
 
-    // 5. Visual Calculations
-    // We inflate very small bars to be clickable (min 5%), but this distorts the "Savings" bar slightly.
-    // This is a trade-off for usability.
-    const CLICKABLE_MIN_PCT = 5;
-
-    const rawNeedsPct = (needsSegs.total / safeIncome) * 100;
-    const needsVisualPct = needsSegs.total > 0 ? Math.max(rawNeedsPct, CLICKABLE_MIN_PCT) : 0;
-
-    const rawWantsPct = (wantsSegs.total / safeIncome) * 100;
-    const wantsVisualPct = wantsSegs.total > 0 ? Math.max(rawWantsPct, CLICKABLE_MIN_PCT) : 0;
-
-    const totalSpent = currentMonthExpenses;
-    const isTotalOver = totalSpent > currentMonthIncome;
-
-    // 6. Savings Bars Logic
-    // We calculate two "phantom" bars for the empty space:
-    // A. Efficiency Bar: The gap between Actual Spending and the Budget Limit.
-    // B. Target Bar: The gap between Budget Limit and 100% Income.
-
-    const needsLimitPct = (needsLimit / safeIncome) * 100;
-    const wantsLimitPct = (wantsLimit / safeIncome) * 100;
-    const totalLimitPct = needsLimitPct + wantsLimitPct;
-
-    const visualSpendingEnd = needsVisualPct + wantsVisualPct;
-
-    // "Efficiency": Amount budget that was allocated but NOT spent.
-    // Logic: BudgetLimit - ActualVisualSpend
-    const efficiencyBarPct = Math.max(0, totalLimitPct - visualSpendingEnd);
-
-    // "Target": Pure unallocated savings
-    // Logic: 100% - Max(BudgetLimit, ActualVisualSpend)
-    // If we overspend, we eat into this bar.
-    const targetSavingsBarPct = Math.max(0, 100 - Math.max(totalLimitPct, visualSpendingEnd));
-
-    // Display Percentage (Strict Math, ignore visual inflation)
-    const savingsPct = Math.max(0, 100 - (totalSpent / safeIncome) * 100);
-
-    // CSS Pattern for "Unpaid" or "Overflow"
-    const stripePattern = {
-        backgroundImage: `linear-gradient(45deg,rgba(255,255,255,.3) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.3) 50%,rgba(255,255,255,.3) 75%,transparent 75%,transparent)`,
-        backgroundSize: '8px 8px'
+    // --- VIEW TOGGLE HANDLER ---
+    const handleViewToggle = (checked) => {
+        updateSettings({ simpleBudgetView: checked });
     };
+
+    // --- RENDER: SIMPLE BAR ---
+    const renderSimpleBar = () => {
+        // 1. Calculate Widths relative to Income
+        const needsPct = (needsTotal / safeIncome) * 100;
+        const wantsPct = (wantsTotal / safeIncome) * 100;
+
+        // Savings fills the rest (or 0 if overspent)
+        const savingsPct = Math.max(0, 100 - needsPct - wantsPct);
+
+        // 2. Date Context for "Smart Warnings"
+        const now = new Date();
+        // If we are viewing a past month, suppress warnings (unless over budget)
+        // If viewing future, suppress warnings.
+        // Only apply "Pacing" logic to the CURRENT month.
+        const isCurrentMonth =
+            now.getMonth() === (settings.selectedMonth ?? now.getMonth()) &&
+            now.getFullYear() === (settings.selectedYear ?? now.getFullYear());
+
+        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        const currentDay = now.getDate();
+        const isEndOfMonth = currentDay >= (daysInMonth - 3); // Last 3 days of month
+
+        // 3. Warning Logic Helper
+        // Returns classes based on usage vs limit
+        const getStatusStyles = (used, limit) => {
+            if (limit === 0) return "text-white/90"; // No limit set
+            const ratio = used / limit;
+
+            // LEVEL 1: Over Budget (Always Red, Always Bold)
+            if (ratio > 1) {
+                return "text-red-100 font-extrabold flex items-center justify-center gap-1 animate-pulse shadow-sm";
+            }
+
+            // LEVEL 2: Near Limit (The "Soft Warning")
+            // Trigger if used > 90% AND it's NOT the end of the month (or if not current month)
+            if (ratio > 0.90) {
+                // If it's the end of the current month, 90% is actually good! Don't warn.
+                if (isCurrentMonth && isEndOfMonth) {
+                    return "text-white/90 font-medium";
+                }
+                // Otherwise, warn the user they are running hot
+                return "text-amber-100 font-bold flex items-center justify-center gap-1";
+            }
+
+            // LEVEL 3: Safe
+            return "text-white/90 font-medium"; // Safe
+        };
+
+        // 3. Labels
+        const needsLabel = `${Math.round(needsPct)}%`;
+        const wantsLabel = `${Math.round(wantsPct)}%`;
+        const savingsLabel = `${Math.round(savingsPct)}%`;
+
+        return (
+            <div className="relative h-12 w-full bg-gray-100 rounded-xl overflow-hidden flex shadow-inner border border-gray-200">
+                {/* NEEDS SEGMENT */}
+                <div
+                    className="h-full flex items-center justify-center transition-all duration-500 relative group cursor-default border-r border-white/10"
+                    style={{ width: `${needsPct}%`, backgroundColor: needsColor }}
+                >
+                    {needsPct > 8 && (
+                        // Pass 'needs' type to disable amber warning
+                        <div className={`text-xs sm:text-sm z-10 transition-all ${getStatusStyles(needsTotal, needsLimit, 'needs')}`}>
+                            {needsTotal > needsLimit && <AlertCircle className="w-3 h-3 inline mr-1" />}
+                            Needs {needsLabel}
+                        </div>
+                    )}
+                </div>
+
+                {/* WANTS SEGMENT */}
+                <div
+                    className="h-full flex items-center justify-center transition-all duration-500 relative group cursor-default border-r border-white/10"
+                    style={{ width: `${wantsPct}%`, backgroundColor: wantsColor }}
+                >
+                    {wantsPct > 8 && (
+                        // Pass 'wants' type to ENABLE amber warning
+                        <div className={`text-xs sm:text-sm z-10 transition-all ${getStatusStyles(wantsTotal, wantsLimit, 'wants')}`}>
+                            {/* Check specific 'wants' logic for icon rendering */}
+                            {(wantsTotal / wantsLimit) > 0.9 && !(isCurrentMonth && isEndOfMonth && (wantsTotal / wantsLimit) <= 1) && (
+                                <Zap className="w-3 h-3 inline mr-1 fill-current" />
+                            )}
+                            Wants {wantsLabel}
+                        </div>
+                    )}
+                </div>
+
+                {/* SAVINGS SEGMENT */}
+                {savingsPct > 0 && (
+                    <div
+                        className="h-full bg-emerald-500 flex items-center justify-center transition-all duration-500 relative"
+                        style={{ width: `${savingsPct}%` }}
+                    >
+                        {savingsPct > 8 && (
+                            <div className="text-white/90 font-medium text-xs sm:text-sm flex items-center gap-1">
+                                Save {savingsLabel}
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    // --- RENDER: DETAILED BAR ---
+    const renderDetailedBar = () => {
+        // Use the complex logic from before
+        const CLICKABLE_MIN_PCT = 5;
+        const rawNeedsPct = (needsSegs.total / safeIncome) * 100;
+        const needsVisualPct = needsSegs.total > 0 ? Math.max(rawNeedsPct, CLICKABLE_MIN_PCT) : 0;
+        const rawWantsPct = (wantsSegs.total / safeIncome) * 100;
+        const wantsVisualPct = wantsSegs.total > 0 ? Math.max(rawWantsPct, CLICKABLE_MIN_PCT) : 0;
+
+        // Savings Bars Logic
+        const needsLimitPct = (needsLimit / safeIncome) * 100;
+        const wantsLimitPct = (wantsLimit / safeIncome) * 100;
+        const totalLimitPct = needsLimitPct + wantsLimitPct;
+        const visualSpendingEnd = needsVisualPct + wantsVisualPct;
+
+        const efficiencyBarPct = Math.max(0, totalLimitPct - visualSpendingEnd);
+        const targetSavingsBarPct = Math.max(0, 100 - Math.max(totalLimitPct, visualSpendingEnd));
+
+        const stripePattern = {
+            backgroundImage: `linear-gradient(45deg,rgba(255,255,255,.3) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.3) 50%,rgba(255,255,255,.3) 75%,transparent 75%,transparent)`,
+            backgroundSize: '8px 8px'
+        };
+
+        return (
+            <div className="relative h-8 w-full bg-gray-100 rounded-lg overflow-hidden flex shadow-inner">
+                {/* NEEDS */}
+                <Link
+                    to={needsBudget ? `/BudgetDetail?id=${needsBudget.id}` : '#'}
+                    className={`h-full transition-all duration-500 relative group hover:brightness-110 cursor-pointer border-r border-white/20 overflow-hidden flex`}
+                    style={{ width: `${needsVisualPct}%` }}
+                >
+                    {needsSegs.safePaid > 0 && <div className="h-full" style={{ width: `${(needsSegs.safePaid / needsSegs.total) * 100}%`, backgroundColor: needsColor }} />}
+                    {needsSegs.safeUnpaid > 0 && <div className="h-full bg-blue-500 opacity-60" style={{ width: `${(needsSegs.safeUnpaid / needsSegs.total) * 100}%`, ...stripePattern }} />}
+                    {needsSegs.overflow > 0 && <div className="h-full opacity-60" style={{ width: `${(needsSegs.overflow / needsSegs.total) * 100}%`, backgroundColor: 'red', ...stripePattern }} />}
+                    <div className={`absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white transition-opacity ${needsVisualPct > 10 ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>Needs</div>
+                </Link>
+
+                {/* WANTS */}
+                <Link
+                    to={wantsBudget ? `/BudgetDetail?id=${wantsBudget.id}` : '#'}
+                    className={`h-full transition-all duration-500 relative group hover:brightness-110 cursor-pointer border-r border-white/20 overflow-hidden flex`}
+                    style={{ width: `${wantsVisualPct}%` }}
+                >
+                    {wantsSegs.safePaid > 0 && <div className="h-full" style={{ width: `${(wantsSegs.safePaid / wantsSegs.total) * 100}%`, backgroundColor: wantsColor }} />}
+                    {wantsSegs.safeUnpaid > 0 && <div className="h-full opacity-60" style={{ width: `${(wantsSegs.safeUnpaid / wantsSegs.total) * 100}%`, backgroundColor: wantsColor, ...stripePattern }} />}
+                    {wantsSegs.overflow > 0 && <div className="h-full bg-red-500" style={{ width: `${(wantsSegs.overflow / wantsSegs.total) * 100}%`, ...stripePattern }} />}
+                    <div className={`absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white transition-opacity ${wantsVisualPct > 10 ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>Lifestyle</div>
+                </Link>
+
+                {/* SAVINGS */}
+                {efficiencyBarPct > 0 && (
+                    <div className="h-full bg-emerald-300 relative group border-r border-white/20" style={{ width: `${efficiencyBarPct}%` }}>
+                        <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-emerald-800 opacity-75 group-hover:opacity-100 transition-opacity whitespace-nowrap overflow-hidden">Extra</div>
+                    </div>
+                )}
+                {targetSavingsBarPct > 0 && (
+                    <div className="h-full bg-emerald-500 relative group" style={{ width: `${targetSavingsBarPct}%` }}>
+                        <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white transition-opacity opacity-75 group-hover:opacity-100 whitespace-nowrap overflow-hidden">Target</div>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    // Main Calculations
+    const savingsAmount = Math.max(0, currentMonthIncome - totalSpent);
+    const savingsPct = (savingsAmount / safeIncome) * 100;
+    const isTotalOver = totalSpent > currentMonthIncome;
 
     return (
         <Card className="border-none shadow-md bg-white overflow-hidden h-full flex flex-col">
             <CardContent className="p-5 flex-1 flex flex-col">
 
                 {/* --- Header / Controls --- */}
-                <div className="flex items-center justify-between mb-6">
-                    <div className="flex-1">
+                <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
+                    <div className="flex-1 w-full sm:w-auto">
                         {monthNavigator}
                     </div>
-                    <div className="flex items-center gap-2 ml-4">
-                        {addIncomeButton}
-                        {addExpenseButton}
-                        {importDataButton}
+
+                    <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
+                        {/* THE TOGGLE */}
+                        <div className="flex items-center gap-2">
+                            <Label htmlFor="simple-view" className="text-xs text-gray-500 font-medium cursor-pointer">
+                                {isSimpleView ? 'Simple' : 'Detailed'}
+                            </Label>
+                            <Switch
+                                id="simple-view"
+                                checked={isSimpleView}
+                                onCheckedChange={handleViewToggle}
+                                className="scale-90"
+                            />
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            {addIncomeButton}
+                            {addExpenseButton}
+                            {importDataButton}
+                        </div>
                     </div>
                 </div>
 
@@ -161,20 +297,16 @@ export default function RemainingBudgetCard({
                             <div className="text-sm text-gray-500 mt-1">
                                 {currentMonthIncome > 0 ? (
                                     <>
-                                        You've spent <strong className={isTotalOver ? "text-red-600" : "text-gray-900"}>{formatCurrency(totalSpent, settings)}</strong> of your <strong>{formatCurrency(currentMonthIncome, settings)}</strong> income.
-                                    </>
-                                ) : totalSpent > 0 ? (
-                                    <>
-                                        You've spent <strong className="text-red-600">{formatCurrency(totalSpent, settings)}</strong>, but have no income recorded.
+                                        Spent <strong className={isTotalOver ? "text-red-600" : "text-gray-900"}>{formatCurrency(totalSpent, settings)}</strong> of <strong>{formatCurrency(currentMonthIncome, settings)}</strong>
                                     </>
                                 ) : (
-                                    "No income or expenses recorded."
+                                    "No income recorded."
                                 )}
                             </div>
                         </div>
 
-                        {/* Efficiency Bonus Badge */}
-                        {bonusSavingsPotential > 0 && !isTotalOver && (
+                        {/* Efficiency Bonus (Only show in Detailed View OR if relevant) */}
+                        {!isSimpleView && bonusSavingsPotential > 0 && !isTotalOver && (
                             <div className="text-right hidden sm:block">
                                 <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-100">
                                     <TrendingUp className="w-3 h-3 text-emerald-600" />
@@ -184,124 +316,45 @@ export default function RemainingBudgetCard({
                                 </div>
                             </div>
                         )}
+
+                        {/* Simple View Bonus: Just a simpler badge */}
+                        {isSimpleView && !isTotalOver && (
+                            <div className="text-right hidden sm:block">
+                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-50 border border-gray-100">
+                                    <Target className="w-3 h-3 text-gray-500" />
+                                    <span className="text-xs font-medium text-gray-600">
+                                        Left: {formatCurrency(savingsAmount, settings)}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
-                    {/* 2. The Visualization Bar */}
+                    {/* 2. The Visualization Bar (Switched) */}
                     <div className="space-y-2">
-                        <div className="relative h-8 w-full bg-gray-100 rounded-lg overflow-hidden flex shadow-inner">
+                        {isSimpleView ? renderSimpleBar() : renderDetailedBar()}
 
-                            {/* --- NEEDS SEGMENT --- */}
-                            <Link
-                                to={needsBudget ? `/BudgetDetail?id=${needsBudget.id}` : '#'}
-                                className={`h-full transition-all duration-500 relative group hover:brightness-110 cursor-pointer border-r border-white/20 overflow-hidden flex`}
-                                style={{ width: `${needsVisualPct}%` }}
-                            >
-                                {/* A. Safe Paid (Solid) */}
-                                {needsSegs.safePaid > 0 && (
-                                    <div className="h-full" style={{ width: `${(needsSegs.safePaid / needsSegs.total) * 100}%`, backgroundColor: needsColor }} />
-                                )}
-
-                                {/* B. Safe Unpaid (Striped) */}
-                                {needsSegs.safeUnpaid > 0 && (
-                                    <div className="h-full bg-blue-500 opacity-60" style={{ width: `${(needsSegs.safeUnpaid / needsSegs.total) * 100}%`, ...stripePattern }} />
-                                )}
-
-                                {/* C. Overflow (Red Striped) */}
-                                {needsSegs.overflow > 0 && (
-                                    <div className="h-full opacity-60" style={{ width: `${(needsSegs.overflow / needsSegs.total) * 100}%`, backgroundColor: 'red', ...stripePattern }} />
-                                )}
-
-                                <div className={`absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white transition-opacity ${needsVisualPct > 10 ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                                    Needs
+                        {/* --- Legend Row (Conditional) --- */}
+                        {!isSimpleView && (
+                            <div className="flex flex-col sm:flex-row justify-between text-xs text-gray-400 pt-1 gap-2">
+                                <div className="flex gap-4 items-center">
+                                    <span className="flex items-center gap-1.5">
+                                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: needsColor }}></div>
+                                        Essentials
+                                    </span>
+                                    <span className="flex items-center gap-1.5">
+                                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: wantsColor }}></div>
+                                        Lifestyle
+                                    </span>
                                 </div>
-                            </Link>
-
-                            {/* --- WANTS SEGMENT --- */}
-                            <Link
-                                to={wantsBudget ? `/BudgetDetail?id=${wantsBudget.id}` : '#'}
-                                className={`h-full transition-all duration-500 relative group hover:brightness-110 cursor-pointer border-r border-white/20 overflow-hidden flex`}
-                                style={{ width: `${wantsVisualPct}%` }}
-                            >
-                                {/* A. Safe Paid (Solid) */}
-                                {wantsSegs.safePaid > 0 && (
-                                    <div className="h-full" style={{ width: `${(wantsSegs.safePaid / wantsSegs.total) * 100}%`, backgroundColor: wantsColor }} />
-                                )}
-
-                                {/* B. Safe Unpaid (Striped) */}
-                                {wantsSegs.safeUnpaid > 0 && (
-                                    <div className="h-full opacity-60" style={{ width: `${(wantsSegs.safeUnpaid / wantsSegs.total) * 100}%`, backgroundColor: wantsColor, ...stripePattern }} />
-                                )}
-
-                                {/* C. Overflow (Red Striped) */}
-                                {wantsSegs.overflow > 0 && (
-                                    <div className="h-full bg-red-500" style={{ width: `${(wantsSegs.overflow / wantsSegs.total) * 100}%`, ...stripePattern }} />
-                                )}
-
-                                <div className={`absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white transition-opacity ${wantsVisualPct > 10 ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                                    Lifestyle
+                                <div className="flex items-center gap-2">
+                                    <Link to="/Settings" className="flex items-center gap-1 text-[10px] hover:text-blue-600 transition-colors">
+                                        <Target size={12} />
+                                        <span>Goals</span>
+                                    </Link>
                                 </div>
-                            </Link>
-
-                            {/* --- EFFICIENCY SAVINGS SEGMENT (Gap between Actual & Budget) --- */}
-                            {efficiencyBarPct > 0 && (
-                                <div
-                                    className="h-full bg-emerald-300 relative group border-r border-white/20"
-                                    style={{ width: `${efficiencyBarPct}%` }}
-                                >
-                                    <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-emerald-800 opacity-75 group-hover:opacity-100 transition-opacity whitespace-nowrap overflow-hidden">
-                                        Extra
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* --- TARGET SAVINGS SEGMENT (Gap between Budget & Income) --- */}
-                            {targetSavingsBarPct > 0 && (
-                                <div
-                                    className="h-full bg-emerald-500 relative group"
-                                    style={{ width: `${targetSavingsBarPct}%` }}
-                                >
-                                    <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white transition-opacity opacity-75 group-hover:opacity-100 whitespace-nowrap overflow-hidden">
-                                        Target
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* --- Legend Row --- */}
-                        <div className="flex flex-col sm:flex-row justify-between text-xs text-gray-400 pt-1 gap-2">
-                            {/* Amounts Legend */}
-                            <div className="flex gap-4 items-center">
-                                <span className="flex items-center gap-1.5">
-                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: needsColor }}></div>
-                                    Essentials: {formatCurrency(needsSegs.total, settings)}
-                                </span>
-                                <span className="flex items-center gap-1.5">
-                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: wantsColor }}></div>
-                                    Lifestyle: {formatCurrency(wantsSegs.total, settings)}
-                                </span>
                             </div>
-
-                            {/* Status Key */}
-                            <div className="flex gap-3 items-center text-[10px] bg-gray-50 px-2 py-1 rounded border border-gray-100">
-                                <span className="flex items-center gap-1">
-                                    <div className="w-2 h-2 bg-gray-400 rounded-sm"></div> Paid
-                                </span>
-                                <span className="flex items-center gap-1">
-                                    <div className="w-2 h-2 bg-gray-400/50 rounded-sm" style={stripePattern}></div> Plan
-                                </span>
-                                <span className="flex items-center gap-1 text-red-500 font-medium">
-                                    <div className="w-2 h-2 bg-red-500/80 rounded-sm" style={stripePattern}></div> Over
-                                </span>
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                                <span className="text-[10px] text-gray-400 font-medium hidden sm:inline">{goalSummary}</span>
-                                <Link to="/Settings" className="flex items-center gap-1 text-[10px] hover:text-blue-600 transition-colors">
-                                    <Target size={12} />
-                                    <span>Adjust</span>
-                                </Link>
-                            </div>
-                        </div>
+                        )}
                     </div>
 
                 </div>
