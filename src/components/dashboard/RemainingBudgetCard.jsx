@@ -614,10 +614,10 @@ export default function RemainingBudgetCard({
                             {addExpenseButton}
                             {/* Conditionally highlight the Add Income button if the month is empty */}
                             {isEmptyMonth && addIncomeButton ? (
-                                cloneElement(addIncomeButton, {
-                                    // Add a pulsing glow ring and shadow to draw attention
-                                    className: "ring-4 ring-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.4)] animate-pulse transition-all duration-500"
-                                })
+                                <div className="relative group">
+                                    <div className="absolute -inset-0.5 bg-emerald-400 rounded-lg blur opacity-75 animate-pulse group-hover:opacity-100 transition duration-1000"></div>
+                                    <div className="relative">{addIncomeButton}</div>
+                                </div>
                             ) : (
                                 addIncomeButton
                             )}
