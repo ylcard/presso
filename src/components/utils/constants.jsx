@@ -94,3 +94,15 @@ export const SUPPORTED_CURRENCIES = [
     { code: 'TWD', name: 'Taiwan Dollar', symbol: 'NT$' },
     { code: 'TRY', name: 'Turkish Lira', symbol: '₺' },
 ];
+
+// Fields monitored for changes in the Settings Page
+export const SETTINGS_KEYS = [
+    'baseCurrency',
+    'currencyPosition',
+    'budgetViewMode',
+    'thousandSeparator',
+    'decimalSeparator',
+    'decimalPlaces',
+    'hideTrailingZeros',
+    'fixedLifestyleMode'
+];
