@@ -251,19 +251,23 @@ export default function Settings() {
                     <p className="text-gray-500 mt-1">Manage your preferences and financial goals</p>
                 </div>
 
-                {/* CARD 1: GENERAL APP SETTINGS */}
-                <div className="space-y-6">
-                    <Card className="border-none shadow-lg">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <SettingsIcon className="w-5 h-5" />
-                                Currency & Formatting
-                            </CardTitle>
-                            <CardDescription>
-                                Configure how monetary values are displayed throughout the app
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
+                <Card className="border-none shadow-lg">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <SettingsIcon className="w-5 h-5" />
+                            Application Preferences
+                        </CardTitle>
+                        <CardDescription>
+                            Manage currency formatting and budget allocation goals
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        {/* SECTION 1: CURRENCY & FORMATTING */}
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
+                                <h3 className="font-semibold text-gray-900">Currency & Formatting</h3>
+                            </div>
+
                             {/* ... Currency Inputs ... */}
                             <div className="space-y-2">
                                 <Label htmlFor="currency">Currency</Label>
@@ -337,123 +341,121 @@ export default function Settings() {
                                     </Label>
                                 </div>
                             </div>
-
                             <div className="p-4 bg-slate-50 rounded-lg border border-slate-100">
                                 <p className="text-xs text-gray-500 mb-1">Preview</p>
                                 <p className="text-2xl font-bold text-gray-900">{formatCurrency(previewAmount, formData)}</p>
                             </div>
-                        </CardContent>
-                    </Card>
-                </div>
+                        </div>
 
-                {/* CARD 2: BUDGET GOALS (Logic moved here) */}
-                <Card className="border-none shadow-lg">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Target className="w-5 h-5" />
-                            Goal Allocation
-                        </CardTitle>
-                        <CardDescription>Define how your monthly income is split between Needs, Wants, and Savings.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        {loadingGoals ? (
-                            <Skeleton className="h-64 w-full" />
-                        ) : (
-                            <>
-                                {/* Mode Switcher */}
-                                <div className="flex items-center justify-center p-1 bg-gray-100 rounded-lg">
-                                    <button type="button" onClick={() => setLocalGoalMode(true)} className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${!isAbsoluteMode ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Percentage</button>
-                                    <button type="button" onClick={() => setLocalGoalMode(false)} className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${isAbsoluteMode ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Absolute Values</button>
+                        {/* SECTION 2: GOAL ALLOCATION (Merged) */}
+                        <div className="space-y-6 pt-6 border-t border-gray-200">
+                            <div>
+                                <div className="flex items-center gap-2 mb-1">
+                                    <Target className="w-5 h-5 text-gray-900" />
+                                    <h3 className="font-semibold text-gray-900">Goal Allocation</h3>
                                 </div>
+                                <p className="text-sm text-gray-500">Define how your monthly income is split between Needs, Wants, and Savings.</p>
+                            </div>
 
-                                {/* SLIDER VIEW (Percentage) */}
-                                {!isAbsoluteMode ? (
-                                    <div className="pt-6 pb-2 px-2 animate-in fade-in slide-in-from-top-2 duration-300">
-                                        <div ref={containerRef} className="relative h-6 w-full bg-gray-100 rounded-full select-none touch-none">
-                                            {/* Zones */}
-                                            <div className="absolute top-0 left-0 h-full rounded-l-full" style={{ width: `${splits.split1}%`, backgroundColor: FINANCIAL_PRIORITIES.needs.color }} />
-                                            <div className="absolute top-0 h-full" style={{ left: `${splits.split1}%`, width: `${splits.split2 - splits.split1}%`, backgroundColor: FINANCIAL_PRIORITIES.wants.color }} />
-                                            <div className="absolute top-0 h-full rounded-r-full" style={{ left: `${splits.split2}%`, width: `${100 - splits.split2}%`, backgroundColor: FINANCIAL_PRIORITIES.savings.color }} />
-
-                                            {/* Thumb 1 */}
-                                            <div onPointerDown={(e) => handlePointerDown(e, 1)} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} className={`absolute top-0 bottom-0 w-4 -ml-2 bg-white shadow-sm rounded-full border flex items-center justify-center z-10 hover:scale-110 transition-transform ${activeThumb === 1 ? 'cursor-grabbing' : 'cursor-grab'}`} style={{ left: `${splits.split1}%` }}>
-                                                <GripVertical className="w-2.5 h-2.5 text-gray-400" />
-                                            </div>
-                                            {/* Thumb 2 */}
-                                            <div onPointerDown={(e) => handlePointerDown(e, 2)} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} className={`absolute top-0 bottom-0 w-4 -ml-2 bg-white shadow-sm rounded-full border flex items-center justify-center z-10 hover:scale-110 transition-transform ${activeThumb === 2 ? 'cursor-grabbing' : 'cursor-grab'}`} style={{ left: `${splits.split2}%` }}>
-                                                <GripVertical className="w-3 h-3 text-gray-400" />
-                                            </div>
-                                        </div>
+                            {loadingGoals ? (
+                                <Skeleton className="h-64 w-full" />
+                            ) : (
+                                <>
+                                    {/* Mode Switcher */}
+                                    <div className="flex items-center justify-center p-1 bg-gray-100 rounded-lg">
+                                        <button type="button" onClick={() => setLocalGoalMode(true)} className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${!isAbsoluteMode ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Percentage</button>
+                                        <button type="button" onClick={() => setLocalGoalMode(false)} className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${isAbsoluteMode ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Absolute Values</button>
                                     </div>
-                                ) : (
-                                    /* INPUT VIEW (Absolute) */
-                                    <div className="pt-2 animate-in fade-in slide-in-from-top-2 duration-300 space-y-4">
-                                        <div className="grid grid-cols-1 gap-4">
-                                            {Object.entries(FINANCIAL_PRIORITIES)
-                                                // Optional: Sort by order property if you want a specific display order independent of object keys
-                                                .sort(([, a], [, b]) => a.order - b.order)
-                                                .map(([key, config]) => (
-                                                    <div key={key} className="space-y-1.5">
-                                                        <Label className="text-xs font-semibold uppercase tracking-wider text-gray-500 flex items-center gap-2">
-                                                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: config.color }} />
-                                                            {config.label}
-                                                        </Label>
-                                                        <div>
-                                                            <AmountInput
-                                                                value={absoluteValues[key]}
-                                                                onChange={(val) => setAbsoluteValues(prev => ({ ...prev, [key]: val }))}
-                                                                placeholder="0.00"
-                                                                className="font-mono"
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                        </div>
-                                        <div className="flex justify-between items-center pt-2 border-t border-gray-100">
-                                            <span className="text-sm font-medium text-gray-500">Total Allocated</span>
-                                            <span className="text-lg font-bold text-gray-900">
-                                                $ {Object.values(absoluteValues).reduce((acc, val) => acc + (Number(val) || 0), 0).toLocaleString()}
-                                            </span>
-                                        </div>
-                                    </div>
-                                )}
 
-                                {/* Lifestyle Creep Protection (Percentage Mode Only) */}
-                                {!isAbsoluteMode && (
-                                    <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-100 animate-in fade-in slide-in-from-top-1 duration-300 delay-75">
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2 bg-blue-100 rounded-full text-blue-600">
-                                                <Lock className="w-4 h-4" />
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-bold text-gray-900">Fixed Lifestyle Mode</p>
-                                                <p className="text-xs text-gray-500">If income rises, keep Needs budget fixed.</p>
-                                            </div>
-                                        </div>
-                                        <Switch
-                                            checked={formData.fixedLifestyleMode}
-                                            // Update local form state, handled by general submit usually, but here we can stick to settings sync
-                                            onCheckedChange={(checked) => handleFormChange('fixedLifestyleMode', checked)}
-                                        />
-                                    </div>
-                                )}
+                                    {/* SLIDER VIEW (Percentage) */}
+                                    {!isAbsoluteMode ? (
+                                        <div className="pt-6 pb-2 px-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                                            <div ref={containerRef} className="relative h-6 w-full bg-gray-100 rounded-full select-none touch-none">
+                                                {/* Zones */}
+                                                <div className="absolute top-0 left-0 h-full rounded-l-full" style={{ width: `${splits.split1}%`, backgroundColor: FINANCIAL_PRIORITIES.needs.color }} />
+                                                <div className="absolute top-0 h-full" style={{ left: `${splits.split1}%`, width: `${splits.split2 - splits.split1}%`, backgroundColor: FINANCIAL_PRIORITIES.wants.color }} />
+                                                <div className="absolute top-0 h-full rounded-r-full" style={{ left: `${splits.split2}%`, width: `${100 - splits.split2}%`, backgroundColor: FINANCIAL_PRIORITIES.savings.color }} />
 
-                                {/* Percentage Legend */}
-                                {!isAbsoluteMode && (
-                                    <div className="grid grid-cols-3 gap-4 animate-in fade-in">
-                                        {Object.entries(FINANCIAL_PRIORITIES).sort(([, a], [, b]) => a.order - b.order).map(([key, config]) => (
-                                            <div key={key} className="text-center space-y-1">
-                                                <div className="flex items-center justify-center gap-2 mb-1">
-                                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: config.color }} />
-                                                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">{config.label}</span>
+                                                {/* Thumb 1 */}
+                                                <div onPointerDown={(e) => handlePointerDown(e, 1)} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} className={`absolute top-0 bottom-0 w-4 -ml-2 bg-white shadow-sm rounded-full border flex items-center justify-center z-10 hover:scale-110 transition-transform ${activeThumb === 1 ? 'cursor-grabbing' : 'cursor-grab'}`} style={{ left: `${splits.split1}%` }}>
+                                                    <GripVertical className="w-2.5 h-2.5 text-gray-400" />
                                                 </div>
-                                                <div className="text-2xl font-bold text-gray-900">{Math.round(currentValues[key])}%</div>
+                                                {/* Thumb 2 */}
+                                                <div onPointerDown={(e) => handlePointerDown(e, 2)} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} className={`absolute top-0 bottom-0 w-4 -ml-2 bg-white shadow-sm rounded-full border flex items-center justify-center z-10 hover:scale-110 transition-transform ${activeThumb === 2 ? 'cursor-grabbing' : 'cursor-grab'}`} style={{ left: `${splits.split2}%` }}>
+                                                    <GripVertical className="w-3 h-3 text-gray-400" />
+                                                </div>
                                             </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </>
-                        )}
+                                        </div>
+                                    ) : (
+                                        /* INPUT VIEW (Absolute) */
+                                        <div className="pt-2 animate-in fade-in slide-in-from-top-2 duration-300 space-y-4">
+                                            <div className="grid grid-cols-1 gap-4">
+                                                {Object.entries(FINANCIAL_PRIORITIES)
+                                                    // Optional: Sort by order property if you want a specific display order independent of object keys
+                                                    .sort(([, a], [, b]) => a.order - b.order)
+                                                    .map(([key, config]) => (
+                                                        <div key={key} className="space-y-1.5">
+                                                            <Label className="text-xs font-semibold uppercase tracking-wider text-gray-500 flex items-center gap-2">
+                                                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: config.color }} />
+                                                                {config.label}
+                                                            </Label>
+                                                            <div>
+                                                                <AmountInput
+                                                                    value={absoluteValues[key]}
+                                                                    onChange={(val) => setAbsoluteValues(prev => ({ ...prev, [key]: val }))}
+                                                                    placeholder="0.00"
+                                                                    className="font-mono"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                            </div>
+                                            <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+                                                <span className="text-sm font-medium text-gray-500">Total Allocated</span>
+                                                <span className="text-lg font-bold text-gray-900">
+                                                    $ {Object.values(absoluteValues).reduce((acc, val) => acc + (Number(val) || 0), 0).toLocaleString()}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Lifestyle Creep Protection (Percentage Mode Only) */}
+                                    {!isAbsoluteMode && (
+                                        <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-100 animate-in fade-in slide-in-from-top-1 duration-300 delay-75">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 bg-blue-100 rounded-full text-blue-600">
+                                                    <Lock className="w-4 h-4" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-bold text-gray-900">Fixed Lifestyle Mode</p>
+                                                    <p className="text-xs text-gray-500">If income rises, keep Needs budget fixed.</p>
+                                                </div>
+                                            </div>
+                                            <Switch
+                                                checked={formData.fixedLifestyleMode}
+                                                // Update local form state, handled by general submit usually, but here we can stick to settings sync
+                                                onCheckedChange={(checked) => handleFormChange('fixedLifestyleMode', checked)}
+                                            />
+                                        </div>
+                                    )}
+
+                                    {/* Percentage Legend */}
+                                    {!isAbsoluteMode && (
+                                        <div className="grid grid-cols-3 gap-4 animate-in fade-in">
+                                            {Object.entries(FINANCIAL_PRIORITIES).sort(([, a], [, b]) => a.order - b.order).map(([key, config]) => (
+                                                <div key={key} className="text-center space-y-1">
+                                                    <div className="flex items-center justify-center gap-2 mb-1">
+                                                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: config.color }} />
+                                                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">{config.label}</span>
+                                                    </div>
+                                                    <div className="text-2xl font-bold text-gray-900">{Math.round(currentValues[key])}%</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
                     </CardContent>
                 </Card>
                 {/* --- STATIC ACTION BUTTONS --- */}
