@@ -151,6 +151,8 @@ export default function Dashboard() {
                             addIncomeButton={
                                 <QuickAddIncome
                                     open={showQuickAddIncome}
+                                    selectedMonth={selectedMonth}
+                                    selectedYear={selectedYear}
                                     onOpenChange={setShowQuickAddIncome}
                                     onSubmit={transactionActions.handleSubmit}
                                     isSubmitting={transactionActions.isSubmitting}
@@ -162,6 +164,8 @@ export default function Dashboard() {
                             addExpenseButton={
                                 <QuickAddTransaction
                                     open={showQuickAdd}
+                                    selectedMonth={selectedMonth}
+                                    selectedYear={selectedYear}
                                     onOpenChange={setShowQuickAdd}
                                     categories={categories}
                                     customBudgets={activeCustomBudgets}
