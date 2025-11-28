@@ -243,6 +243,15 @@ export default function RemainingBudgetCard({
     const savingsPct = (savingsAmount / safeIncome) * 100;
     const isTotalOver = totalSpent > currentMonthIncome;
 
+    // --- ANIMATION CONFIG: FLUID PHYSICS ---
+    // Low stiffness + mass = "Weighted/Fluid" feel
+    const fluidSpring = {
+        type: "spring",
+        stiffness: 300,
+        damping: 25,
+        mass: 1.2
+    };
+
     // --- RENDER: VIEW TOGGLE (Segmented Control) ---
     const ViewToggle = () => (
         <div className="flex bg-gray-100/80 p-1 rounded-lg border border-gray-200/50 relative isolate">
@@ -256,8 +265,8 @@ export default function RemainingBudgetCard({
                 {isSimpleView && (
                     <motion.div
                         layoutId="active-view-pill"
-                        className="absolute inset-0 bg-white rounded shadow-sm -z-10"
-                        transition={{ type: "spring", stiffness: 500, damping: 35 }}
+                        className="absolute inset-0 bg-white rounded-md shadow-[0_1px_3px_rgba(0,0,0,0.1)] -z-10"
+                        transition={fluidSpring}
                     />
                 )}
                 <LayoutList className="w-3.5 h-3.5" />
@@ -273,8 +282,8 @@ export default function RemainingBudgetCard({
                 {!isSimpleView && (
                     <motion.div
                         layoutId="active-view-pill"
-                        className="absolute inset-0 bg-white rounded shadow-sm -z-10"
-                        transition={{ type: "spring", stiffness: 500, damping: 35 }}
+                        className="absolute inset-0 bg-white rounded-md shadow-[0_1px_3px_rgba(0,0,0,0.1)] -z-10"
+                        transition={fluidSpring}
                     />
                 )}
                 <BarChart3 className="w-3.5 h-3.5" />
