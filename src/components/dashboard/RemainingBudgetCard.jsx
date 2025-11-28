@@ -55,12 +55,16 @@ export default function RemainingBudgetCard({
 
     // --- GOAL SUMMARY TEXT ---
     const GoalSummary = () => {
-        const isAbsolute = settings.goalAllocationMode === 'absolute';
+        // goalMode: true = Percentage, false = Absolute
+        const isAbsolute = settings.goalMode === false;
 
         const getValue = (priority) => {
             const goal = goals.find(g => g.priority === priority);
-            if (isAbsolute) return formatCurrency(goal?.target_amount || 0, settings);
-            return `${goal?.target_percentage || (priority === 'needs' ? 50 : priority === 'wants' ? 30 : 20)}%`;
+            if (isAbsolute) {
+                return formatCurrency(goal?.target_amount || 0, settings);
+            }
+            // Use nullish coalescing to fallback to defaults only if percentage is null/undefined
+            return `${goal?.target_percentage ?? (priority === 'needs' ? 50 : priority === 'wants' ? 30 : 20)}%`;
         };
 
         return (
