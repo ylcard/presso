@@ -96,7 +96,7 @@ export default function RemainingBudgetCard({
         };
 
         return (
-            <div className="flex items-center gap-1 text-[10px] font-medium hidden sm:flex">
+            <div className="flex items-center gap-1 text-xs font-medium hidden sm:flex">
                 <span style={{ color: needsColor }}>{getValue('needs')}</span>
                 <span className="text-gray-300">/</span>
                 <span style={{ color: wantsColor }}>{getValue('wants')}</span>
