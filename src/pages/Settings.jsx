@@ -389,7 +389,7 @@ export default function Settings() {
                                     ) : (
                                         /* INPUT VIEW (Absolute) */
                                         <div className="pt-2 animate-in fade-in slide-in-from-top-2 duration-300 space-y-4">
-                                            <div className="grid grid-cols-1 gap-4">
+                                            <div className="grid grid-cols-3 gap-4">
                                                 {Object.entries(FINANCIAL_PRIORITIES)
                                                     // Optional: Sort by order property if you want a specific display order independent of object keys
                                                     .sort(([, a], [, b]) => a.order - b.order)
