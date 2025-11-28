@@ -52,8 +52,10 @@ export default function Reports() {
     // Calculate Efficiency Bonus
     const bonusSavingsPotential = useMemo(() => {
         if (!monthStart || !monthEnd || !systemBudgets) return 0;
-        return calculateBonusSavingsPotential(systemBudgets, transactions, categories, allCustomBudgets, monthStart, monthEnd);
-    }, [systemBudgets, transactions, categories, allCustomBudgets, monthStart, monthEnd]);
+        const goalMode = settings?.goalMode ?? true;
+        // Updated to pass income and goalMode for correct calculation
+        return calculateBonusSavingsPotential(systemBudgets, transactions, categories, allCustomBudgets, monthStart, monthEnd, monthlyIncome, goalMode);
+    }, [systemBudgets, transactions, categories, allCustomBudgets, monthStart, monthEnd, monthlyIncome, settings]);
 
     // Calculate the "Safe Baseline" using your existing logic
     const projectionData = useMemo(() => calculateProjection(transactions, categories, 6), [transactions, categories]);
@@ -137,6 +139,7 @@ export default function Reports() {
                             goals={goals}
                             monthlyIncome={monthlyIncome}
                             isLoading={isLoading}
+                            settings={settings}
                         />
 
                     </div>
