@@ -64,7 +64,8 @@ export default function Dashboard() {
         selectedYear,
         allCustomBudgets,
         systemBudgets,
-        categories
+        categories,
+        settings
     );
 
     // NEW: Calculate the aggregated "Needs" and "Wants" totals using the new simplified logic
@@ -94,7 +95,8 @@ export default function Dashboard() {
             categories,
             goals,
             monthlyIncome,
-            settings.baseCurrency
+            settings.baseCurrency,
+            settings
         );
 
     const transactionActions = useTransactionActions({
