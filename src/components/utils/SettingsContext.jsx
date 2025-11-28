@@ -16,6 +16,7 @@ const defaultSettings = {
     dateFormat: 'MMM dd, yyyy',
     budgetViewMode: 'bars',
     fixedLifestyleMode: false,
+    simpleBudgetView: true,
     goalAllocationMode: 'percentage', // 'percentage' or 'absolute'
     absoluteGoals: { needs: 0, wants: 0, savings: 0 } // Store absolute amounts
 };
@@ -72,6 +73,7 @@ export const SettingsProvider = ({ children }) => {
                     dateFormat: userSettings.dateFormat || 'MMM dd, yyyy',
                     budgetViewMode: userSettings.budgetViewMode || 'bars',
                     fixedLifestyleMode: userSettings.fixedLifestyleMode || false,
+                    simpleBudgetView: userSettings.simpleBudgetView || true,
                     goalAllocationMode: userSettings.goalAllocationMode || 'percentage',
                     absoluteGoals: userSettings.absoluteGoals || { needs: 0, wants: 0, savings: 0 }
                 };
