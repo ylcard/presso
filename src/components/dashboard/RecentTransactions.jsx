@@ -107,7 +107,7 @@ export default function RecentTransactions({ transactions, categories, customBud
                                                 <>
                                                     <span className="text-gray-300">•</span>
                                                     {/* Standard Badge: Gray Theme (Exact same structure as Orange) */}
-                                                    <Badge variant="outline" className="text-xs bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100 transition-colors cursor-pointer px-2 py-0.5 font-medium">
+                                                    <Badge variant="outline" className="text-xs bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-200 hover:border-gray-300 hover:text-gray-900 transition-all cursor-pointer px-2 py-0.5 font-medium">
                                                         <Link to={`/BudgetDetail?id=${customBudget.id}`} className="flex items-center gap-1">
                                                             {customBudget.name}
                                                             <ExternalLink className="w-2.5 h-2.5 opacity-60" />
