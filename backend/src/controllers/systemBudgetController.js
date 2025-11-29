@@ -84,6 +84,24 @@ export const createSystemBudget = asyncHandler(async (req, res) => {
     endDate: new Date(req.body.endDate),
   };
 
+  // Check for existing budget to prevent duplicates
+  const existingBudget = await prisma.systemBudget.findFirst({
+    where: {
+      userId: req.user.id,
+      systemBudgetType: req.body.systemBudgetType,
+      startDate: data.startDate,
+      endDate: data.endDate
+    }
+  });
+
+  if (existingBudget) {
+    return res.status(200).json({
+      success: true,
+      message: 'System budget already exists',
+      data: existingBudget,
+    });
+  }
+
   const budget = await prisma.systemBudget.create({
     data,
   });
