@@ -38,8 +38,7 @@ export const useGoals = (user) => {
         queryKey: [QUERY_KEYS.GOALS],
         queryFn: async () => {
             if (!user) return [];
-            const allGoals = await base44.entities.BudgetGoal.list();
-            return allGoals.filter(g => g.user_email === user.email);
+            return await base44.entities.BudgetGoal.list();
         },
         initialData: [],
         enabled: !!user,
@@ -54,8 +53,7 @@ export const useCustomBudgetsAll = (user) => {
         queryKey: [QUERY_KEYS.CUSTOM_BUDGETS],
         queryFn: async () => {
             if (!user) return [];
-            const all = await base44.entities.CustomBudget.list('-startDate');
-            return all.filter(cb => cb.user_email === user.email);
+            return await base44.entities.CustomBudget.list('-startDate');
         },
         initialData: [],
         enabled: !!user,
@@ -70,8 +68,7 @@ export const useSystemBudgetsAll = (user) => {
         queryKey: [QUERY_KEYS.ALL_SYSTEM_BUDGETS],
         queryFn: async () => {
             if (!user) return [];
-            const all = await base44.entities.SystemBudget.list();
-            return all.filter(sb => sb.user_email === user.email);
+            return await base44.entities.SystemBudget.list();
         },
         initialData: [],
         enabled: !!user,
@@ -88,7 +85,6 @@ export const useSystemBudgetsForPeriod = (user, monthStart, monthEnd) => {
             if (!user) return [];
             const all = await base44.entities.SystemBudget.list();
             return all.filter(sb =>
-                sb.user_email === user.email &&
                 sb.startDate === monthStart &&
                 sb.endDate === monthEnd
             );
@@ -124,10 +120,9 @@ export const useAllBudgets = (user) => {
             const customBudgets = await base44.entities.CustomBudget.list();
             const systemBudgets = await base44.entities.SystemBudget.list();
 
-            // Include ALL custom budgets (both active and completed) - removed status filter
-            const userCustomBudgets = customBudgets.filter(cb => cb.user_email === user.email);
+            // Include ALL custom budgets (both active and completed)
+            const userCustomBudgets = customBudgets;
             const userSystemBudgets = systemBudgets
-                .filter(sb => sb.user_email === user.email)
                 .map(sb => ({
                     ...sb,
                     isSystemBudget: true,
@@ -150,9 +145,8 @@ export const useCategoryRules = (user) => {
         queryFn: async () => {
             if (!user) return [];
             const allRules = await base44.entities.CategoryRule.list();
-            // Filter by user and sort by priority (ascending)
+            // Sort by priority (ascending)
             return allRules
-                .filter(r => r.user_email === user.email)
                 .sort((a, b) => (a.priority || 0) - (b.priority || 0));
         },
         initialData: [],
@@ -281,7 +275,6 @@ export const useSystemBudgetManagement = (
                         // Check for duplicates before creating to prevent race conditions or multiple creations
                         const allSystemBudgetsCheck = await base44.entities.SystemBudget.list();
                         const duplicateCheck = allSystemBudgetsCheck.find(sb =>
-                            sb.user_email === user.email &&
                             sb.systemBudgetType === type &&
                             sb.startDate === monthStart &&
                             sb.endDate === monthEnd

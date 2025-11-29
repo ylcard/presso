@@ -194,7 +194,7 @@ export const useCustomBudgetActions = (config = {}) => {
     // CREATE: Use generic hook with intelligent status assignment and cash allocation
     const createMutation = useCreateEntity({
         entityName: 'CustomBudget',
-        queryKeysToInvalidate: [QUERY_KEYS.CUSTOM_BUDGETS],
+        queryKeysToInvalidate: [QUERY_KEYS.CUSTOM_BUDGETS, QUERY_KEYS.ALL_BUDGETS],
         onBeforeCreate: async (data) => {
             // CRITICAL: Determine status based on start date
             const today = new Date();

@@ -121,7 +121,7 @@ export default function Settings() {
     // --- 3. SMART SAVE LOGIC ---
     // Dirty Check: Compare current state vs DB state
     const hasChanges = useMemo(() => {
-        if (!settings || goals.length === 0) return false;
+        if (!settings) return false;
 
         // 1. General Settings
         // const settingsKeys = ['baseCurrency', 'currencyPosition', 'budgetViewMode', 'thousandSeparator', 'decimalSeparator', 'decimalPlaces', 'hideTrailingZeros', 'fixedLifestyleMode'];

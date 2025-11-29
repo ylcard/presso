@@ -47,7 +47,7 @@ export const updateCategorySchema = createCategorySchema.partial();
 export const createBudgetGoalSchema = z.object({
   priority: z.enum(['needs', 'wants', 'savings']),
   target_percentage: z.number().min(0).max(100).optional().nullable(),
-  target_amount: z.number().positive().optional().nullable(),
+  target_amount: z.number().min(0).optional().nullable(),
   is_absolute: z.boolean().default(false),
 }).refine(
   (data) => {
@@ -62,7 +62,7 @@ export const createBudgetGoalSchema = z.object({
 
 export const updateBudgetGoalSchema = z.object({
   target_percentage: z.number().min(0).max(100).optional().nullable(),
-  target_amount: z.number().positive().optional().nullable(),
+  target_amount: z.number().min(0).optional().nullable(),
   is_absolute: z.boolean().optional(),
 });
 

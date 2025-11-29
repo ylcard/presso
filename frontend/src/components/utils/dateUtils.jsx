@@ -17,7 +17,10 @@ export const parseDate = (dateString) => {
     if (!dateString) return null;
     if (dateString instanceof Date) return new Date(dateString);
     if (typeof dateString !== 'string') return null;
-    const [year, month, day] = dateString.split('-').map(Number);
+
+    // Handle ISO strings (e.g., 2023-10-27T00:00:00.000Z)
+    const cleanDateString = dateString.split('T')[0];
+    const [year, month, day] = cleanDateString.split('-').map(Number);
     return new Date(year, month - 1, day);
 };
 
