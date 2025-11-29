@@ -17,6 +17,7 @@ import {
 } from '../validations/schemas.js';
 
 const router = express.Router();
+console.log('[DEBUG] Loading transactionRoutes...');
 
 // All routes are protected
 router.use(authenticate);
