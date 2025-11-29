@@ -365,6 +365,10 @@ export default function TransactionFormContent({
             }
         }
 
+        // Determine budget type
+        const selectedBudget = allBudgets.find(b => b.id === formData.customBudgetId);
+        const isSystemBudget = selectedBudget?.isSystemBudget;
+
         const submitData = {
             title: formData.title,
             amount: finalAmount,
@@ -372,8 +376,8 @@ export default function TransactionFormContent({
             originalCurrency: formData.originalCurrency,
             exchangeRateUsed: exchangeRateUsed,
             type: formData.type,
-            category_id: formData.category_id || null,
-            financial_priority: formData.financial_priority || null, // ADDED 20-Jan-2025
+            categoryId: formData.category_id || null, // Fixed: category_id -> categoryId
+            financial_priority: formData.financial_priority || null,
             date: formData.date,
             notes: formData.notes || null
         };
@@ -381,14 +385,24 @@ export default function TransactionFormContent({
         if (formData.type === 'expense') {
             submitData.isPaid = formData.isCashExpense ? true : formData.isPaid;
             submitData.paidDate = formData.isCashExpense ? formData.date : (formData.isPaid ? (formData.paidDate || formData.date) : null);
-            submitData.customBudgetId = formData.customBudgetId || null;
+
+            // Handle System vs Custom Budget
+            if (isSystemBudget) {
+                submitData.systemBudgetId = formData.customBudgetId;
+                submitData.customBudgetId = null;
+            } else {
+                submitData.customBudgetId = formData.customBudgetId || null;
+                submitData.systemBudgetId = null;
+            }
+
             submitData.isCashTransaction = formData.isCashExpense;
             submitData.cashTransactionType = null;
         } else {
             submitData.isPaid = false;
             submitData.paidDate = null;
-            submitData.category_id = null;
+            submitData.categoryId = null; // Fixed
             submitData.customBudgetId = null;
+            submitData.systemBudgetId = null;
             submitData.isCashTransaction = false;
             submitData.cashTransactionType = null;
             submitData.cashAmount = null;

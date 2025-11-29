@@ -56,6 +56,9 @@ model Transaction {
   customBudgetId      String?
   customBudget        CustomBudget? @relation(fields: [customBudgetId], references: [id], onDelete: SetNull)
 
+  systemBudgetId      String?
+  systemBudget        SystemBudget? @relation(fields: [systemBudgetId], references: [id], onDelete: SetNull)
+
   @@index([userId, date])
   @@index([userId, type])
   @@index([categoryId])
@@ -117,6 +120,9 @@ model SystemBudget {
   // Foreign Keys
   userId              String
   user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Relations
+  transactions        Transaction[]
 
   @@index([userId, startDate, endDate])
   @@map("system_budgets")

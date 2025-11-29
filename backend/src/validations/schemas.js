@@ -27,6 +27,7 @@ export const createTransactionSchema = z.object({
   isCashTransaction: z.boolean().default(false),
   categoryId: z.string().optional().nullable(),
   customBudgetId: z.string().optional().nullable(),
+  systemBudgetId: z.string().optional().nullable(),
 });
 
 export const updateTransactionSchema = createTransactionSchema.partial();
