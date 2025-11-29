@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { getCurrencySymbol } from './currencyUtils';
 
 const SettingsContext = createContext();
 
@@ -65,7 +66,7 @@ export const SettingsProvider = ({ children }) => {
                 setSettingsId(userSettings.id);
                 const newSettings = {
                     baseCurrency: userSettings.baseCurrency || 'USD',
-                    currencySymbol: userSettings.currencySymbol || '$',
+                    currencySymbol: getCurrencySymbol(userSettings.baseCurrency || 'USD'),
                     currencyPosition: userSettings.currencyPosition || 'before',
                     thousandSeparator: userSettings.thousandSeparator || ',',
                     decimalSeparator: userSettings.decimalSeparator || '.',
