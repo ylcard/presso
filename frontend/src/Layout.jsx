@@ -13,7 +13,9 @@ import {
     SidebarMenuItem,
     SidebarHeader,
     SidebarProvider,
+    SidebarFooter,
 } from "@/components/ui/sidebar";
+import { UserProfile } from "@/components/ui/UserProfile";
 import { PeriodProvider } from "./components/hooks/usePeriod";
 
 const LayoutContent = ({ children }) => {
@@ -70,6 +72,9 @@ const LayoutContent = ({ children }) => {
                             </SidebarGroupContent>
                         </SidebarGroup>
                     </SidebarContent>
+                    <SidebarFooter>
+                        <UserProfile />
+                    </SidebarFooter>
                 </Sidebar>
 
                 <main className="flex-1 flex flex-col relative">

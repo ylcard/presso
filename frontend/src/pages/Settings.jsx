@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useSettings } from "../components/utils/SettingsContext";
+import { useAuth } from "@/lib/AuthContext";
 import { useSettingsForm, useGoalActions } from "../components/hooks/useActions";
 import { useGoals } from "../components/hooks/useBase44Entities";
 import { formatCurrency } from "../components/utils/currencyUtils";
@@ -22,6 +23,7 @@ import { showToast } from "@/components/ui/use-toast";
 
 export default function Settings() {
     const { settings, updateSettings, user } = useSettings();
+    const { logout } = useAuth();
 
     // --- 1. GENERAL SETTINGS LOGIC ---
     const { formData, handleFormChange, resetForm } = useSettingsForm(
@@ -421,16 +423,16 @@ export default function Settings() {
 
                                     {/* Lifestyle Creep Protection (Percentage Mode Only) */}
                                     {!isAbsoluteMode && (
-                                    <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-100 animate-in fade-in slide-in-from-top-1 duration-300 delay-75">
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2 bg-blue-100 rounded-full text-blue-600">
-                                                <Lock className="w-4 h-4" />
-                                            </div>
-                                            <div className="space-y-0.5">
-                                                <p className="text-sm font-bold text-gray-900">Inflation Protection</p>
-                                                <p className="text-xs text-gray-500 max-w-[280px] sm:max-w-md">
-                                                    Prevents lifestyle creep. If income spikes, budgets are calculated on the lower of your current vs average income.
-                                                </p>
+                                        <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-100 animate-in fade-in slide-in-from-top-1 duration-300 delay-75">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 bg-blue-100 rounded-full text-blue-600">
+                                                    <Lock className="w-4 h-4" />
+                                                </div>
+                                                <div className="space-y-0.5">
+                                                    <p className="text-sm font-bold text-gray-900">Inflation Protection</p>
+                                                    <p className="text-xs text-gray-500 max-w-[280px] sm:max-w-md">
+                                                        Prevents lifestyle creep. If income spikes, budgets are calculated on the lower of your current vs average income.
+                                                    </p>
                                                 </div>
                                             </div>
                                             <Switch
@@ -468,6 +470,14 @@ export default function Settings() {
                         className="w-full sm:w-auto text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
                     >
                         Reset to Defaults
+                    </CustomButton>
+
+                    <CustomButton
+                        onClick={() => logout()}
+                        variant="outline"
+                        className="w-full sm:w-auto text-gray-600 hover:text-gray-900"
+                    >
+                        Log Out
                     </CustomButton>
 
                     <div className="flex items-center gap-3 w-full sm:w-auto">
