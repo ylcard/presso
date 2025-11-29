@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { localApiClient } from "@/api/localApiClient";
 import { showToast } from "@/components/ui/use-toast";
 
 /**
@@ -44,9 +44,9 @@ import { showToast } from "@/components/ui/use-toast";
 export const useCreateEntity = ({
     entityName,
     queryKeysToInvalidate = [],
-    successMessage,
-    onBeforeCreate,
-    onAfterSuccess,
+    successMessage = null,
+    onBeforeCreate = null,
+    onAfterSuccess = null,
 }) => {
     const queryClient = useQueryClient();
 
@@ -58,8 +58,8 @@ export const useCreateEntity = ({
                 processedData = await onBeforeCreate(data);
             }
 
-            // Perform the entity creation via the base44 API
-            const result = await base44.entities[entityName].create(processedData);
+            // Perform the entity creation via the API
+            const result = await localApiClient.entities[entityName].create(processedData);
             return result;
         },
         onSuccess: (createdData) => {

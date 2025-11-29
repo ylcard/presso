@@ -1,6 +1,6 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { localApiClient } from "@/api/localApiClient";
 import { showToast } from "@/components/ui/use-toast";
 
 /**
@@ -34,7 +34,7 @@ import { showToast } from "@/components/ui/use-toast";
  *     // Handle complex cash wallet balance adjustments
  *     if (cashWallet && oldEntity) {
  *       // ... cash wallet adjustment logic ...
- *       await base44.entities.CashWallet.update(cashWallet.id, { balances: updatedBalances });
+ *       await localApiClient.entities.CashWallet.update(cashWallet.id, { balances: updatedBalances });
  *     }
  *     return data; // Return processed data
  *   },
@@ -64,9 +64,9 @@ import { showToast } from "@/components/ui/use-toast";
 export const useUpdateEntity = ({
     entityName,
     queryKeysToInvalidate = [],
-    successMessage,
-    onBeforeUpdate,
-    onAfterSuccess,
+    successMessage = null,
+    onBeforeUpdate = null,
+    onAfterSuccess = null,
 }) => {
     const queryClient = useQueryClient();
 
@@ -78,8 +78,8 @@ export const useUpdateEntity = ({
                 processedData = await onBeforeUpdate({ id, data, oldEntity });
             }
 
-            // Perform the entity update via the base44 API
-            const result = await base44.entities[entityName].update(id, processedData);
+            // Perform the entity update via the API
+            const result = await localApiClient.entities[entityName].update(id, processedData);
             return result;
         },
         onSuccess: (updatedData) => {

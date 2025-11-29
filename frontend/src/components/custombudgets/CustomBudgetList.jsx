@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { localApiClient } from "@/api/localApiClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import CustomBudgetCard from "./CustomBudgetCard";
 import { useSettings } from "../utils/SettingsContext";
@@ -17,12 +17,12 @@ export default function CustomBudgetList({ customBudgets, onEdit, onDelete }) {
 
     const { data: transactions = [] } = useQuery({
         queryKey: ['transactions'],
-        queryFn: () => base44.entities.Transaction.list(),
+        queryFn: () => localApiClient.entities.Transaction.list(),
         initialData: [],
     });
 
     const updateStatusMutation = useMutation({
-        mutationFn: ({ id, status }) => base44.entities.CustomBudget.update(id, { status }),
+        mutationFn: ({ id, status }) => localApiClient.entities.CustomBudget.update(id, { status }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['customBudgets'] });
         },

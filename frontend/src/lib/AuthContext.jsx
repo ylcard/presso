@@ -1,6 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
-
+import { localApiClient } from '@/api/localApiClient';
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
@@ -42,7 +41,7 @@ export const AuthProvider = ({ children }) => {
   const checkUserAuth = async () => {
     try {
       setIsLoadingAuth(true);
-      const currentUser = await base44.auth.me();
+      const currentUser = await localApiClient.auth.me();
       setUser(currentUser);
       setIsAuthenticated(true);
       setIsLoadingAuth(false);
@@ -68,14 +67,14 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(false);
 
     if (shouldRedirect) {
-      base44.auth.logout(window.location.href);
+      localApiClient.auth.logout(window.location.href);
     } else {
-      base44.auth.logout();
+      localApiClient.auth.logout();
     }
   };
 
   const navigateToLogin = () => {
-    base44.auth.redirectToLogin(window.location.href);
+    localApiClient.auth.redirectToLogin(window.location.href);
   };
 
   return (

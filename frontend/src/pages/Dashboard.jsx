@@ -9,7 +9,7 @@ import {
     useSystemBudgetsAll,
     useSystemBudgetsForPeriod,
     useSystemBudgetManagement,
-} from "../components/hooks/useBase44Entities";
+} from "../components/hooks/useEntities";
 import {
     usePaidTransactions,
     useMonthlyIncome,

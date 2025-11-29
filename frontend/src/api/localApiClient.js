@@ -206,5 +206,22 @@ export const localApiClient = {
                 return response.data || response;
             }
         }
+    },
+    integrations: {
+        Core: {
+            InvokeLLM: async (params) => {
+                console.warn("InvokeLLM not implemented in localApiClient");
+                // Mock response for exchange rates
+                return { rates: {} };
+            },
+            UploadFile: async (params) => {
+                console.warn("UploadFile not implemented in localApiClient");
+                return { file_url: "mock_url" };
+            },
+            ExtractDataFromUploadedFile: async (params) => {
+                console.warn("ExtractDataFromUploadedFile not implemented in localApiClient");
+                return { status: "success", output: { transactions: [] } };
+            }
+        }
     }
 };

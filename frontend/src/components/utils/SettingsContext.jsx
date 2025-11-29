@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { localApiClient } from '@/api/localApiClient';
+import { getCurrencySymbol } from './currencyUtils';
 
 const SettingsContext = createContext();
 
@@ -54,18 +55,18 @@ export const SettingsProvider = ({ children }) => {
 
     const loadSettings = async () => {
         try {
-            const currentUser = await base44.auth.me();
+            const currentUser = await localApiClient.auth.me();
             setUser(currentUser);
 
             // Filter by email directly to avoid fetching ALL user settings
-            const userSettingsArray = await base44.entities.UserSettings.filter({ user_email: currentUser.email });
+            const userSettingsArray = await localApiClient.entities.UserSettings.filter({ user_email: currentUser.email });
             const userSettings = userSettingsArray[0];
 
             if (userSettings) {
                 setSettingsId(userSettings.id);
                 const newSettings = {
                     baseCurrency: userSettings.baseCurrency || 'USD',
-                    currencySymbol: userSettings.currencySymbol || '$',
+                    currencySymbol: getCurrencySymbol(userSettings.baseCurrency || 'USD'),
                     currencyPosition: userSettings.currencyPosition || 'before',
                     thousandSeparator: userSettings.thousandSeparator || ',',
                     decimalSeparator: userSettings.decimalSeparator || '.',
@@ -115,7 +116,7 @@ export const SettingsProvider = ({ children }) => {
             let targetId = settingsId;
 
             if (!targetId && user?.email) {
-                const existing = await base44.entities.UserSettings.filter({ user_email: user.email });
+                const existing = await localApiClient.entities.UserSettings.filter({ user_email: user.email });
                 if (existing && existing[0]) {
                     targetId = existing[0].id;
                     setSettingsId(targetId); // Update state for next time
@@ -124,11 +125,11 @@ export const SettingsProvider = ({ children }) => {
 
             if (targetId) {
                 // Trying to apply a bug fix for the fixed mode not saving
-                // await base44.entities.UserSettings.update(targetId, updatedSettings);
-                await base44.entities.UserSettings.update(targetId, dbPayload);
+                // await localApiClient.entities.UserSettings.update(targetId, updatedSettings);
+                await localApiClient.entities.UserSettings.update(targetId, dbPayload);
             } else if (user?.email) {
                 // Only create if we genuinely couldn't find an existing record
-                const created = await base44.entities.UserSettings.create({
+                const created = await localApiClient.entities.UserSettings.create({
                     ...updatedSettings, // CRITICAL: Use full, merged settings for creation
                     ...dbPayload,
                     user_email: user.email
@@ -141,8 +142,13 @@ export const SettingsProvider = ({ children }) => {
         }
     };
 
+    const refreshUser = async () => {
+        const currentUser = await localApiClient.auth.me();
+        setUser(currentUser);
+    };
+
     return (
-        <SettingsContext.Provider value={{ settings, updateSettings, user, isLoading }}>
+        <SettingsContext.Provider value={{ settings, updateSettings, user, isLoading, refreshUser }}>
             {children}
         </SettingsContext.Provider>
     );

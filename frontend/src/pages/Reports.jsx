@@ -7,7 +7,7 @@ import {
     useGoals,
     useSystemBudgetsForPeriod,
     useCustomBudgetsAll
-} from "../components/hooks/useBase44Entities";
+} from "../components/hooks/useEntities";
 import { useMonthlyTransactions, useMonthlyIncome } from "../components/hooks/useDerivedData";
 import MonthlyBreakdown from "../components/reports/MonthlyBreakdown";
 import PriorityChart from "../components/reports/PriorityChart";

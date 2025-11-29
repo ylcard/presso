@@ -2,11 +2,11 @@ import { useState, useMemo } from "react";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Plus, ArrowDown } from "lucide-react";
 import { useConfirm } from "../components/ui/ConfirmDialogProvider";
-import { base44 } from "@/api/base44Client";
+import { localApiClient } from "@/api/localApiClient";
 import { useQueryClient } from "@tanstack/react-query";
 import { showToast } from "@/components/ui/use-toast";
 import { QUERY_KEYS } from "../components/hooks/queryKeys";
-import { useTransactions, useCategories, useCustomBudgetsAll } from "../components/hooks/useBase44Entities";
+import { useTransactions, useCategories, useCustomBudgetsAll } from "../components/hooks/useEntities";
 import { useAdvancedTransactionFiltering } from "../components/hooks/useDerivedData";
 import { useTransactionActions } from "../components/hooks/useActions";
 import { useSettings } from "../components/utils/SettingsContext";
@@ -103,7 +103,7 @@ export default function Transactions() {
 
 
                     for (const chunk of chunks) {
-                        const deletePromises = chunk.map(id => base44.entities.Transaction.delete(id));
+                        const deletePromises = chunk.map(id => localApiClient.entities.Transaction.delete(id));
                         await Promise.all(deletePromises);
                     }
 

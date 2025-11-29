@@ -4,7 +4,7 @@ import { Plus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSettings } from "../components/utils/SettingsContext";
 import { usePeriod } from "../components/hooks/usePeriod";
-import { useTransactions, useMiniBudgetsAll } from "../components/hooks/useBase44Entities";
+import { useTransactions, useMiniBudgetsAll } from "../components/hooks/useEntities";
 import { useMiniBudgetsFiltered } from "../components/hooks/useDerivedData";
 import { useMiniBudgetActions } from "../components/hooks/useActions";
 import {

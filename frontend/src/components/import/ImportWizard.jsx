@@ -5,12 +5,12 @@ import FileUploader from "./FileUploader";
 import ColumnMapper from "./ColumnMapper";
 import CategorizeReview from "./CategorizeReview";
 import { parseCSV } from "@/components/utils/simpleCsvParser";
-import { base44 } from "@/api/base44Client";
+import { localApiClient } from "@/api/localApiClient";
 import { useSettings } from "@/components/utils/SettingsContext";
 import { showToast } from "@/components/ui/use-toast";
 import { ArrowRight, Loader2, Upload } from "lucide-react";
-import { useCategories, useCategoryRules, useCustomBudgetsAll } from "@/components/hooks/useBase44Entities";
-import { categorizeTransaction } from "@/components/utils/transactionCategorization";
+import { useCategories, useCategoryRules, useCustomBudgetsAll } from "../hooks/useEntities";
+import { categorizeTransaction } from "../utils/transactionCategorization";
 import { createPageUrl } from "@/utils";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
@@ -67,10 +67,10 @@ export default function ImportWizard({ onSuccess }) {
         setError(null);
         try {
             showToast({ title: "Uploading...", description: "Uploading file for analysis." });
-            const { file_url } = await base44.integrations.Core.UploadFile({ file: file });
+            const { file_url } = await localApiClient.integrations.Core.UploadFile({ file: file });
 
             showToast({ title: "Analyzing...", description: "Extracting data from PDF. This may take a moment." });
-            const result = await base44.integrations.Core.ExtractDataFromUploadedFile({
+            const result = await localApiClient.integrations.Core.ExtractDataFromUploadedFile({
                 file_url: file_url,
                 json_schema: {
                     "type": "object",
@@ -242,7 +242,7 @@ export default function ImportWizard({ onSuccess }) {
                 };
             });
 
-            await base44.entities.Transaction.bulkCreate(transactionsToCreate);
+            await localApiClient.entities.Transaction.bulkCreate(transactionsToCreate);
 
             showToast({ title: "Success", description: `Imported ${transactionsToCreate.length} transactions.` });
             if (onSuccess) {

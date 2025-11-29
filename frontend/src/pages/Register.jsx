@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import { localApiClient } from '@/api/localApiClient';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,7 +22,7 @@ export default function Register() {
         setLoading(true);
 
         try {
-            const user = await base44.auth.register({ name, email, password });
+            const user = await localApiClient.auth.register({ name, email, password });
             if (user) {
                 // Redirect to home after successful registration
                 window.location.href = '/';

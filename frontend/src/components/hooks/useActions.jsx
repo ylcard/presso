@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { localApiClient } from "@/api/localApiClient";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { showToast } from "@/components/ui/use-toast";
 import { useCreateEntity } from "./useCreateEntity";
@@ -125,7 +125,7 @@ export const useGoalActions = (user, goals) => {
     const queryClient = useQueryClient();
 
     const updateGoalMutation = useMutation({
-        mutationFn: ({ id, data }) => base44.entities.BudgetGoal.update(id, data),
+        mutationFn: ({ id, data }) => localApiClient.entities.BudgetGoal.update(id, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GOALS] });
         },
@@ -135,7 +135,7 @@ export const useGoalActions = (user, goals) => {
     });
 
     const createGoalMutation = useMutation({
-        mutationFn: (data) => base44.entities.BudgetGoal.create(data),
+        mutationFn: (data) => localApiClient.entities.BudgetGoal.create(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.GOALS] });
         },
@@ -173,7 +173,7 @@ export const useGoalActions = (user, goals) => {
                         console.log(`Goal for ${priority} exists (409), fetching and updating...`);
                         try {
                             // Backend supports GET /api/budget-goals/:priority
-                            const existingGoal = await base44.entities.BudgetGoal.get(priority);
+                            const existingGoal = await localApiClient.entities.BudgetGoal.get(priority);
                             if (existingGoal) {
                                 return await updateGoalMutation.mutateAsync({
                                     id: existingGoal.id,
@@ -248,7 +248,7 @@ export const useCustomBudgetActions = (config = {}) => {
         queryKeysToInvalidate: [QUERY_KEYS.CUSTOM_BUDGETS, ['budget'], ['allBudgets']],
         onBeforeUpdate: async ({ id, data }) => {
             // CRITICAL: Use get() instead of list().find() for efficiency
-            const existingBudget = await base44.entities.CustomBudget.get(id);
+            const existingBudget = await localApiClient.entities.CustomBudget.get(id);
 
             if (!existingBudget) {
                 throw new Error('Budget not found');
@@ -269,7 +269,7 @@ export const useCustomBudgetActions = (config = {}) => {
         confirmMessage: "Are you sure you want to delete this budget? This will also delete all associated transactions and return cash allocations to your wallet.",
         onBeforeDelete: async (budgetId) => {
             // CRITICAL5: Use efficient get() instead of list().find()
-            const budget = await base44.entities.CustomBudget.get(budgetId);
+            const budget = await localApiClient.entities.CustomBudget.get(budgetId);
 
             if (!budget) {
                 throw new Error('Budget not found for deletion');
@@ -279,7 +279,7 @@ export const useCustomBudgetActions = (config = {}) => {
             const budgetTransactions = transactions.filter(t => t.customBudgetId === budgetId);
 
             for (const transaction of budgetTransactions) {
-                await base44.entities.Transaction.delete(transaction.id);
+                await localApiClient.entities.Transaction.delete(transaction.id);
             }
         },
         onAfterSuccess: () => {
@@ -295,7 +295,7 @@ export const useCustomBudgetActions = (config = {}) => {
         queryKeysToInvalidate: [QUERY_KEYS.CUSTOM_BUDGETS],
         onBeforeUpdate: async ({ id, data }) => {
             // CRITICAL: Use get() instead of list().find()
-            const budget = await base44.entities.CustomBudget.get(id);
+            const budget = await localApiClient.entities.CustomBudget.get(id);
 
             if (!budget) {
                 throw new Error('Budget not found');

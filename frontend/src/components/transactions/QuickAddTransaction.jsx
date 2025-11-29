@@ -9,7 +9,7 @@ import {
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Plus, Pencil } from "lucide-react";
 import { useSettings } from "../utils/SettingsContext";
-import { useAllBudgets } from "../hooks/useBase44Entities";
+import { useAllBudgets } from "../hooks/useEntities";
 import { formatDateString, getFirstDayOfMonth } from "../utils/dateUtils";
 import TransactionFormContent from "./TransactionFormContent";
 

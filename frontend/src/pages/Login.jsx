@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
+import { localApiClient } from '@/api/localApiClient';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,7 +24,7 @@ export default function Login() {
         setLoading(true);
 
         try {
-            const user = await base44.auth.login(email, password);
+            const user = await localApiClient.auth.login(email, password);
             if (user) {
                 // Force reload to update AuthContext state or use a context method if available
                 // For now, reload is safest to ensure all states are fresh

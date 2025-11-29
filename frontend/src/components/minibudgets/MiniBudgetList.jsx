@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { localApiClient } from "@/api/localApiClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import MiniBudgetCard from "./MiniBudgetCard";
 import { useSettings } from "../utils/SettingsContext";
@@ -17,12 +17,12 @@ export default function MiniBudgetList({ miniBudgets, onEdit, onDelete }) {
 
   const { data: transactions = [] } = useQuery({
     queryKey: ['transactions'],
-    queryFn: () => base44.entities.Transaction.list(),
+    queryFn: () => localApiClient.entities.Transaction.list(),
     initialData: [],
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: ({ id, status }) => base44.entities.MiniBudget.update(id, { status }),
+    mutationFn: ({ id, status }) => localApiClient.entities.MiniBudget.update(id, { status }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['miniBudgets'] });
     },
@@ -36,7 +36,7 @@ export default function MiniBudgetList({ miniBudgets, onEdit, onDelete }) {
     // Separate system and custom budgets
     const systemBudgets = miniBudgets.filter(mb => mb.isSystemBudget);
     const customBudgets = miniBudgets.filter(mb => !mb.isSystemBudget);
-    
+
     // Group custom budgets by status
     const grouped = customBudgets.reduce((acc, budget) => {
       const status = budget.status || 'active';
@@ -44,7 +44,7 @@ export default function MiniBudgetList({ miniBudgets, onEdit, onDelete }) {
       acc[status].push(budget);
       return acc;
     }, {});
-    
+
     return { systemBudgets, customBudgets: grouped };
   }, [miniBudgets]);
 

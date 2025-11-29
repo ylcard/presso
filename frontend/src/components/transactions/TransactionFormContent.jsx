@@ -23,7 +23,7 @@ import { SUPPORTED_CURRENCIES } from "../utils/constants";
 import { formatDateString, isDateInRange, formatDate } from "../utils/dateUtils";
 import { differenceInDays, parseISO, startOfDay } from "date-fns";
 import { normalizeAmount } from "../utils/generalUtils";
-import { useCategoryRules } from "../hooks/useBase44Entities";
+import { useCategoryRules } from "../hooks/useEntities";
 import { categorizeTransaction } from "../utils/transactionCategorization";
 
 export default function TransactionFormContent({

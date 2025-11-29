@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Plus } from "lucide-react";
-import { useCategories } from "../components/hooks/useBase44Entities";
+import { useCategories } from "../components/hooks/useEntities";
 import { useCategoryActions } from "../components/hooks/useActions";
 import CategoryForm from "../components/categories/CategoryForm";
 import CategoryGrid from "../components/categories/CategoryGrid";

@@ -2,7 +2,7 @@
 
 /*
 import { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { localApiClient } from "@/api/localApiClient";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { showToast } from "@/components/ui/use-toast";
 import { QUERY_KEYS } from "../hooks/queryKeys";
@@ -18,7 +18,7 @@ export const useCashWalletActions = (user, cashWallet, settings, exchangeRates) 
     // Ensure cash wallet exists
     const ensureCashWallet = async () => {
         if (!cashWallet && user) {
-            const wallet = await base44.entities.CashWallet.create({
+            const wallet = await localApiClient.entities.CashWallet.create({
                 balances: [],
                 user_email: user.email
             });
@@ -70,7 +70,7 @@ export const useCashWalletActions = (user, cashWallet, settings, exchangeRates) 
             }
 
             // Create transaction (as expense in base currency)
-            await base44.entities.Transaction.create({
+            await localApiClient.entities.Transaction.create({
                 title: data.title,
                 amount: convertedAmount,
                 originalAmount: data.amount,
@@ -95,7 +95,7 @@ export const useCashWalletActions = (user, cashWallet, settings, exchangeRates) 
                 data.amount
             );
 
-            await base44.entities.CashWallet.update(wallet.id, {
+            await localApiClient.entities.CashWallet.update(wallet.id, {
                 balances: updatedBalances
             });
         },
@@ -151,7 +151,7 @@ export const useCashWalletActions = (user, cashWallet, settings, exchangeRates) 
             }
 
             // Create transaction (as income in base currency)
-            await base44.entities.Transaction.create({
+            await localApiClient.entities.Transaction.create({
                 title: data.title,
                 amount: convertedAmount,
                 originalAmount: data.amount,
@@ -173,7 +173,7 @@ export const useCashWalletActions = (user, cashWallet, settings, exchangeRates) 
                 -data.amount
             ).filter(b => b.amount > 0.01); // Remove zero/near-zero balances
 
-            await base44.entities.CashWallet.update(wallet.id, {
+            await localApiClient.entities.CashWallet.update(wallet.id, {
                 balances: updatedBalances
             });
         },

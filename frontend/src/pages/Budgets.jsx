@@ -9,7 +9,7 @@ import {
     useCategories,
     useCustomBudgetsAll,
     useSystemBudgetsForPeriod,
-} from "../components/hooks/useBase44Entities";
+} from "../components/hooks/useEntities";
 import { useBudgetsAggregates } from "../components/hooks/useDerivedData";
 import { useCustomBudgetActions } from "../components/hooks/useActions";
 import { getCustomBudgetStats } from "../components/utils/financialCalculations";

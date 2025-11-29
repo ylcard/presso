@@ -6,7 +6,7 @@ import { useSettings } from "../utils/SettingsContext";
 import { formatCurrency } from "../utils/currencyUtils";
 import { getCategoryIcon } from "../utils/iconMapConfig";
 import QuickAddTransaction from "./QuickAddTransaction";
-import { useTransactions, useCategories } from "../hooks/useBase44Entities";
+import { useTransactions, useCategories } from "../hooks/useEntities";
 import { CustomButton } from "@/components/ui/CustomButton";
 
 export default function TransactionCard({ transaction, category, onEdit, onDelete }) {

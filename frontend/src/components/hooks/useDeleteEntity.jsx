@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { localApiClient } from "@/api/localApiClient";
 import { useConfirm } from "@/components/ui/ConfirmDialogProvider";
 import { showToast } from "@/components/ui/use-toast";
 
@@ -45,7 +45,7 @@ import { showToast } from "@/components/ui/use-toast";
  *     if (transaction.isCashTransaction && transaction.cashAmount && cashWallet) {
  *       const balances = [...cashWallet.balances];
  *       let updatedBalances = updateCurrencyBalance(balances, transaction.cashCurrency, transaction.cashAmount);
- *       await base44.entities.CashWallet.update(cashWallet.id, { balances: updatedBalances });
+ *       await localApiClient.entities.CashWallet.update(cashWallet.id, { balances: updatedBalances });
  *     }
  *   }
  * });
@@ -59,13 +59,13 @@ import { showToast } from "@/components/ui/use-toast";
  *   confirmMessage: "This will delete the budget and all associated transactions. Cash allocations will be returned to your wallet.",
  *   onBeforeDelete: async (budgetId) => {
  *     // CRITICAL: Fetch the specific budget efficiently
- *     const budget = await base44.entities.CustomBudget.get(budgetId);
+ *     const budget = await localApiClient.entities.CustomBudget.get(budgetId);
  *     if (!budget) throw new Error('Budget not found');
  *     
  *     // Delete all associated transactions
  *     const budgetTransactions = transactions.filter(t => t.customBudgetId === budgetId);
  *     for (const t of budgetTransactions) {
- *       await base44.entities.Transaction.delete(t.id);
+ *       await localApiClient.entities.Transaction.delete(t.id);
  *     }
  *     
  *     // Return remaining cash allocations to wallet
@@ -97,10 +97,10 @@ import { showToast } from "@/components/ui/use-toast";
 export const useDeleteEntity = ({
     entityName,
     queryKeysToInvalidate = [],
-    confirmTitle,
-    confirmMessage,
-    onBeforeDelete,
-    onAfterSuccess,
+    confirmTitle = "Delete Entity",
+    confirmMessage = "Are you sure you want to delete this entity?",
+    onBeforeDelete = null,
+    onAfterSuccess = null,
 }) => {
     const queryClient = useQueryClient();
     const { confirmAction } = useConfirm();
@@ -116,9 +116,9 @@ export const useDeleteEntity = ({
                 await onBeforeDelete(idOrEntity);
             }
 
-            // Perform the actual entity deletion via the base44 API
+            // Perform the actual entity deletion via the API
             // This line is only reached if onBeforeDelete completes successfully
-            await base44.entities[entityName].delete(id);
+            await localApiClient.entities[entityName].delete(id);
         },
         onSuccess: () => {
             // Invalidate all specified query keys to trigger refetches

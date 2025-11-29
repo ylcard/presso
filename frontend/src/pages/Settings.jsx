@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { useSettings } from "../components/utils/SettingsContext";
 import { useAuth } from "@/lib/AuthContext";
 import { useSettingsForm, useGoalActions } from "../components/hooks/useActions";
-import { useGoals } from "../components/hooks/useBase44Entities";
+import { useGoals } from "../components/hooks/useEntities";
 import { formatCurrency } from "../components/utils/currencyUtils";
 import { Settings as SettingsIcon, Target, GripVertical, Lock, Save, AlertCircle } from "lucide-react";
 import {
