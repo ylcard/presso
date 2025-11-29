@@ -1,8 +1,3 @@
-import { createClient } from '@base44/sdk';
-// import { getAccessToken } from '@base44/sdk/utils/auth-utils';
+import { localApiClient } from './localApiClient';
 
-// Create a client with authentication required
-export const base44 = createClient({
-  appId: "6902025277cb9a8be32b08bd", 
-  requiresAuth: true // Ensure authentication is required for all operations
-});
+export const base44 = localApiClient;

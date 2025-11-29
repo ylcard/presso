@@ -104,8 +104,6 @@ export default function ImportWizard({ onSuccess }) {
                 // 2. Determine type based on original string indicators
                 const isNegative = item.amount.toString().includes('-') || item.amount.toString().includes('(');
                 const type = isNegative ? 'expense' : 'income';
-<<<<<<< HEAD
-=======
 
                 // 3. Date Logic Correction: Ensure Transaction Date <= Paid Date
                 // Banks sometimes flip these or the AI extracts them swapped.
@@ -124,7 +122,6 @@ export default function ImportWizard({ onSuccess }) {
                     }
                 }
 
->>>>>>> upstream/main
 
                 // Enhanced categorization using rules and patterns
                 const catResult = categorizeTransaction(
@@ -143,18 +140,8 @@ export default function ImportWizard({ onSuccess }) {
                     category: catResult.categoryName || 'Uncategorized',
                     categoryId: catResult.categoryId || null,
                     financial_priority: catResult.priority || 'wants',
-<<<<<<< HEAD
-<<<<<<< HEAD
-                    isPaid: !!item.valueDate,
-                    paidDate: item.valueDate || null,
-=======
-                    // isPaid: !!item.valueDate,
-                    // paidDate: item.valueDate || null,
-=======
->>>>>>> upstream/main
                     isPaid: !!pdDate,
                     paidDate: pdDate || null,
->>>>>>> upstream/main
                     customBudgetId: null,
                     originalData: item
                 };

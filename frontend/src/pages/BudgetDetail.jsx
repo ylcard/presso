@@ -118,8 +118,7 @@ export default function BudgetDetail() {
     const { data: allocations = [] } = useQuery({
         queryKey: ['allocations', budgetId],
         queryFn: async () => {
-            const all = await base44.entities.CustomBudgetAllocation.list();
-            return all.filter(a => a.customBudgetId === budgetId);
+            return await base44.entities.CustomBudget.getAllocations(budgetId);
         },
         initialData: [],
         enabled: !!budgetId && budget && !budget.isSystemBudget,
@@ -138,21 +137,21 @@ export default function BudgetDetail() {
     });
 
     const createAllocationMutation = useMutation({
-        mutationFn: (data) => base44.entities.CustomBudgetAllocation.create(data),
+        mutationFn: (data) => base44.entities.CustomBudget.createAllocation(budgetId, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['allocations', budgetId] });
         },
     });
 
     const updateAllocationMutation = useMutation({
-        mutationFn: ({ id, data }) => base44.entities.CustomBudgetAllocation.update(id, data),
+        mutationFn: ({ id, data }) => base44.entities.CustomBudget.updateAllocation(budgetId, id, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['allocations', budgetId] });
         },
     });
 
     const deleteAllocationMutation = useMutation({
-        mutationFn: (id) => base44.entities.CustomBudgetAllocation.delete(id),
+        mutationFn: (id) => base44.entities.CustomBudget.deleteAllocation(budgetId, id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['allocations', budgetId] });
         },

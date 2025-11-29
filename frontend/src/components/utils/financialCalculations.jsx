@@ -167,33 +167,6 @@ export const getFinancialBreakdown = (transactions, categories, allCustomBudgets
  * FIX: Now uses t.amount (Base Currency) strictly to avoid currency mixing.
  */
 export const getCustomBudgetStats = (customBudget, transactions, monthStart, monthEnd, baseCurrency = 'USD') => {
-<<<<<<< HEAD
-    const budgetTransactions = transactions.filter(t => t.customBudgetId === customBudget.id);
-} else if (systemBudget.systemBudgetType === 'wants') {
-    const directPaid = getDirectPaidWantsExpenses(transactions, categories, startDate, endDate, allCustomBudgets);
-    const customPaid = getPaidCustomBudgetExpenses(transactions, allCustomBudgets, startDate, endDate);
-    paidAmount = directPaid + customPaid;
-
-    const directUnpaid = getDirectUnpaidWantsExpenses(transactions, categories, startDate, endDate, allCustomBudgets);
-    const customUnpaid = getUnpaidCustomBudgetExpenses(transactions, allCustomBudgets, startDate, endDate);
-    unpaidAmount = directUnpaid + customUnpaid;
-} else if (systemBudget.systemBudgetType === 'savings') {
-
-    const totalNeeds =
-        getPaidNeedsExpenses(transactions, categories, startDate, endDate, allCustomBudgets) +
-        getUnpaidNeedsExpenses(transactions, categories, startDate, endDate, allCustomBudgets);
-
-    const totalWants =
-        getDirectPaidWantsExpenses(transactions, categories, startDate, endDate, allCustomBudgets) +
-        getDirectUnpaidWantsExpenses(transactions, categories, startDate, endDate, allCustomBudgets) +
-        getPaidCustomBudgetExpenses(transactions, allCustomBudgets, startDate, endDate) +
-        getUnpaidCustomBudgetExpenses(transactions, allCustomBudgets, startDate, endDate);
-
-    // "Paid" in this context means "Actual Savings Achieved"
-    paidAmount = Math.max(0, monthlyIncome - totalNeeds - totalWants);
-    unpaidAmount = 0;
-}
-=======
     // If dates provided, filter by range, otherwise take all for that budget ID
     const budgetTransactions = transactions.filter(t => {
         if (t.customBudgetId !== customBudget.id) return false;
@@ -208,31 +181,26 @@ export const getCustomBudgetStats = (customBudget, transactions, monthStart, mon
     const spent = expenses.reduce((sum, t) => sum + t.amount, 0);
     const unpaid = expenses.filter(t => !t.isPaid).reduce((sum, t) => sum + t.amount, 0);
     const paidBase = expenses.filter(t => t.isPaid).reduce((sum, t) => sum + t.amount, 0);
->>>>>>> upstream/main
 
-const totalBudget = systemBudget.budgetAmount || 0;
-const totalSpent = paidAmount + unpaidAmount;
-const remaining = totalBudget - totalSpent;
-const percentageUsed = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
-
-return {
-    paid: {
-        totalBaseCurrencyAmount: paidAmount,
-        foreignCurrencyDetails: []
-    },
-    unpaid: {
-        totalBaseCurrencyAmount: unpaidAmount,
-        foreignCurrencyDetails: []
-    },
-    totalSpent,
-    paidAmount,
-    unpaidAmount,
-    remaining,
-    percentageUsed,
-    transactionCount: 0
+    return {
+        allocated,
+        spent,
+        unpaid,
+        remaining: allocated - spent,
+        paid: {
+            totalBaseCurrencyAmount: paidBase,
+            foreignCurrencyDetails: []
+        },
+        unpaid: {
+            totalBaseCurrencyAmount: unpaid,
+            foreignCurrencyDetails: []
+        },
+        totalAllocatedUnits: allocated,
+        totalSpentUnits: spent,
+        totalUnpaidUnits: unpaid,
+        totalTransactionCount: expenses.length
+    };
 };
-<<<<<<< HEAD
-=======
 
 /**
  * Calculates statistics for a system budget.
@@ -283,8 +251,8 @@ export const getSystemBudgetStats = (systemBudget, transactions, categories, all
         percentageUsed,
         // Pass granular stats back if UI needs them (e.g. for Direct vs Custom split)
         breakdown
->>>>>>> upstream/main
     };
+};
 
 /**
  * Calculates allocation statistics for a custom budget's categories.

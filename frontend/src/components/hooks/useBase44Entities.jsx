@@ -100,8 +100,7 @@ export const useAllocations = (budgetId) => {
     const { data: allocations = [], isLoading } = useQuery({
         queryKey: [QUERY_KEYS.ALLOCATIONS, budgetId],
         queryFn: async () => {
-            const all = await base44.entities.CustomBudgetAllocation.list();
-            return all.filter(a => a.customBudgetId === budgetId);
+            return await base44.entities.CustomBudget.getAllocations(budgetId);
         },
         initialData: [],
         enabled: !!budgetId,
