@@ -143,6 +143,10 @@ export const localApiClient = {
             const response = await apiClient.get('/api/auth/me');
             return response.data || response;
         },
+        updateProfile: async (data) => {
+            const response = await apiClient.put('/api/auth/me', data);
+            return response.data || response;
+        },
         logout: async (redirectUrl) => {
             try {
                 await apiClient.post('/api/auth/logout');

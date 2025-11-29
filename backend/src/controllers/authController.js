@@ -166,6 +166,58 @@ export const getMe = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @route   PUT /api/auth/me
+ * @desc    Update current user profile
+ * @access  Private
+ */
+export const updateProfile = asyncHandler(async (req, res) => {
+  const { name, email, password } = req.body;
+
+  const user = await prisma.user.findUnique({
+    where: { id: req.user.id },
+  });
+
+  if (!user) {
+    throw new ApiError(404, 'User not found');
+  }
+
+  // If email is being changed, check if it's already taken
+  if (email && email !== user.email) {
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    });
+    if (existingUser) {
+      throw new ApiError(409, 'Email already in use');
+    }
+  }
+
+  const updateData = {};
+  if (name) updateData.name = name;
+  if (email) updateData.email = email;
+  if (password) {
+    updateData.password = await bcrypt.hash(password, 10);
+  }
+
+  const updatedUser = await prisma.user.update({
+    where: { id: user.id },
+    data: updateData,
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  res.json({
+    success: true,
+    message: 'Profile updated successfully',
+    data: updatedUser,
+  });
+});
+
+/**
  * @route   POST /api/auth/logout
  * @desc    Logout user (client-side token removal)
  * @access  Private
