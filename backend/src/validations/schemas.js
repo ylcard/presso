@@ -16,12 +16,12 @@ export const loginSchema = z.object({
 export const createTransactionSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   amount: z.number().positive('Amount must be positive'),
-  date: z.string().datetime().or(z.date()),
+  date: z.coerce.date(),
   type: z.enum(['income', 'expense'], {
     errorMap: () => ({ message: 'Type must be either income or expense' }),
   }),
   isPaid: z.boolean().default(false),
-  paidDate: z.string().datetime().or(z.date()).nullable().optional(),
+  paidDate: z.coerce.date().nullable().optional(),
   notes: z.string().optional().nullable(),
   financial_priority: z.enum(['needs', 'wants', 'savings']).optional().nullable(),
   isCashTransaction: z.boolean().default(false),
@@ -53,7 +53,7 @@ export const createBudgetGoalSchema = z.object({
   (data) => {
     // Either target_percentage or target_amount must be provided
     return (data.target_percentage !== null && data.target_percentage !== undefined) ||
-           (data.target_amount !== null && data.target_amount !== undefined);
+      (data.target_amount !== null && data.target_amount !== undefined);
   },
   {
     message: 'Either target_percentage or target_amount must be provided',
@@ -70,8 +70,8 @@ export const updateBudgetGoalSchema = z.object({
 export const createSystemBudgetSchema = z.object({
   name: z.string().min(1, 'Budget name is required'),
   budgetAmount: z.number().min(0, 'Budget amount must be non-negative'),
-  startDate: z.string().datetime().or(z.date()),
-  endDate: z.string().datetime().or(z.date()),
+  startDate: z.coerce.date(),
+  endDate: z.coerce.date(),
   color: z.string().optional().nullable(),
   systemBudgetType: z.enum(['needs', 'wants', 'savings']),
 });
@@ -82,8 +82,8 @@ export const updateSystemBudgetSchema = createSystemBudgetSchema.partial();
 export const createCustomBudgetSchema = z.object({
   name: z.string().min(1, 'Budget name is required'),
   allocatedAmount: z.number().min(0, 'Allocated amount must be non-negative'),
-  startDate: z.string().datetime().or(z.date()),
-  endDate: z.string().datetime().or(z.date()),
+  startDate: z.coerce.date(),
+  endDate: z.coerce.date(),
   status: z.enum(['active', 'planned', 'completed', 'archived']).default('active'),
 });
 
@@ -104,8 +104,8 @@ export const updateCustomBudgetAllocationSchema = z.object({
 export const createMiniBudgetSchema = z.object({
   name: z.string().min(1, 'Mini budget name is required'),
   allocatedAmount: z.number().min(0, 'Allocated amount must be non-negative'),
-  startDate: z.string().datetime().or(z.date()),
-  endDate: z.string().datetime().or(z.date()),
+  startDate: z.coerce.date(),
+  endDate: z.coerce.date(),
   status: z.enum(['active', 'planned', 'completed', 'archived']).default('active'),
 });
 
@@ -170,12 +170,12 @@ export const transactionFilterSchema = z.object({
   cashStatus: z.enum(['cash_only', 'exclude_cash', 'all']).optional(),
   financialPriority: z.enum(['needs', 'wants', 'savings', 'all']).optional(),
   customBudgetId: z.string().optional(),
-  startDate: z.string().datetime().or(z.date()).optional(),
-  endDate: z.string().datetime().or(z.date()).optional(),
+  startDate: z.coerce.date().optional(),
+  endDate: z.coerce.date().optional(),
   search: z.string().optional(),
 });
 
 export const dateRangeSchema = z.object({
-  startDate: z.string().datetime().or(z.date()),
-  endDate: z.string().datetime().or(z.date()),
+  startDate: z.coerce.date().optional(),
+  endDate: z.coerce.date().optional(),
 });

@@ -4,13 +4,16 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { QUERY_KEYS } from "./queryKeys";
 import { getMonthlyIncome, resolveBudgetLimit } from "../utils/financialCalculations";
 import { useSettings } from "../utils/SettingsContext";
+import { useAuth } from "@/lib/AuthContext";
 
 // Hook to fetch transactions
 export const useTransactions = () => {
+    const { isAuthenticated } = useAuth();
     const { data: transactions = [], isLoading, error } = useQuery({
         queryKey: [QUERY_KEYS.TRANSACTIONS],
         queryFn: () => base44.entities.Transaction.list('date', 1000),
         initialData: [],
+        enabled: isAuthenticated,
     });
 
     return { transactions, isLoading, error };
@@ -18,10 +21,12 @@ export const useTransactions = () => {
 
 // Hook for fetching categories
 export const useCategories = () => {
+    const { isAuthenticated } = useAuth();
     const { data: categories = [], isLoading } = useQuery({
         queryKey: [QUERY_KEYS.CATEGORIES],
         queryFn: () => base44.entities.Category.list(),
         initialData: [],
+        enabled: isAuthenticated,
     });
 
     return { categories, isLoading };

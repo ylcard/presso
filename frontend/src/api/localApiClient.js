@@ -43,6 +43,8 @@ const createEntityProxy = (resource) => ({
         if (limit) params.limit = limit;
 
         const map = {
+            'Transaction': '/api/transactions',
+            'Category': '/api/categories',
             'CategoryRule': '/api/category-rules',
             'BudgetGoal': '/api/budget-goals',
             'SystemBudget': '/api/system-budgets',
@@ -59,6 +61,8 @@ const createEntityProxy = (resource) => ({
     },
     create: async (data) => {
         const map = {
+            'Transaction': '/api/transactions',
+            'Category': '/api/categories',
             'CategoryRule': '/api/category-rules',
             'BudgetGoal': '/api/budget-goals',
             'SystemBudget': '/api/system-budgets',
@@ -72,6 +76,8 @@ const createEntityProxy = (resource) => ({
     },
     update: async (id, data) => {
         const map = {
+            'Transaction': '/api/transactions',
+            'Category': '/api/categories',
             'CategoryRule': '/api/category-rules',
             'BudgetGoal': '/api/budget-goals',
             'SystemBudget': '/api/system-budgets',
@@ -85,6 +91,8 @@ const createEntityProxy = (resource) => ({
     },
     delete: async (id) => {
         const map = {
+            'Transaction': '/api/transactions',
+            'Category': '/api/categories',
             'CategoryRule': '/api/category-rules',
             'BudgetGoal': '/api/budget-goals',
             'SystemBudget': '/api/system-budgets',
