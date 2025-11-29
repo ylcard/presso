@@ -1,0 +1,245 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  transactions              Transaction[]
+  categories                Category[]
+  budgetGoals               BudgetGoal[]
+  systemBudgets             SystemBudget[]
+  customBudgets             CustomBudget[]
+  miniBudgets               MiniBudget[]
+  settings                  UserSettings?
+  cashWallet                CashWallet?
+  categoryRules             CategoryRule[]
+
+  @@map("users")
+}
+
+model Transaction {
+  id                  String    @id @default(cuid())
+  title               String
+  amount              Float
+  date                DateTime
+  type                String    // 'income' or 'expense'
+  isPaid              Boolean   @default(false)
+  paidDate            DateTime?
+  notes               String?
+  financial_priority  String?   // 'needs', 'wants', 'savings'
+  isCashTransaction   Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  // Foreign Keys
+  userId              String
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  categoryId          String?
+  category            Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  customBudgetId      String?
+  customBudget        CustomBudget? @relation(fields: [customBudgetId], references: [id], onDelete: SetNull)
+
+  @@index([userId, date])
+  @@index([userId, type])
+  @@index([categoryId])
+  @@map("transactions")
+}
+
+model Category {
+  id                      String   @id @default(cuid())
+  name                    String
+  icon                    String?
+  color                   String?
+  priority                String   // 'needs', 'wants', 'savings'
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  // Foreign Keys
+  userId                  String
+  user                    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Relations
+  transactions            Transaction[]
+  customBudgetAllocations CustomBudgetAllocation[]
+  categoryRules           CategoryRule[]
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@map("categories")
+}
+
+model BudgetGoal {
+  id                String   @id @default(cuid())
+  priority          String   @unique // 'needs', 'wants', 'savings'
+  target_percentage Float?   // Used in percentage mode
+  target_amount     Float?   // Used in absolute mode
+  is_absolute       Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Foreign Keys
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, priority])
+  @@index([userId])
+  @@map("budget_goals")
+}
+
+model SystemBudget {
+  id                  String   @id @default(cuid())
+  name                String
+  budgetAmount        Float
+  startDate           DateTime
+  endDate             DateTime
+  color               String?
+  systemBudgetType    String   // 'needs', 'wants', 'savings'
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  // Foreign Keys
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, startDate, endDate])
+  @@map("system_budgets")
+}
+
+model CustomBudget {
+  id              String   @id @default(cuid())
+  name            String
+  allocatedAmount Float
+  startDate       DateTime
+  endDate         DateTime
+  status          String   @default("active") // 'active', 'planned', 'completed', 'archived'
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Foreign Keys
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Relations
+  allocations     CustomBudgetAllocation[]
+  transactions    Transaction[]
+
+  @@index([userId, status])
+  @@map("custom_budgets")
+}
+
+model CustomBudgetAllocation {
+  id              String   @id @default(cuid())
+  allocatedAmount Float
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Foreign Keys
+  customBudgetId  String
+  customBudget    CustomBudget @relation(fields: [customBudgetId], references: [id], onDelete: Cascade)
+
+  categoryId      String
+  category        Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([customBudgetId, categoryId])
+  @@map("custom_budget_allocations")
+}
+
+model MiniBudget {
+  id              String   @id @default(cuid())
+  name            String
+  allocatedAmount Float
+  status          String   @default("active") // 'active', 'planned', 'completed', 'archived'
+  startDate       DateTime
+  endDate         DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Foreign Keys
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@map("mini_budgets")
+}
+
+model UserSettings {
+  id                  String   @id @default(cuid())
+  baseCurrency        String   @default("USD")
+  currencyPosition    String   @default("before") // 'before' or 'after'
+  thousandSeparator   String   @default(",")
+  decimalSeparator    String   @default(".")
+  decimalPlaces       Int      @default(2)
+  hideTrailingZeros   Boolean  @default(false)
+  dateFormat          String   @default("MMM dd, yyyy")
+  budgetViewMode      String   @default("bars") // 'bars' or 'cards'
+  fixedLifestyleMode  Boolean  @default(false)
+  goalMode            Boolean  @default(true) // true = percentage, false = absolute
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  // Foreign Keys (One-to-One)
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_settings")
+}
+
+model ExchangeRate {
+  id           String   @id @default(cuid())
+  fromCurrency String
+  toCurrency   String
+  rate         Float
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([fromCurrency, toCurrency])
+  @@map("exchange_rates")
+}
+
+model CashWallet {
+  id          String   @id @default(cuid())
+  amount      Float    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Foreign Keys (One-to-One)
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("cash_wallets")
+}
+
+model CategoryRule {
+  id         String   @id @default(cuid())
+  priority   Int      @default(0)
+  keywords   String[] // Array of keywords for auto-categorization
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Foreign Keys
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("category_rules")
+}
