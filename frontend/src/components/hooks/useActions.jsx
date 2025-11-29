@@ -159,12 +159,37 @@ export const useGoalActions = (user, goals) => {
                 });
             } else if (user) {
                 // Return the promise directly
-                return createGoalMutation.mutateAsync({
-                    priority,
-                    target_percentage: percentage,
-                    user_email: user.email,
-                    ...extraData
-                });
+                try {
+                    return await createGoalMutation.mutateAsync({
+                        priority,
+                        target_percentage: percentage,
+                        user_email: user.email,
+                        ...extraData
+                    });
+                } catch (error) {
+                    // If conflict (409), it means the goal already exists but wasn't in our list
+                    // Fetch it by priority and update it instead
+                    if (error.status === 409) {
+                        console.log(`Goal for ${priority} exists (409), fetching and updating...`);
+                        try {
+                            // Backend supports GET /api/budget-goals/:priority
+                            const existingGoal = await base44.entities.BudgetGoal.get(priority);
+                            if (existingGoal) {
+                                return await updateGoalMutation.mutateAsync({
+                                    id: existingGoal.id,
+                                    data: {
+                                        target_percentage: percentage,
+                                        ...extraData
+                                    }
+                                });
+                            }
+                        } catch (fetchError) {
+                            console.error('Error fetching existing goal after conflict:', fetchError);
+                            throw error; // Throw original error if recovery fails
+                        }
+                    }
+                    throw error;
+                }
             }
 
         } catch (error) {

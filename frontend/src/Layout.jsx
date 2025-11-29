@@ -39,7 +39,7 @@ const LayoutContent = ({ children }) => {
             <div className="min-h-screen flex w-full" style={{ backgroundColor: 'var(--bg-subtle)' }}>
                 <Sidebar className="hidden md:flex border-r border-gray-200">
                     <SidebarHeader className="border-b border-gray-200 p-6">
-                        <div className="flex items-center gap-3">
+                        <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
                                 <Wallet className="w-6 h-6 text-white" />
                             </div>
@@ -47,7 +47,7 @@ const LayoutContent = ({ children }) => {
                                 <h2 className="font-bold text-gray-900 text-lg">BudgetWise</h2>
                                 <p className="text-xs text-gray-500">Personal Finance</p>
                             </div>
-                        </div>
+                        </Link>
                     </SidebarHeader>
 
                     <SidebarContent className="p-3">

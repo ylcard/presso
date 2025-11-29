@@ -87,7 +87,7 @@ model Category {
 
 model BudgetGoal {
   id                String   @id @default(cuid())
-  priority          String   @unique // 'needs', 'wants', 'savings'
+  priority          String   // 'needs', 'wants', 'savings'
   target_percentage Float?   // Used in percentage mode
   target_amount     Float?   // Used in absolute mode
   is_absolute       Boolean  @default(false)
