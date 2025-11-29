@@ -141,8 +141,13 @@ export const SettingsProvider = ({ children }) => {
         }
     };
 
+    const refreshUser = async () => {
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+    };
+
     return (
-        <SettingsContext.Provider value={{ settings, updateSettings, user, isLoading }}>
+        <SettingsContext.Provider value={{ settings, updateSettings, user, isLoading, refreshUser }}>
             {children}
         </SettingsContext.Provider>
     );

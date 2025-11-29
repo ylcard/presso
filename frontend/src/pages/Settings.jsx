@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Input } from "@/components/ui/input";
+import { base44 } from "@/api/base44Client";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -22,7 +23,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { showToast } from "@/components/ui/use-toast";
 
 export default function Settings() {
-    const { settings, updateSettings, user } = useSettings();
+    const { settings, updateSettings, user, refreshUser } = useSettings();
     const { logout } = useAuth();
 
     // --- 1. GENERAL SETTINGS LOGIC ---
@@ -124,13 +125,11 @@ export default function Settings() {
         if (!settings) return false;
 
         // 1. General Settings
-        // const settingsKeys = ['baseCurrency', 'currencyPosition', 'budgetViewMode', 'thousandSeparator', 'decimalSeparator', 'decimalPlaces', 'hideTrailingZeros', 'fixedLifestyleMode'];
-        // if (settingsKeys.some(k => formData[k] !== settings[k])) return true;
         if (SETTINGS_KEYS.some(k => formData[k] !== settings[k])) return true;
         if (localGoalMode !== (settings.goalMode ?? true)) return true;
 
         // 2. Goals
-        return Object.keys(FINANCIAL_PRIORITIES).some(p => {
+        const goalsChanged = Object.keys(FINANCIAL_PRIORITIES).some(p => {
             const goal = goals.find(g => g.priority === p);
             if (!localGoalMode) { // Absolute
                 return (Number(absoluteValues[p]) || 0) !== (goal?.target_amount || 0);
@@ -139,7 +138,15 @@ export default function Settings() {
                 return Math.abs(currentValues[p] - (goal?.target_percentage || 0)) > 0.5;
             }
         });
-    }, [formData, settings, localGoalMode, absoluteValues, currentValues, goals]);
+        if (goalsChanged) return true;
+
+        // 3. Profile Settings
+        if (formData.name !== undefined && formData.name !== user?.name) return true;
+        if (formData.email !== undefined && formData.email !== user?.email) return true;
+        if (formData.password && formData.password.length > 0) return true;
+
+        return false;
+    }, [formData, settings, localGoalMode, absoluteValues, currentValues, goals, user]);
 
     // --- NAVIGATION GUARD (Browser Level) ---
     useEffect(() => {
@@ -199,6 +206,23 @@ export default function Settings() {
                     goalMode: localGoalMode
                 }));
             }
+
+            // A2. Profile Update (if changed)
+            if ((formData.name && formData.name !== user?.name) || (formData.email && formData.email !== user?.email) || formData.password) {
+                const profileData = {};
+                if (formData.name && formData.name !== user?.name) profileData.name = formData.name;
+                if (formData.email && formData.email !== user?.email) profileData.email = formData.email;
+                if (formData.password) profileData.password = formData.password;
+
+                if (Object.keys(profileData).length > 0) {
+                    promises.push(
+                        base44.auth.updateProfile(profileData)
+                            .then(() => refreshUser())
+                    );
+                }
+            }
+
+
 
             // B. Goal Updates (if changed)
             Object.keys(FINANCIAL_PRIORITIES).forEach((priority) => {
@@ -264,6 +288,40 @@ export default function Settings() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
+                        {/* SECTION 0: PROFILE SETTINGS */}
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
+                                <h3 className="font-semibold text-gray-900">Profile Settings</h3>
+                            </div>
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <Label>Full Name</Label>
+                                    <Input
+                                        value={formData.name || user?.name || ''}
+                                        onChange={(e) => handleFormChange('name', e.target.value)}
+                                        placeholder="Your Name"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Email Address</Label>
+                                    <Input
+                                        value={formData.email || user?.email || ''}
+                                        onChange={(e) => handleFormChange('email', e.target.value)}
+                                        placeholder="email@example.com"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>New Password (leave blank to keep current)</Label>
+                                    <Input
+                                        type="password"
+                                        value={formData.password || ''}
+                                        onChange={(e) => handleFormChange('password', e.target.value)}
+                                        placeholder="••••••••"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
                         {/* SECTION 1: CURRENCY & FORMATTING */}
                         <div className="space-y-6">
                             <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
