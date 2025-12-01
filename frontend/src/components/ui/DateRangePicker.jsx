@@ -9,12 +9,14 @@ import {
 import { useSettings } from "../utils/SettingsContext";
 import { formatDate } from "../utils/dateUtils";
 import DatePicker from "./DatePicker";
+import { useTranslation } from "react-i18next";
 
 export default function DateRangePicker({ startDate, endDate, onRangeChange }) {
     const { settings } = useSettings();
     const [open, setOpen] = useState(false);
     const [tempStart, setTempStart] = useState(startDate);
     const [tempEnd, setTempEnd] = useState(endDate);
+    const { t } = useTranslation();
 
     const handleApply = () => {
         onRangeChange(tempStart, tempEnd);
@@ -38,27 +40,27 @@ export default function DateRangePicker({ startDate, endDate, onRangeChange }) {
                             {formatDate(startDate, settings.dateFormat)} - {formatDate(endDate, settings.dateFormat)}
                         </span>
                     ) : (
-                        <span className="text-muted-foreground">Pick date range</span>
+                        <span className="text-muted-foreground">{t('pick_date_range')}</span>
                     )}
                 </CustomButton>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-4" align="start">
                 <div className="space-y-4">
                     <div className="space-y-2">
-                        <label className="text-sm font-medium">Start Date</label>
+                        <label className="text-sm font-medium">{t('start_date')}</label>
                         <DatePicker
                             value={tempStart}
                             onChange={(value) => setTempStart(value)}
-                            placeholder="Select start date"
+                            placeholder={t('select_start_date')}
                         />
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium">End Date</label>
+                        <label className="text-sm font-medium">{t('end_date')}</label>
                         <DatePicker
                             value={tempEnd}
                             onChange={(value) => setTempEnd(value)}
-                            placeholder="Select end date"
+                            placeholder={t('select_end_date')}
                         />
                     </div>
 
@@ -69,7 +71,7 @@ export default function DateRangePicker({ startDate, endDate, onRangeChange }) {
                             onClick={handleCancel}
                             className="flex-1"
                         >
-                            Cancel
+                            {t('cancel')}
                         </CustomButton>
                         <CustomButton
                             variant="primary"
@@ -77,7 +79,7 @@ export default function DateRangePicker({ startDate, endDate, onRangeChange }) {
                             onClick={handleApply}
                             className="flex-1"
                         >
-                            Apply
+                            {t('apply')}
                         </CustomButton>
                     </div>
                 </div>

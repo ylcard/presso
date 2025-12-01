@@ -32,8 +32,10 @@ import AllocationManager from "../components/custombudgets/AllocationManager";
 import BudgetCard from "../components/budgets/BudgetCard";
 import CustomBudgetForm from "../components/custombudgets/CustomBudgetForm";
 import ExpensesCardContent from "../components/budgetdetail/ExpensesCardContent";
+import { useTranslation } from "../hooks/useTranslation";
 
 export default function BudgetDetail() {
+    const { t } = useTranslation();
     const { settings, user } = useSettings();
     const queryClient = useQueryClient();
     const location = useLocation();
@@ -311,8 +313,8 @@ export default function BudgetDetail() {
     // Navigation now happens automatically via useDeleteEntity's onAfterSuccess callback in useCustomBudgetActions
     const handleDeleteBudget = () => {
         confirmAction(
-            "Delete Budget",
-            "This will delete the budget and all associated transactions. This action cannot be undone.",
+            t('budgets.detail.actions.deleteConfirm.title'),
+            t('budgets.detail.actions.deleteConfirm.message'),
             async () => {
                 await budgetActions.handleDeleteDirect(budgetId);
                 // Navigation moved to useDeleteEntity's onAfterSuccess to prevent premature redirect
@@ -338,12 +340,12 @@ export default function BudgetDetail() {
                     <Card className="border-none shadow-lg">
                         <CardContent className="p-12 text-center">
                             <AlertCircle className="w-16 h-16 text-orange-500 mx-auto mb-4" />
-                            <h2 className="text-2xl font-bold text-gray-900 mb-2">Budget Not Found</h2>
+                            <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('budgets.detail.notFound.title')}</h2>
                             <p className="text-gray-600 mb-4">
-                                The budget you're looking for doesn't exist or has been deleted.
+                                {t('budgets.detail.notFound.description')}
                             </p>
                             <p className="text-sm text-gray-500">
-                                Redirecting to budgets page...
+                                {t('budgets.detail.notFound.redirect')}
                             </p>
                         </CardContent>
                     </Card>
@@ -417,10 +419,10 @@ export default function BudgetDetail() {
                         <div className="flex items-center gap-2">
                             <h1 className="text-3xl md:text-4xl font-bold text-gray-900">{budget.name}</h1>
                             {budget.isSystemBudget && (
-                                <Badge variant="outline">System</Badge>
+                                <Badge variant="outline">{t('budgets.system.badge')}</Badge>
                             )}
                             {isCompleted && (
-                                <Badge className="bg-green-100 text-green-800">Completed</Badge>
+                                <Badge className="bg-green-100 text-green-800">{t('budgets.detail.status.completed')}</Badge>
                             )}
                         </div>
                         <p className="text-gray-500 mt-1">
@@ -432,7 +434,7 @@ export default function BudgetDetail() {
                             <Popover open={budgetActions.showForm} onOpenChange={budgetActions.setShowForm}>
                                 <PopoverTrigger asChild>
                                     <CustomButton variant="modify">
-                                        Edit Budget
+                                        {t('budgets.detail.actions.edit')}
                                     </CustomButton>
                                 </PopoverTrigger>
                                 <PopoverContent
@@ -442,7 +444,7 @@ export default function BudgetDetail() {
                                     sideOffset={8}
                                 >
                                     <div className="space-y-2">
-                                        <h3 className="font-semibold text-lg">Edit Budget</h3>
+                                        <h3 className="font-semibold text-lg">{t('budgets.detail.actions.edit')}</h3>
                                         <CustomBudgetForm
                                             budget={budget}
                                             onSubmit={handleEditBudget}
@@ -463,7 +465,7 @@ export default function BudgetDetail() {
                                 disabled={completeBudgetMutation.isPending}
                             >
                                 <CheckCircle className="w-4 h-4 mr-2" />
-                                Complete
+                                {t('budgets.detail.actions.complete')}
                             </CustomButton>
                         )}
                         {!budget.isSystemBudget && budget.status === 'completed' && (
@@ -472,7 +474,7 @@ export default function BudgetDetail() {
                                 onClick={() => reactivateBudgetMutation.mutate(budgetId)}
                                 disabled={reactivateBudgetMutation.isPending}
                             >
-                                Reactivate
+                                {t('budgets.detail.actions.reactivate')}
                             </CustomButton>
                         )}
                         {canDelete && (
@@ -481,7 +483,7 @@ export default function BudgetDetail() {
                                 onClick={handleDeleteBudget}
                             >
                                 <Trash2 className="w-4 h-4 mr-2" />
-                                Delete
+                                {t('budgets.detail.actions.delete')}
                             </CustomButton>
                         )}
                     </div>
@@ -490,7 +492,7 @@ export default function BudgetDetail() {
                 <div className="grid md:grid-cols-3 gap-4">
                     <Card className="border-none shadow-lg">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium text-gray-500">Budget</CardTitle>
+                            <CardTitle className="text-sm font-medium text-gray-500">{t('budgets.detail.cards.budget')}</CardTitle>
                             <DollarSign className="w-4 h-4 text-blue-500" />
                         </CardHeader>
                         <CardContent>
@@ -504,7 +506,7 @@ export default function BudgetDetail() {
 
                     <Card className="border-none shadow-lg">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium text-gray-500">Expenses</CardTitle>
+                            <CardTitle className="text-sm font-medium text-gray-500">{t('budgets.detail.cards.expenses')}</CardTitle>
                             <TrendingDown className="w-4 h-4 text-red-500" />
                         </CardHeader>
                         <CardContent>
@@ -514,7 +516,7 @@ export default function BudgetDetail() {
 
                     <Card className="border-none shadow-lg">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium text-gray-500">Remaining</CardTitle>
+                            <CardTitle className="text-sm font-medium text-gray-500">{t('budgets.detail.cards.remaining')}</CardTitle>
                             <CheckCircle className="w-4 h-4 text-green-500" />
                         </CardHeader>
                         <CardContent>
@@ -530,7 +532,7 @@ export default function BudgetDetail() {
                 {budget.description && (
                     <Card className="border-none shadow-lg">
                         <CardHeader>
-                            <CardTitle>Description</CardTitle>
+                            <CardTitle>{t('budgets.detail.cards.description')}</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <p className="text-gray-700">{budget.description}</p>
@@ -556,9 +558,9 @@ export default function BudgetDetail() {
                 {budget.isSystemBudget && relatedCustomBudgetsForDisplay.length > 0 && (
                     <Card className="border-none shadow-lg">
                         <CardHeader>
-                            <CardTitle>Custom Budgets ({relatedCustomBudgetsForDisplay.length})</CardTitle>
+                            <CardTitle>{t('budgets.custom.title')} ({relatedCustomBudgetsForDisplay.length})</CardTitle>
                             <p className="text-sm text-gray-500 mt-1">
-                                Custom budgets containing {budget.systemBudgetType} expenses
+                                {t('budgets.custom.description')}
                             </p>
                         </CardHeader>
                         <CardContent>
@@ -584,11 +586,11 @@ export default function BudgetDetail() {
                     <CardHeader className="flex flex-row items-center justify-between">
                         <div>
                             <CardTitle>
-                                {budget.isSystemBudget ? 'Direct Expenses' : 'Expenses'} ({budgetTransactions.length})
+                                {budget.isSystemBudget ? t('budgets.detail.cards.directExpenses') : t('budgets.detail.cards.expenses')} ({budgetTransactions.length})
                             </CardTitle>
                             {budget.isSystemBudget && (
                                 <p className="text-sm text-gray-500 mt-1">
-                                    Expenses not part of any custom budget
+                                    {t('budgets.detail.cards.expensesSubtitle')}
                                 </p>
                             )}
                         </div>
@@ -608,7 +610,7 @@ export default function BudgetDetail() {
                     <CardContent>
                         {budgetTransactions.length === 0 ? (
                             <div className="h-40 flex items-center justify-center text-gray-400">
-                                <p>No {budget.isSystemBudget ? 'direct ' : ''}expenses yet. Add your first one!</p>
+                                <p>{budget.isSystemBudget ? t('budgets.detail.cards.noDirectExpenses') : t('budgets.detail.cards.noExpenses')}</p>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

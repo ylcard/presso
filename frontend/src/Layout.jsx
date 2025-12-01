@@ -17,8 +17,10 @@ import {
 } from "@/components/ui/sidebar";
 import { UserProfile } from "@/components/ui/UserProfile";
 import { PeriodProvider } from "./components/hooks/usePeriod";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const LayoutContent = ({ children }) => {
+    const { t } = useTranslation();
     const location = useLocation();
 
     return (
@@ -63,7 +65,7 @@ const LayoutContent = ({ children }) => {
                                             >
                                                 <Link to={item.url} className="flex items-center gap-3 px-4 py-3">
                                                     <item.icon className="w-5 h-5" />
-                                                    <span className="font-medium">{item.title}</span>
+                                                    <span className="font-medium">{t(item.title)}</span>
                                                 </Link>
                                             </SidebarMenuButton>
                                         </SidebarMenuItem>
@@ -98,7 +100,7 @@ const LayoutContent = ({ children }) => {
                                     >
                                         <item.icon className={`w-5 h-5 sm:w-6 sm:h-6 ${isActive ? 'stroke-[2.5px]' : 'stroke-2'}`} />
                                         <span className={`text-[9px] sm:text-[10px] font-medium truncate max-w-full px-0.5 ${isActive ? 'font-semibold' : ''}`}>
-                                            {item.title}
+                                            {t(item.title)}
                                         </span>
                                     </Link>
                                 );

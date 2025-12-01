@@ -15,9 +15,14 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import { iconMap } from "../utils/iconMapConfig";
+import { useTranslation } from "react-i18next";
 
-export default function CategorySelect({ value, onValueChange, categories, placeholder = "Select category", multiple = false }) {
+export default function CategorySelect({ value, onValueChange, categories, placeholder, multiple = false }) {
+    const { t } = useTranslation();
     const [open, setOpen] = useState(false);
+
+    // Default placeholder if not provided
+    const displayPlaceholder = placeholder || t('select_category');
 
     // SORTING LOGIC: Needs -> Wants -> Savings -> Others (then Alphabetical)
     const sortedCategories = useMemo(() => {
@@ -76,9 +81,9 @@ export default function CategorySelect({ value, onValueChange, categories, place
                 >
                     {multiple ? (
                         selectedCategories.length > 0 ? (
-                            <span>{selectedCategories.length} selected</span>
+                            <span>{t('selected_count', { count: selectedCategories.length })}</span>
                         ) : (
-                            <span className="text-muted-foreground">{placeholder}</span>
+                            <span className="text-muted-foreground">{displayPlaceholder}</span>
                         )
                     ) : (
                         selectedCategory ? (
@@ -92,16 +97,16 @@ export default function CategorySelect({ value, onValueChange, categories, place
                                 <span>{selectedCategory.name}</span>
                             </div>
                         ) : (
-                            <span className="text-muted-foreground">{placeholder}</span>
+                            <span className="text-muted-foreground">{displayPlaceholder}</span>
                         )
                     )}
                 </CustomButton>
             </PopoverTrigger>
             <PopoverContent className="w-[200px] p-0" align="start">
                 <Command className="h-auto w-full overflow-visible">
-                    <CommandInput placeholder="Search category..." />
+                    <CommandInput placeholder={t('search_category')} />
                     <CommandList className="max-h-64 overflow-y-auto overflow-x-hidden">
-                        <CommandEmpty>No category found.</CommandEmpty>
+                        <CommandEmpty>{t('no_category_found')}</CommandEmpty>
                         <CommandGroup className="overflow-visible">
                             {sortedCategories.map((category) => {
                                 const Icon = category.icon && iconMap[category.icon] ? iconMap[category.icon] : Circle;

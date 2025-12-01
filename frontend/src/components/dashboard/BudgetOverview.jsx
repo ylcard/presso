@@ -4,9 +4,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getCategoryIcon } from "../utils/iconMapConfig";
 import { formatCurrency } from "../utils/currencyUtils";
 import { useSettings } from "../utils/SettingsContext";
+import { useTranslation } from "react-i18next";
 
 export default function BudgetOverview({ transactions, categories, isLoading }) {
     const { settings } = useSettings();
+    const { t } = useTranslation();
 
     const chartData = useMemo(() => {
         const categoryMap = categories.reduce((acc, cat) => {
@@ -29,26 +31,26 @@ export default function BudgetOverview({ transactions, categories, isLoading }) 
                 const category = categoryMap[categoryId];
                 return {
                     id: categoryId,
-                    name: category?.name || 'Uncategorized',
+                    name: category?.name || t('uncategorized'),
                     value: amount,
                     color: category?.color || '#94A3B8',
                     iconKey: category?.icon
                 };
             })
             .sort((a, b) => b.value - a.value);
-    }, [transactions, categories]);
+    }, [transactions, categories, t]);
 
     return (
         <Card className="border-none shadow-lg">
             <CardHeader>
-                <CardTitle>Spending by Category</CardTitle>
+                <CardTitle>{t('spending_by_category')}</CardTitle>
             </CardHeader>
             <CardContent>
                 {isLoading ? (
                     <Skeleton className="h-64 w-full" />
                 ) : chartData.length === 0 ? (
                     <div className="h-64 flex items-center justify-center text-gray-400">
-                        <p>No expenses yet. Start tracking your spending!</p>
+                        <p>{t('no_expenses_start_tracking')}</p>
                     </div>
                 ) : (
                     <div className="space-y-3">

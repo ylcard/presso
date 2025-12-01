@@ -11,10 +11,12 @@ import { useSettings } from "../utils/SettingsContext";
 import { usePeriod } from "../hooks/usePeriod";
 // Import cross-period detection for Settlement View indicators
 import { detectCrossPeriodSettlement } from "../utils/calculationEngine";
+import { useTranslation } from "react-i18next";
 
 export default function RecentTransactions({ transactions, categories, customBudgets }) {
     const { settings } = useSettings();
     const { currentYear, monthStart, monthEnd } = usePeriod();
+    const { t } = useTranslation();
 
     const categoryMap = createEntityMap(categories);
     const customBudgetMap = createEntityMap(customBudgets || []);
@@ -26,11 +28,11 @@ export default function RecentTransactions({ transactions, categories, customBud
         return (
             <Card className="border-none shadow-lg">
                 <CardHeader>
-                    <CardTitle>Recent Transactions</CardTitle>
+                    <CardTitle>{t('dashboard.recentTransactions')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="h-40 flex items-center justify-center text-gray-400">
-                        <p>No paid transactions yet. Add your first one!</p>
+                        <p>{t('dashboard.noPaidTransactions')}</p>
                     </div>
                 </CardContent>
             </Card>
@@ -40,9 +42,9 @@ export default function RecentTransactions({ transactions, categories, customBud
     return (
         <Card className="border-none shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Recent Transactions</CardTitle>
+                <CardTitle>{t('dashboard.recentTransactions')}</CardTitle>
                 <Link to={createPageUrl("Transactions")} className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1">
-                    View All
+                    {t('common.viewAll')}
                     <ArrowRight className="w-4 h-4" />
                 </Link>
             </CardHeader>
@@ -98,7 +100,7 @@ export default function RecentTransactions({ transactions, categories, customBud
                                                 <>
                                                     <span className="text-gray-300">•</span>
                                                     <p className="text-xs text-green-600">
-                                                        Paid {format(new Date(transaction.paidDate), showYear ? "MMM d, yyyy" : "MMM d")}
+                                                        {t('transactions.paidDate', { date: format(new Date(transaction.paidDate), showYear ? "MMM d, yyyy" : "MMM d") })}
                                                     </p>
                                                 </>
                                             )}

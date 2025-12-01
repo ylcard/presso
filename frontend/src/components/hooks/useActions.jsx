@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "../../hooks/useTranslation";
 import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { showToast } from "@/components/ui/use-toast";
@@ -13,6 +14,7 @@ import { useSettings } from "../utils/SettingsContext";
 // Hook for transaction actions (CRUD operations - Transactions page)
 export const useTransactionActions = (config = {}) => {
     const { setShowForm, setEditingTransaction, ...options } = config;
+    const { t } = useTranslation();
 
     // CREATE: Use generic hook with cash wallet preprocessing
     const createMutation = useCreateEntity({
@@ -39,8 +41,8 @@ export const useTransactionActions = (config = {}) => {
     const { handleDelete: handleDeleteTransaction } = useDeleteEntity({
         entityName: 'Transaction',
         queryKeysToInvalidate: [QUERY_KEYS.TRANSACTIONS],
-        confirmTitle: "Delete Transaction",
-        confirmMessage: "Are you sure you want to delete this transaction? This action cannot be undone.",
+        confirmTitle: t('transactions.delete.title'),
+        confirmMessage: t('transactions.delete.confirmSingle'),
     });
 
     const handleSubmit = (data, editingTransaction) => {
@@ -71,6 +73,7 @@ export const useTransactionActions = (config = {}) => {
 // Uses generic useCreateEntity, useUpdateEntity, and useDeleteEntity hooks
 // Hook for category actions (CRUD operations)
 export const useCategoryActions = (setShowForm, setEditingCategory) => {
+    const { t } = useTranslation();
     // CREATE: Use generic hook (no preprocessing needed)
     const createMutation = useCreateEntity({
         entityName: 'Category',
@@ -95,8 +98,8 @@ export const useCategoryActions = (setShowForm, setEditingCategory) => {
     const { handleDelete: handleDeleteCategory } = useDeleteEntity({
         entityName: 'Category',
         queryKeysToInvalidate: [QUERY_KEYS.CATEGORIES],
-        confirmTitle: "Delete Category",
-        confirmMessage: "Are you sure you want to delete this category? This will not delete associated transactions.",
+        confirmTitle: t('categories.deleteConfirm.title'),
+        confirmMessage: t('categories.deleteConfirm.message'),
     });
 
     const handleSubmit = (data, editingCategory) => {
@@ -213,6 +216,7 @@ export const useGoalActions = (user, goals) => {
 export const useCustomBudgetActions = (config = {}) => {
     const { user } = useSettings();
     const { transactions, ...options } = config;
+    const { t } = useTranslation();
     const [showForm, setShowForm] = useState(false);
     const [editingBudget, setEditingBudget] = useState(null);
 
@@ -265,8 +269,8 @@ export const useCustomBudgetActions = (config = {}) => {
     const { handleDelete: handleDeleteBudget, deleteDirect, isDeleting } = useDeleteEntity({
         entityName: 'CustomBudget',
         queryKeysToInvalidate: [QUERY_KEYS.CUSTOM_BUDGETS, QUERY_KEYS.TRANSACTIONS],
-        confirmTitle: "Delete Budget",
-        confirmMessage: "Are you sure you want to delete this budget? This will also delete all associated transactions and return cash allocations to your wallet.",
+        confirmTitle: t('budgets.detail.actions.deleteConfirm.title'),
+        confirmMessage: t('budgets.detail.actions.deleteConfirm.message'),
         onBeforeDelete: async (budgetId) => {
             // CRITICAL5: Use efficient get() instead of list().find()
             const budget = await base44.entities.CustomBudget.get(budgetId);

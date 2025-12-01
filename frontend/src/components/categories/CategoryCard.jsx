@@ -3,10 +3,13 @@ import { Pencil, Trash2, Circle } from "lucide-react";
 import { motion } from "framer-motion";
 import { iconMap } from "../utils/iconMapConfig";
 import { FINANCIAL_PRIORITIES } from "../utils/constants";
+import { useTranslation } from "react-i18next";
 
 export default function CategoryCard({ category, onEdit, onDelete }) {
+    const { t } = useTranslation();
     const IconComponent = category.icon && iconMap[category.icon] ? iconMap[category.icon] : Circle;
-    const priorityConfig = FINANCIAL_PRIORITIES[category.priority] || { label: category.priority, color: '#6b7280' };
+    const priorityConfig = FINANCIAL_PRIORITIES[category.priority] || { color: '#6b7280' };
+    const label = FINANCIAL_PRIORITIES[category.priority] ? t(`settings.goals.priorities.${category.priority}`) : category.priority;
 
     return (
         <motion.div
@@ -28,7 +31,7 @@ export default function CategoryCard({ category, onEdit, onDelete }) {
             <div className="flex-1 min-w-0">
                 <h2 className="font-bold text-gray-900 text-sm truncate select-none">{category.name}</h2>
                 <p className="text-xs font-medium truncate" style={{ color: priorityConfig.color }}>
-                    {priorityConfig.label}
+                    {label}
                 </p>
             </div>
 

@@ -10,9 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGr
 import { Checkbox } from "@/components/ui/checkbox";
 import CategorySelect from "@/components/ui/CategorySelect";
 import { parseDate, formatDate } from "@/components/utils/dateUtils";
+import { useTranslation } from "react-i18next";
 
 export default function CategorizeReview({ data, categories, customBudgets = [], onUpdateRow, onDeleteRows }) {
     const { settings } = useSettings();
+    const { t } = useTranslation();
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
     const [selectedIndices, setSelectedIndices] = useState(new Set());
 
@@ -100,11 +102,11 @@ export default function CategorizeReview({ data, categories, customBudgets = [],
                 <div className="flex justify-between items-center">
                     <div>
                         <CardTitle className="flex items-center gap-2">
-                            <span>Review & Categorize</span>
-                            <Badge variant="outline">{data.length} records</Badge>
+                            <span>{t('import.reviewCategorize')}</span>
+                            <Badge variant="outline">{data.length} {t('import.records')}</Badge>
                         </CardTitle>
                         <p className="text-sm text-gray-500 mt-1">
-                            Review the automatically categorized transactions below.
+                            {t('import.reviewCategorizeDesc')}
                         </p>
                     </div>
                     {selectedIndices.size > 0 && (
@@ -115,7 +117,7 @@ export default function CategorizeReview({ data, categories, customBudgets = [],
                             className="animate-in fade-in slide-in-from-top-1"
                         >
                             <Trash2 className="w-4 h-4 mr-2" />
-                            Delete {selectedIndices.size} Selected
+                            {t('import.deleteSelected', { count: selectedIndices.size })}
                         </CustomButton>
                     )}
                 </div>
@@ -135,22 +137,22 @@ export default function CategorizeReview({ data, categories, customBudgets = [],
                                     className="cursor-pointer hover:bg-gray-50 transition-colors whitespace-nowrap"
                                     onClick={() => handleSort('date')}
                                 >
-                                    <div className="flex items-center">Date {getSortIcon('date')}</div>
+                                    <div className="flex items-center">{t('import.fields.date')} {getSortIcon('date')}</div>
                                 </TableHead>
                                 <TableHead
                                     className="cursor-pointer hover:bg-gray-50 transition-colors"
                                     onClick={() => handleSort('title')}
                                 >
-                                    <div className="flex items-center">Title {getSortIcon('title')}</div>
+                                    <div className="flex items-center">{t('import.fields.title')} {getSortIcon('title')}</div>
                                 </TableHead>
-                                <TableHead className="w-[200px]">Category</TableHead>
-                                <TableHead className="w-[180px]">Budget</TableHead>
-                                <TableHead className="w-[110px]">Priority</TableHead>
+                                <TableHead className="w-[200px]">{t('import.fields.category')}</TableHead>
+                                <TableHead className="w-[180px]">{t('import.fields.budget')}</TableHead>
+                                <TableHead className="w-[110px]">{t('import.fields.priority')}</TableHead>
                                 <TableHead
                                     className="text-right cursor-pointer hover:bg-gray-50 transition-colors"
                                     onClick={() => handleSort('amount')}
                                 >
-                                    <div className="flex items-center justify-end">Amount {getSortIcon('amount')}</div>
+                                    <div className="flex items-center justify-end">{t('import.fields.amount')} {getSortIcon('amount')}</div>
                                 </TableHead>
                             </TableRow>
                         </TableHeader>
@@ -178,7 +180,7 @@ export default function CategorizeReview({ data, categories, customBudgets = [],
                                                     const cat = categories.find(c => c.id === value);
                                                     onUpdateRow(row.originalIndex, {
                                                         categoryId: value,
-                                                        category: cat ? cat.name : 'Uncategorized',
+                                                        category: cat ? cat.name : t('uncategorized'),
                                                         financial_priority: cat ? (cat.priority || 'wants') : row.financial_priority
                                                     });
                                                 }}
@@ -205,14 +207,14 @@ export default function CategorizeReview({ data, categories, customBudgets = [],
                                                 }}
                                             >
                                                 <SelectTrigger className="w-full h-8 text-xs">
-                                                    <SelectValue placeholder="Select Budget" />
+                                                    <SelectValue placeholder={t('import.selectBudget')} />
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     <SelectItem value="system">
                                                         <div className="flex items-center">
                                                             <Star className="w-3 h-3 text-blue-600 mr-2" />
                                                             <span>
-                                                                {row.financial_priority ? row.financial_priority.charAt(0).toUpperCase() + row.financial_priority.slice(1) : 'System Budget'}
+                                                                {row.financial_priority ? row.financial_priority.charAt(0).toUpperCase() + row.financial_priority.slice(1) : t('system_budget')}
                                                                 {(() => {
                                                                     const d = parseDate(row.date);
                                                                     if (!d) return null;
@@ -224,7 +226,7 @@ export default function CategorizeReview({ data, categories, customBudgets = [],
                                                     </SelectItem>
                                                     {sortedCustomBudgets.length > 0 && (
                                                         <SelectGroup>
-                                                            <SelectLabel>Custom Budgets</SelectLabel>
+                                                            <SelectLabel>{t('custom_budgets')}</SelectLabel>
                                                             {sortedCustomBudgets.map(cb => (
                                                                 <SelectItem key={cb.id} value={cb.id}>
                                                                     <div className="flex items-center">
@@ -253,9 +255,9 @@ export default function CategorizeReview({ data, categories, customBudgets = [],
                                                     <SelectValue />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="needs">Needs</SelectItem>
-                                                    <SelectItem value="wants">Wants</SelectItem>
-                                                    <SelectItem value="savings">Savings</SelectItem>
+                                                    <SelectItem value="needs">{t('reports.kpi.needs')}</SelectItem>
+                                                    <SelectItem value="wants">{t('reports.kpi.wants')}</SelectItem>
+                                                    <SelectItem value="savings">{t('reports.kpi.savings')}</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         ) : (

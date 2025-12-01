@@ -1,38 +1,26 @@
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import CustomBudgetForm from "../custombudgets/CustomBudgetForm";
 import { useSettings } from "../utils/SettingsContext";
+import { useTranslation } from "../../hooks/useTranslation";
 
-export default function QuickAddBudget({
-    open,
-    onOpenChange,
-    onSubmit,
-    isSubmitting,
-    baseCurrency
-}) {
+export default function QuickAddBudget({ open, onOpenChange, onSubmit, isSubmitting, baseCurrency }) {
     const { settings } = useSettings();
-
-    const handleSubmitWrapper = (data) => {
-        onSubmit(data);
-        onOpenChange(false);
-    };
+    const { t } = useTranslation();
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent
-                className="sm:max-w-2xl max-h-[90vh] overflow-y-auto"
-                aria-describedby="create-budget-description"
-            >
-                <span id="create-budget-description" className="sr-only">Create a new custom budget</span>
+            <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                    <DialogTitle>Create Budget</DialogTitle>
+                    <DialogTitle>{t('budgets.form.createTitle')}</DialogTitle>
+                    <DialogDescription className="sr-only">
+                        {t('budgets.form.createTitle')}
+                    </DialogDescription>
                 </DialogHeader>
                 <CustomBudgetForm
-                    onSubmit={handleSubmitWrapper}
+                    onSubmit={(data) => {
+                        onSubmit(data);
+                        onOpenChange(false);
+                    }}
                     onCancel={() => onOpenChange(false)}
                     isSubmitting={isSubmitting}
                     baseCurrency={baseCurrency}

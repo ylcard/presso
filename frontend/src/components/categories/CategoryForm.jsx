@@ -8,8 +8,10 @@ import { X, Circle, ChevronDown, Search, Check } from "lucide-react"; // Added I
 import { iconMap, ICON_OPTIONS } from "../utils/iconMapConfig";
 import { motion, AnimatePresence } from "framer-motion";
 import { PRIORITY_OPTIONS, PRESET_COLORS } from "../utils/constants";
+import { useTranslation } from "../../hooks/useTranslation";
 
 export default function CategoryForm({ category, onSubmit, onCancel, isSubmitting }) {
+    const { t } = useTranslation();
     const [formData, setFormData] = useState({
         name: '',
         icon: 'Circle',
@@ -63,7 +65,7 @@ export default function CategoryForm({ category, onSubmit, onCancel, isSubmittin
             >
                 <Card className="border-none shadow-2xl max-h-[90vh] overflow-y-auto">
                     <CardHeader className="sticky top-0 z-10 bg-white border-b flex flex-row items-center justify-between">
-                        <CardTitle>{category ? 'Edit' : 'Create'} Category</CardTitle>
+                        <CardTitle>{category ? t('categories.form.editTitle') : t('categories.form.createTitle')}</CardTitle>
                         <CustomButton variant="ghost" size="icon" onClick={onCancel}>
                             <X className="w-4 h-4" />
                         </CustomButton>
@@ -80,18 +82,18 @@ export default function CategoryForm({ category, onSubmit, onCancel, isSubmittin
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="name">Category Name</Label>
+                                <Label htmlFor="name">{t('categories.form.nameLabel')}</Label>
                                 <Input
                                     id="name"
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    placeholder="e.g., Groceries, Entertainment"
+                                    placeholder={t('categories.form.namePlaceholder')}
                                     required
                                 />
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Icon Selection</Label>
+                                <Label>{t('categories.form.iconLabel')}</Label>
 
                                 {/* Custom Searchable Dropdown Trigger */}
                                 <div className="relative">
@@ -105,7 +107,9 @@ export default function CategoryForm({ category, onSubmit, onCancel, isSubmittin
                                                 <IconComponent className="w-5 h-5 text-gray-700" />
                                             </div>
                                             <span className="text-sm font-medium text-gray-700">
-                                                {ICON_OPTIONS.find(opt => opt.value === formData.icon)?.label || formData.icon}
+                                                {ICON_OPTIONS.find(opt => opt.value === formData.icon)
+                                                    ? t(`categories.icons.${formData.icon}`, { defaultValue: ICON_OPTIONS.find(opt => opt.value === formData.icon).label })
+                                                    : formData.icon}
                                             </span>
                                         </div>
                                         <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isIconPickerOpen ? 'rotate-180' : ''}`} />
@@ -126,7 +130,7 @@ export default function CategoryForm({ category, onSubmit, onCancel, isSubmittin
                                                         <Search className="absolute left-2 top-2.5 w-4 h-4 text-gray-400" />
                                                         <Input
                                                             autoFocus
-                                                            placeholder="Search icons (e.g. food, home)..."
+                                                            placeholder={t('categories.form.searchPlaceholder')}
                                                             className="pl-8 h-9 bg-white"
                                                             value={iconSearchQuery}
                                                             onChange={(e) => setIconSearchQuery(e.target.value)}
@@ -155,7 +159,7 @@ export default function CategoryForm({ category, onSubmit, onCancel, isSubmittin
                                                                     >
                                                                         <div className="flex items-center gap-3">
                                                                             <OptionIcon className="w-5 h-5 opacity-70" />
-                                                                            <span>{option.label}</span>
+                                                                            <span>{t(`categories.icons.${option.value}`, { defaultValue: option.label })}</span>
                                                                         </div>
                                                                         {isSelected && <Check className="w-4 h-4" />}
                                                                     </button>
@@ -163,7 +167,7 @@ export default function CategoryForm({ category, onSubmit, onCancel, isSubmittin
                                                             })
                                                         ) : (
                                                             <div className="p-4 text-center text-gray-500 text-sm">
-                                                                No icons found for "{iconSearchQuery}"
+                                                                {t('categories.form.noIconsFound', { query: iconSearchQuery })}
                                                             </div>
                                                         )}
                                                     </div>
@@ -175,7 +179,7 @@ export default function CategoryForm({ category, onSubmit, onCancel, isSubmittin
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Color</Label>
+                                <Label>{t('categories.form.colorLabel')}</Label>
                                 <div className="grid grid-cols-5 md:grid-cols-10 gap-2">
                                     {PRESET_COLORS.map((color) => (
                                         <button
@@ -197,7 +201,7 @@ export default function CategoryForm({ category, onSubmit, onCancel, isSubmittin
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="priority">Priority</Label>
+                                <Label htmlFor="priority">{t('categories.form.priorityLabel')}</Label>
                                 <Select
                                     value={formData.priority}
                                     onValueChange={(value) => setFormData({ ...formData, priority: value })}
@@ -209,8 +213,8 @@ export default function CategoryForm({ category, onSubmit, onCancel, isSubmittin
                                         {PRIORITY_OPTIONS.map((option) => (
                                             <SelectItem key={option.value} value={option.value}>
                                                 <div>
-                                                    <p className="font-medium">{option.label}</p>
-                                                    <p className="text-xs text-gray-500">{option.description}</p>
+                                                    <p className="font-medium">{t(`categories.priorities.${option.value}.label`)}</p>
+                                                    <p className="text-xs text-gray-500">{t(`categories.priorities.${option.value}.description`)}</p>
                                                 </div>
                                             </SelectItem>
                                         ))}
@@ -220,14 +224,14 @@ export default function CategoryForm({ category, onSubmit, onCancel, isSubmittin
 
                             <div className="flex justify-end gap-3 pt-4">
                                 <CustomButton type="button" variant="outline" onClick={onCancel}>
-                                    Cancel
+                                    {t('common.cancel')}
                                 </CustomButton>
                                 <CustomButton
                                     type="submit"
                                     disabled={isSubmitting}
                                     variant="primary"
                                 >
-                                    {isSubmitting ? 'Saving...' : category ? 'Update' : 'Create'}
+                                    {isSubmitting ? t('common.saving') : category ? t('common.update') : t('common.create')}
                                 </CustomButton>
                             </div>
                         </form>

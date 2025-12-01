@@ -14,6 +14,7 @@ import AmountInput from "../ui/AmountInput";
 import DatePicker from "../ui/DatePicker";
 import { formatDateString, getFirstDayOfMonth } from "../utils/dateUtils";
 import { normalizeAmount } from "../utils/generalUtils";
+import { useTranslation } from "react-i18next";
 
 export default function QuickAddIncome({
     open,
@@ -27,6 +28,7 @@ export default function QuickAddIncome({
     selectedMonth,
     selectedYear
 }) {
+    const { t } = useTranslation();
 
     // Helper to determine initial date based on context
     const getInitialDate = () => {
@@ -38,7 +40,7 @@ export default function QuickAddIncome({
         // Otherwise default to the 1st of the selected month
         return getFirstDayOfMonth(selectedMonth, selectedYear);
     };
-   
+
 
     const [formData, setFormData] = useState({
         title: '',
@@ -47,7 +49,7 @@ export default function QuickAddIncome({
         // date: formatDateString(new Date())
         date: getInitialDate()
     });
-    
+
     // CRITICAL: Ensure form date updates when the component opens or the selected month changes
     useEffect(() => {
         if (open) {
@@ -83,22 +85,22 @@ export default function QuickAddIncome({
                         className={triggerClassName}
                     >
                         <Plus className="w-4 h-4 mr-2" />
-                        Add Income
+                        {t('transactions.actions.addIncome')}
                     </CustomButton>
                 </DialogTrigger>
             )}
             <DialogContent className="sm:max-w-md fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
                 <DialogHeader>
-                    <DialogTitle>Quick Add Income</DialogTitle>
+                    <DialogTitle>{t('transactions.quickAddIncome')}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="title">Income Source</Label>
+                        <Label htmlFor="title">{t('transactions.incomeSource')}</Label>
                         <Input
                             id="title"
                             value={formData.title}
                             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                            placeholder="e.g., Salary, Freelance Project"
+                            placeholder={t('transactions.incomeSourcePlaceholder')}
                             required
                             autoFocus
                         />
@@ -106,7 +108,7 @@ export default function QuickAddIncome({
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="amount">Amount</Label>
+                            <Label htmlFor="amount">{t('common.amount')}</Label>
                             <AmountInput
                                 id="amount"
                                 value={formData.amount}
@@ -117,25 +119,25 @@ export default function QuickAddIncome({
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="date">Date</Label>
+                            <Label htmlFor="date">{t('common.date')}</Label>
                             <DatePicker
                                 value={formData.date}
                                 onChange={(value) => setFormData({ ...formData, date: value })}
-                                placeholder="Pick a date"
+                                placeholder={t('components.datePicker.pickDate')}
                             />
                         </div>
                     </div>
 
                     <div className="flex justify-end gap-3 pt-4">
                         <CustomButton type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                            Cancel
+                            {t('common.cancel')}
                         </CustomButton>
                         <CustomButton
                             type="submit"
                             disabled={isSubmitting}
                             variant="success"
                         >
-                            {isSubmitting ? 'Adding...' : 'Add Income'}
+                            {isSubmitting ? t('common.adding') : t('transactions.actions.addIncome')}
                         </CustomButton>
                     </div>
                 </form>

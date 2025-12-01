@@ -4,6 +4,7 @@ import { useSettings } from "../utils/SettingsContext";
 import { useMonthlyBreakdown } from "../hooks/useDerivedData";
 import { formatCurrency } from "../utils/currencyUtils";
 import { getCategoryIcon } from "../utils/iconMapConfig";
+import { useTranslation } from 'react-i18next';
 
 export default function MonthlyBreakdown({
     transactions,
@@ -15,6 +16,8 @@ export default function MonthlyBreakdown({
     selectedYear
 }) {
     const { settings } = useSettings();
+
+    const { t } = useTranslation();
 
     // Use the extracted hook which now calculates needs/wants internally using financialCalculations
     const { categoryBreakdown, totalExpenses, needsTotal, wantsTotal } = useMonthlyBreakdown(
@@ -55,28 +58,28 @@ export default function MonthlyBreakdown({
                     <CardHeader className="pb-2 border-b border-gray-50">
                         <div className="flex justify-between items-center">
                             <div>
-                                <CardTitle className="text-xl font-bold text-gray-900">Monthly Breakdown</CardTitle>
-                                <p className="text-sm text-gray-500 mt-1">Overview by category</p>
+                                <CardTitle className="text-xl font-bold text-gray-900">{t('reports.charts.breakdown')}</CardTitle>
+                                <p className="text-sm text-gray-500 mt-1">{t('reports.charts.breakdownDesc')}</p>
                             </div>
 
                             {/* The "Fancier" Summary Section */}
                             <div className="flex items-center bg-gray-50 px-1 py-2 rounded-xl border border-gray-100">
-                                <SummaryItem label="Income" amount={monthlyIncome} />
+                                <SummaryItem label={t('reports.kpi.income')} amount={monthlyIncome} />
                                 <Divider />
-                                <SummaryItem label="Expenses" amount={totalExpenses} />
+                                <SummaryItem label={t('reports.kpi.expenses')} amount={totalExpenses} />
 
                                 {/* Extra columns for Needs/Wants */}
                                 <Divider />
-                                <SummaryItem label="Needs" amount={needsTotal} />
+                                <SummaryItem label={t('reports.kpi.needs')} amount={needsTotal} />
                                 <Divider />
-                                <SummaryItem label="Wants" amount={wantsTotal} />
+                                <SummaryItem label={t('reports.kpi.wants')} amount={wantsTotal} />
                             </div>
                         </div>
                     </CardHeader>
                     <CardContent className="pt-6 flex-1">
                         {sortedBreakdown.length === 0 ? (
                             <div className="h-full flex items-center justify-center text-gray-400 bg-gray-50 rounded-2xl border border-dashed border-gray-200 min-h-[200px]">
-                                <p>No expenses to show yet</p>
+                                <p>{t('reports.charts.noExpenses')}</p>
                             </div>
                         ) : (
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -118,10 +121,10 @@ export default function MonthlyBreakdown({
 
                                                 <div className="flex justify-between items-center">
                                                     <p className="text-[10px] text-gray-500 font-medium" title="% of Total Expenses">
-                                                        {item.expensePercentage.toFixed(1)}% <span className="text-gray-400 font-normal">of Exp</span>
+                                                        {item.expensePercentage.toFixed(1)}% <span className="text-gray-400 font-normal">{t('reports.charts.ofExp')}</span>
                                                     </p>
                                                     <p className="text-[10px] text-gray-400" title="% of Total Income">
-                                                        {item.percentage.toFixed(1)}% <span className="text-gray-300">of Inc</span>
+                                                        {item.percentage.toFixed(1)}% <span className="text-gray-300">{t('reports.charts.ofInc')}</span>
                                                     </p>
                                                 </div>
                                             </div>

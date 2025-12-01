@@ -5,12 +5,14 @@ import { estimateCurrentMonth } from "../utils/projectionUtils";
 import { getMonthBoundaries } from "../utils/dateUtils";
 import { getMonthlyIncome, getMonthlyPaidExpenses } from "../utils/financialCalculations";
 import { ArrowRight, TrendingUp, TrendingDown } from "lucide-react";
+import { useTranslation } from 'react-i18next';
 
 export default function ProjectionChart({
     transactions = [],
     settings,
     projectionData
 }) {
+    const { t, i18n } = useTranslation();
 
     // Extract the safe baseline calculated in parent (Reports.js)
     const safeMonthlyAverage = projectionData?.totalProjectedMonthly || 0;
@@ -54,29 +56,29 @@ export default function ProjectionChart({
 
         const chartData = [
             {
-                label: 'Last Month',
-                subLabel: lastMonthDate.toLocaleDateString('en-US', { month: 'short' }),
+                label: t('reports.charts.lastMonth'),
+                subLabel: lastMonthDate.toLocaleDateString(i18n.language, { month: 'short' }),
                 income: lastIncome,
                 expense: lastExpenses,
                 type: 'past'
             },
             {
-                label: 'This Month',
-                subLabel: 'Projected',
+                label: t('reports.charts.thisMonth'),
+                subLabel: t('reports.charts.projected'),
                 income: currentIncome,
                 expense: currentExpenseProj,
                 type: 'current'
             },
             {
-                label: 'Next Month',
-                subLabel: 'Target',
+                label: t('reports.charts.nextMonth'),
+                subLabel: t('reports.charts.targetLabel'),
                 income: nextIncome,
                 expense: nextExpense,
                 type: 'future'
             }
         ];
         return { data: chartData, sixMonthAvg: avgExp };
-    }, [transactions, safeMonthlyAverage]);
+    }, [transactions, safeMonthlyAverage, t, i18n.language]);
 
     // Scaling for the chart
     const maxVal = Math.max(...data.map(d => Math.max(d.income, d.expense)), 100) * 1.1;
@@ -90,16 +92,16 @@ export default function ProjectionChart({
         <Card className="border-none shadow-sm h-full flex flex-col">
             <CardHeader className="pb-2 flex-none">
                 <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg font-semibold text-gray-800">Financial Horizon</CardTitle>
+                    <CardTitle className="text-lg font-semibold text-gray-800">{t('reports.charts.projection')}</CardTitle>
                     <div className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium ${isPositive ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
                         {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                        {isPositive ? 'Savings Proj.' : 'Overspend Risk'}
+                        {isPositive ? t('reports.charts.savingsProj') : t('reports.charts.overspendRisk')}
                     </div>
                 </div>
                 <p className="text-sm text-gray-500">
                     {isPositive
-                        ? `On track to save ${formatCurrency(currentNet, settings)} this month.`
-                        : `Projected to overspend by ${formatCurrency(Math.abs(currentNet), settings)}.`}
+                        ? t('reports.charts.onTrackSave', { amount: formatCurrency(currentNet, settings) })
+                        : t('reports.charts.projectedOverspend', { amount: formatCurrency(Math.abs(currentNet), settings) })}
                 </p>
             </CardHeader>
             <CardContent className="flex-1 min-h-0">
@@ -113,7 +115,7 @@ export default function ProjectionChart({
                             style={{ bottom: `calc(${avgHeight}% + 24px)` }}
                         />
                         <span className="absolute right-0 text-[10px] text-gray-400 bg-white px-1 z-0" style={{ bottom: `calc(${avgHeight}% + 24px)` }}>
-                            6M Avg
+                            {t('reports.charts.sixMonthAvg')}
                         </span>
 
                         {data.map((item, idx) => {
@@ -155,14 +157,14 @@ export default function ProjectionChart({
                                         <p className="font-bold mb-1 border-b border-gray-700 pb-1">{item.label}</p>
                                         <div className="space-y-1">
                                             <p className="flex justify-between gap-4 text-emerald-300">
-                                                <span>Income:</span> <span>{formatCurrency(item.income, settings)}</span>
+                                                <span>{t('reports.kpi.income')}:</span> <span>{formatCurrency(item.income, settings)}</span>
                                             </p>
                                             <p className="flex justify-between gap-4 text-rose-300">
-                                                <span>Expense:</span> <span>{formatCurrency(item.expense, settings)}</span>
+                                                <span>{t('reports.kpi.expenses')}:</span> <span>{formatCurrency(item.expense, settings)}</span>
                                             </p>
                                             {isTarget && (
                                                 <p className="text-[10px] text-gray-400 italic pt-1">
-                                                    *Based on Safe Baseline
+                                                    {t('reports.charts.safeBaseline')}
                                                 </p>
                                             )}
                                         </div>

@@ -3,8 +3,10 @@ import { CustomButton } from "@/components/ui/CustomButton";
 import { Upload, FileText, AlertCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useTranslation } from "react-i18next";
 
 export default function FileUploader({ onFileSelect }) {
+    const { t } = useTranslation();
     const inputRef = useRef(null);
     const [error, setError] = useState(null);
     const [dragActive, setDragActive] = useState(false);
@@ -17,7 +19,7 @@ export default function FileUploader({ onFileSelect }) {
         if (isCsv || isPdf) {
             onFileSelect(file);
         } else {
-            setError("Please upload a valid CSV or PDF file.");
+            setError(t('import.errors.invalidFile'));
         }
     };
 
@@ -68,14 +70,14 @@ export default function FileUploader({ onFileSelect }) {
                         <FileText className="w-8 h-8 text-blue-500" />
                     </div>
                     <div>
-                        <h3 className="text-lg font-semibold text-gray-900">Upload CSV File</h3>
+                        <h3 className="text-lg font-semibold text-gray-900">{t('import.uploadTitle')}</h3>
                         <p className="text-sm text-gray-500 mt-1">
-                            Drag and drop your file here, or click to browse
+                            {t('import.dragDrop')}
                         </p>
                     </div>
                     <CustomButton onClick={() => inputRef.current?.click()} variant="outline">
                         <Upload className="w-4 h-4 mr-2" />
-                        Select File
+                        {t('import.selectFile')}
                     </CustomButton>
                 </div>
             </div>
@@ -83,27 +85,27 @@ export default function FileUploader({ onFileSelect }) {
             {error && (
                 <Alert variant="destructive">
                     <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Error</AlertTitle>
+                    <AlertTitle>{t('error')}</AlertTitle>
                     <AlertDescription>{error}</AlertDescription>
                 </Alert>
             )}
 
             <Card className="bg-gray-50 border-none">
                 <CardContent className="pt-6">
-                    <h4 className="text-sm font-medium text-gray-900 mb-2">Format Requirements:</h4>
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">{t('import.requirements.title')}:</h4>
                     <div className="grid md:grid-cols-2 gap-4">
                         <div>
-                            <h5 className="text-xs font-semibold text-gray-900 mb-1 uppercase tracking-wider">CSV</h5>
+                            <h5 className="text-xs font-semibold text-gray-900 mb-1 uppercase tracking-wider">{t('import.requirements.csv')}</h5>
                             <ul className="text-sm text-gray-600 list-disc pl-5 space-y-1">
-                                <li>First row must contain headers</li>
-                                <li>Required: Date, Amount, Description</li>
+                                <li>{t('import.requirements.csvHeaders')}</li>
+                                <li>{t('import.requirements.csvFields')}</li>
                             </ul>
                         </div>
                         <div>
-                            <h5 className="text-xs font-semibold text-gray-900 mb-1 uppercase tracking-wider">PDF</h5>
+                            <h5 className="text-xs font-semibold text-gray-900 mb-1 uppercase tracking-wider">{t('import.requirements.pdf')}</h5>
                             <ul className="text-sm text-gray-600 list-disc pl-5 space-y-1">
-                                <li>Bank statements or transaction lists</li>
-                                <li>Must contain legible transaction data</li>
+                                <li>{t('import.requirements.pdfType')}</li>
+                                <li>{t('import.requirements.pdfData')}</li>
                             </ul>
                         </div>
                     </div>

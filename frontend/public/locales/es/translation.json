@@ -1,0 +1,532 @@
+{
+    "welcome": "Bienvenido a Presso",
+    "description": "Tu gestor de finanzas personal",
+    "common": {
+        "success": "Éxito",
+        "error": "Error",
+        "saving": "Guardando...",
+        "cancel": "Cancelar",
+        "create": "Crear",
+        "update": "Actualizar",
+        "delete": "Eliminar",
+        "edit": "Editar",
+        "add": "Añadir",
+        "apply": "Aplicar",
+        "amount": "Cantidad",
+        "date": "Fecha",
+        "month": "Mes",
+        "year": "Año",
+        "notes": "Notas",
+        "title": "Título",
+        "description": "Descripción",
+        "viewAll": "Ver Todo",
+        "color": "Color",
+        "back": "Atrás",
+        "adding": "Añadiendo...",
+        "uncategorized": "Sin Categoría",
+        "untitledTransaction": "Transacción Sin Título"
+    },
+    "dashboard": {
+        "title": "Panel de Control",
+        "welcome": "¡Bienvenido de nuevo, {{name}}!",
+        "recentTransactions": "Transacciones Recientes",
+        "noPaidTransactions": "Aún no hay transacciones pagadas. ¡Añade la primera!",
+        "remaining": {
+            "title": "Presupuesto Restante",
+            "left": "Restante",
+            "spent": "Gastado",
+            "of": "de",
+            "saved": "Ahorrado",
+            "readyToPlan": "¿Listo para planificar?",
+            "startPlanning": "Empezar a Planificar",
+            "targetGoals": "Objetivos Meta",
+            "updateTargets": "Actualizar Objetivos",
+            "detailed": "Vista Detallada",
+            "simple": "Vista Simple"
+        }
+    },
+    "auth": {
+        "login": {
+            "title": "Bienvenido de nuevo",
+            "description": "Ingresa tus credenciales para acceder a tu presupuesto",
+            "submit": "Iniciar Sesión",
+            "submitting": "Iniciando sesión...",
+            "footer": "¿No tienes una cuenta?",
+            "registerLink": "Regístrate"
+        },
+        "register": {
+            "title": "Crear Cuenta",
+            "description": "Empieza a gestionar tu presupuesto hoy",
+            "submit": "Registrarse",
+            "submitting": "Creando cuenta...",
+            "footer": "¿Ya tienes una cuenta?",
+            "loginLink": "Iniciar Sesión"
+        },
+        "fields": {
+            "email": "Correo Electrónico",
+            "password": "Contraseña",
+            "name": "Nombre",
+            "emailPlaceholder": "nombre@ejemplo.com",
+            "namePlaceholder": "Juan Pérez"
+        },
+        "errors": {
+            "loginFailed": "Error al iniciar sesión",
+            "registerFailed": "Error al registrarse",
+            "generic": "Error"
+        }
+    },
+    "budgets": {
+        "title": "Presupuestos",
+        "subtitle": "Gestiona tus presupuestos para {{date}}",
+        "system": {
+            "title": "Presupuestos del Sistema",
+            "description": "Gestionados automáticamente según tus objetivos presupuestarios. Tus objetivos se actualizan según tus ingresos mensuales.",
+            "badge": "Sistema"
+        },
+        "custom": {
+            "title": "Presupuestos Personalizados",
+            "create": "Crear Presupuesto",
+            "empty": "No hay presupuestos personalizados. ¡Crea el primero!",
+            "description": "Presupuestos personalizados con gastos de estilo de vida",
+            "badge": "Personalizado"
+        },
+        "detail": {
+            "notFound": {
+                "title": "Presupuesto no encontrado",
+                "description": "El presupuesto que buscas no existe o ha sido eliminado.",
+                "redirect": "Redirigiendo a la página de presupuestos..."
+            },
+            "actions": {
+                "edit": "Editar Presupuesto",
+                "complete": "Completar",
+                "reactivate": "Reactivar",
+                "delete": "Eliminar",
+                "deleteConfirm": {
+                    "title": "Eliminar Presupuesto",
+                    "message": "Esto eliminará el presupuesto y todas las transacciones asociadas. Esta acción no se puede deshacer."
+                }
+            },
+            "cards": {
+                "budget": "Presupuesto",
+                "expenses": "Gastos",
+                "remaining": "Restante",
+                "description": "Descripción",
+                "directExpenses": "Gastos Directos",
+                "expensesSubtitle": "Gastos no parte de ningún presupuesto personalizado",
+                "noExpenses": "Aún no hay gastos. ¡Añade el primero!",
+                "noDirectExpenses": "Aún no hay gastos directos. ¡Añade el primero!"
+            },
+            "status": {
+                "completed": "Completado"
+            }
+        },
+        "card": {
+            "activate": "Activar Ahora",
+            "startDateArrived": "La fecha de inicio ha llegado",
+            "overLimit": "Sobre el Límite",
+            "underLimit": "Bajo el Límite",
+            "surplus": "Superávit",
+            "shortfall": "Déficit",
+            "over": "Exceso",
+            "target": "Objetivo",
+            "budget": "Presupuesto",
+            "actual": "Real",
+            "paid": "Pagado",
+            "unpaid": "No Pagado",
+            "netFlow": "Flujo Neto",
+            "potentialSavings": "(Ahorro Potencial)"
+        },
+        "form": {
+            "createTitle": "Crear Presupuesto",
+            "editTitle": "Editar Presupuesto",
+            "nameLabel": "Nombre del Presupuesto",
+            "namePlaceholder": "ej., Viaje a Manchester",
+            "dateRangeLabel": "Rango de Fechas",
+            "limitLabel": "Límite del Presupuesto",
+            "colorLabel": "Color",
+            "descriptionLabel": "Descripción (Opcional)",
+            "descriptionPlaceholder": "Añade detalles sobre este presupuesto..."
+        }
+    },
+    "allocations": {
+        "title": "Asignaciones de Presupuesto",
+        "description": "Asigna porciones de tu presupuesto a categorías específicas",
+        "allocateFunds": "Asignar Fondos",
+        "unallocatedFunds": "Fondos No Asignados",
+        "remainingFunds": "Fondos Restantes",
+        "emptyState": "No hay asignaciones todavía. ¡Añade la primera!",
+        "deleteConfirm": {
+            "title": "Eliminar Asignación",
+            "message": "¿Estás seguro de que deseas eliminar esta asignación? Esta acción no se puede deshacer."
+        }
+    },
+    "categories": {
+        "title": "Categorías",
+        "subtitle": "Organiza tus transacciones con categorías personalizadas",
+        "add": "Añadir Categoría",
+        "edit": "Editar Categoría",
+        "delete": "Eliminar Categoría",
+        "deleteConfirm": {
+            "title": "Eliminar Categoría",
+            "message": "¿Estás seguro de que deseas eliminar esta categoría? Las transacciones asociadas no se eliminarán."
+        },
+        "form": {
+            "createTitle": "Crear Categoría",
+            "editTitle": "Editar Categoría",
+            "nameLabel": "Nombre de la Categoría",
+            "namePlaceholder": "ej., Comestibles, Entretenimiento",
+            "iconLabel": "Selección de Icono",
+            "searchPlaceholder": "Buscar iconos (ej. comida, hogar)...",
+            "noIconsFound": "No se encontraron iconos para \"{{query}}\"",
+            "colorLabel": "Color",
+            "priorityLabel": "Prioridad"
+        },
+        "grid": {
+            "title": "Tus Categorías",
+            "allTitle": "Todas las Categorías ({{count}})",
+            "empty": "No hay categorías todavía. ¡Crea la primera!"
+        },
+        "priorities": {
+            "needs": {
+                "label": "Esenciales",
+                "description": "Gastos esenciales"
+            },
+            "wants": {
+                "label": "Estilo de Vida",
+                "description": "Gastos de estilo de vida"
+            },
+            "savings": {
+                "label": "Ahorros",
+                "description": "Ahorros después de gastos"
+            }
+        },
+        "icons": {
+            "Home": "Vivienda",
+            "House": "Mantenimiento del Hogar",
+            "ShoppingCart": "Comestibles",
+            "ShoppingBasket": "Recados",
+            "Coffee": "Café",
+            "Car": "Coche",
+            "CarTaxiFront": "Taxi/Viaje Compartido",
+            "Fuel": "Combustible",
+            "Bus": "Transporte Público",
+            "Plane": "Viajes",
+            "Utensils": "Cenar Fuera",
+            "Beer": "Alcohol",
+            "Pizza": "Comida Rápida",
+            "Shirt": "Ropa",
+            "Store": "Compras",
+            "Heart": "Salud",
+            "Cross": "Hospital",
+            "Pill": "Farmacia",
+            "Zap": "Servicios Públicos",
+            "Wifi": "Internet",
+            "Droplets": "Agua",
+            "Laptop": "Tecnología",
+            "Smartphone": "Móvil",
+            "Gift": "Regalos",
+            "Music": "Música",
+            "Guitar": "Pasatiempos",
+            "Drama": "Artes y Cultura",
+            "Podcast": "Podcast",
+            "Tv": "TV/Streaming",
+            "Gamepad2": "Juegos",
+            "Dumbbell": "Fitness",
+            "Book": "Educación",
+            "Briefcase": "Trabajo",
+            "DollarSign": "Ingresos",
+            "HandCoins": "Tarifas/Cargos",
+            "PiggyBank": "Ahorros",
+            "CreditCard": "Deuda/Pago",
+            "Wallet": "General",
+            "Hotel": "Hotel"
+        }
+    },
+    "reports": {
+        "title": "Informes Financieros",
+        "subtitle": "Análisis de rendimiento",
+        "kpi": {
+            "income": "Ingresos",
+            "expenses": "Gastos",
+            "savings": "Ahorros",
+            "rate": "Tasa de Ahorro",
+            "needs": "Necesidades",
+            "wants": "Deseos"
+        },
+        "healthScore": {
+            "title": "Salud Financiera",
+            "excellent": "Excelente",
+            "good": "Bueno",
+            "fair": "Justo",
+            "needsWork": "Necesita Mejorar",
+            "description": "Tu puntuación se basa en tu tasa de ahorro del {{rate}}%, eficiencia presupuestaria y mejora mes a mes.",
+            "savingsRate": "Tasa de Ahorro",
+            "target": "(Objetivo: 20%)",
+            "solvency": "Solvencia",
+            "trend": "Tendencia",
+            "spentLess": "Gastado {{amount}} menos que el mes pasado"
+        },
+        "charts": {
+            "projection": "Horizonte Financiero",
+            "breakdown": "Desglose Mensual",
+            "breakdownDesc": "Resumen por categoría",
+            "priority": "Real vs Objetivo por Prioridad",
+            "trend": "Análisis de Tendencia",
+            "noExpenses": "No hay gastos para mostrar aún",
+            "ofExp": "de Gastos",
+            "ofInc": "de Ingresos",
+            "percentIncome": "% de Ingresos",
+            "actual": "Real",
+            "target": "Objetivo",
+            "savingsProj": "Proy. Ahorro",
+            "overspendRisk": "Riesgo de Gasto Excesivo",
+            "onTrackSave": "En camino de ahorrar {{amount}} este mes.",
+            "projectedOverspend": "Proyectado gastar en exceso por {{amount}}.",
+            "sixMonthAvg": "Prom. 6M",
+            "lastMonth": "Mes Pasado",
+            "thisMonth": "Este Mes",
+            "nextMonth": "Próximo Mes",
+            "projected": "Proyectado",
+            "targetLabel": "Objetivo",
+            "safeBaseline": "*Basado en Línea Base Segura",
+            "insufficientData": "Datos Insuficientes",
+            "insufficientDataDesc": "Se necesita actividad en al menos {{count}} meses para visualizar una tendencia.",
+            "oneMonth": "un mes",
+            "twoMonths": "dos meses",
+            "in": "Ent:",
+            "out": "Sal:",
+            "net": "Neto:"
+        },
+        "stats": {
+            "savingsRate": "Tasa de Ahorro",
+            "vsLastMonth": "{{value}}% vs mes anterior",
+            "netFlow": "Flujo Neto",
+            "projEndOfMonth": "Proy. Fin de Mes: {{amount}}",
+            "closed": "Cerrado",
+            "efficiencyBonus": "Bono de Eficiencia",
+            "unspentNeedsWants": "Necesidades y Deseos no gastados"
+        }
+    },
+    "settings": {
+        "title": "Configuración",
+        "subtitle": "Gestiona tus preferencias y objetivos financieros",
+        "appPreferences": {
+            "title": "Preferencias de la Aplicación",
+            "description": "Gestiona el formato de moneda y los objetivos de asignación de presupuesto"
+        },
+        "currency": {
+            "title": "Moneda y Formato",
+            "label": "Moneda",
+            "position": "Posición",
+            "viewMode": "Modo de Vista",
+            "thousandSeparator": "Separador de Miles",
+            "decimalSeparator": "Separador Decimal",
+            "decimalPlaces": "Decimales",
+            "hideTrailingZeros": "Ocultar Ceros Finales",
+            "preview": "Vista Previa",
+            "positionBefore": "Antes",
+            "positionAfter": "Después",
+            "viewModeBars": "Barras",
+            "viewModeCards": "Tarjetas",
+            "separatorComma": "Coma",
+            "separatorPeriod": "Punto",
+            "separatorSpace": "Espacio"
+        },
+        "goals": {
+            "title": "Asignación de Objetivos",
+            "description": "Define cómo se dividen tus ingresos mensuales entre Necesidades, Deseos y Ahorros.",
+            "modes": {
+                "percentage": "Porcentaje",
+                "absolute": "Valores Absolutos"
+            },
+            "inflation": {
+                "title": "Protección contra Inflación",
+                "description": "Previene la inflación del estilo de vida. Si los ingresos aumentan, los presupuestos se calculan sobre el menor de tus ingresos actuales vs promedio."
+            },
+            "descriptions": {
+                "needs": "Gastos esenciales",
+                "wants": "Gastos discrecionales",
+                "savings": "Ahorros e inversiones"
+            },
+            "totalAllocated": "Total Asignado",
+            "priorities": {
+                "needs": "Esenciales",
+                "wants": "Estilo de Vida",
+                "savings": "Ahorros"
+            }
+        },
+        "actions": {
+            "reset": "Restablecer a Predeterminados",
+            "logout": "Cerrar Sesión",
+            "discard": "Descartar Cambios",
+            "save": "Guardar Configuración"
+        },
+        "toast": {
+            "changesDiscarded": "Cambios Descartados",
+            "changesDiscardedDesc": "Tus cambios han sido descartados.",
+            "resetApplied": "Restablecimiento Aplicado",
+            "resetAppliedDesc": "La configuración se ha restablecido a los valores predeterminados.",
+            "savedSuccess": "Configuración guardada correctamente.",
+            "saveFailed": "Error al guardar la configuración."
+        },
+        "confirmReset": "¿Estás seguro de que deseas restablecer toda la configuración a los valores predeterminados?"
+    },
+    "transactions": {
+        "title": "Transacciones",
+        "subtitle": "Rastrea tus ingresos y gastos",
+        "addExpense": "Añadir Gasto",
+        "editTransaction": "Editar Transacción",
+        "quickAdd": "Añadir Gasto Rápido",
+        "quickAddIncome": "Añadir Ingreso Rápido",
+        "incomeSource": "Fuente de Ingresos",
+        "incomeSourcePlaceholder": "ej., Salario, Freelance",
+        "paidDate": "Pagado el {{date}}",
+        "actions": {
+            "addIncome": "Añadir Ingreso",
+            "addExpense": "Añadir Gasto",
+            "deleteSelected": "Eliminar Transacciones"
+        },
+        "delete": {
+            "title": "Eliminar Transacciones",
+            "message": "¿Estás seguro de que deseas eliminar {{count}} transacciones seleccionadas? Esta acción no se puede deshacer.",
+            "confirmSingle": "¿Estás seguro de que deseas eliminar esta transacción? Esta acción no se puede deshacer.",
+            "successMessage": "Se han eliminado {{count}} transacciones.",
+            "errorMessage": "Error al eliminar algunas transacciones."
+        },
+        "filters": {
+            "search": "Buscar transacciones...",
+            "allCategories": "Todas las Categorías",
+            "allBudgets": "Todos los Presupuestos",
+            "allStatus": "Todos los Estados",
+            "paid": "Pagado",
+            "unpaid": "No Pagado",
+            "allTypes": "Todos los Tipos",
+            "income": "Ingresos",
+            "expense": "Gastos",
+            "cash": "Efectivo",
+            "card": "Tarjeta"
+        },
+        "table": {
+            "date": "Fecha",
+            "payee": "Beneficiario",
+            "category": "Categoría",
+            "amount": "Cantidad",
+            "actions": "Acciones"
+        },
+        "empty": "No se encontraron transacciones."
+    },
+    "nav": {
+        "dashboard": "Panel de Control",
+        "transactions": "Transacciones",
+        "budgets": "Presupuestos",
+        "categories": "Categorías",
+        "reports": "Informes",
+        "settings": "Configuración"
+    },
+    "components": {
+        "budgetBars": {
+            "systemBudgets": "Presupuestos del Sistema",
+            "cardView": "Vista de Tarjeta",
+            "barView": "Vista de Barra",
+            "savingsTargetNotMet": "Objetivo de Ahorro No Alcanzado",
+            "shortMessage": "Te faltan {{amount}} para tu objetivo de ahorro.",
+            "targetActual": "Objetivo: {{target}}, Actual: {{actual}}",
+            "noCustomBudgets": "Sin Presupuestos Personalizados",
+            "noCustomBudgetsDesc": "Aún no has configurado presupuestos personalizados para este mes. Crea uno para rastrear categorías de gastos específicas.",
+            "createFirstBudget": "Crear Primer Presupuesto",
+            "newBudget": "Nuevo Presupuesto"
+        },
+        "remainingBudget": {
+            "readyToPlan": "¿Listo para planificar {{month}}?",
+            "readyToPlanDesc": "Comienza añadiendo tus ingresos esperados para ver tu potencial de ahorro y desbloquear tus objetivos presupuestarios.",
+            "overLimit": "Sobre el Límite",
+            "saved": "Ahorrado",
+            "spentOf": "Gastado <1>{{spent}}</1> de <3>{{income}}</3>",
+            "noIncome": "Sin ingresos registrados.",
+            "efficiency": "Eficiencia: +{{amount}}",
+            "left": "Restante: {{amount}}",
+            "paid": "Pagado",
+            "plan": "Planificar",
+            "goals": "Objetivos",
+            "targetGoals": "Objetivos Meta",
+            "updateTargets": "Actualizar Objetivos"
+        },
+        "transactionForm": {
+            "title": "Título",
+            "titlePlaceholder": "ej., Salario, Comestibles, Café",
+            "amount": "Cantidad",
+            "paidWithCash": "Pagado en efectivo",
+            "date": "Fecha",
+            "paymentDate": "Fecha de Pago",
+            "markAsPaid": "Marcar como pagado",
+            "category": "Categoría",
+            "financialPriority": "Prioridad Financiera",
+            "selectPriority": "Seleccionar prioridad",
+            "budgetAllocation": "Asignación de Presupuesto",
+            "selectBudget": "Seleccionar presupuesto...",
+            "searchBudgets": "Buscar presupuestos...",
+            "noBudgetFound": "No se encontró presupuesto relevante.",
+            "notes": "Notas",
+            "notesPlaceholder": "Detalles adicionales...",
+            "fetchRate": "Obtener Tasa",
+            "rate": "Tasa: {{rate}} (de {{date}})",
+            "noRate": "Sin tasa",
+            "loading": "Cargando...",
+            "needs": "Necesidades",
+            "wants": "Deseos",
+            "savings": "Ahorros"
+        },
+        "datePicker": {
+            "pickDate": "Seleccionar una fecha"
+        },
+        "userNotRegistered": {
+            "title": "Acceso Restringido",
+            "description": "No estás registrado para usar esta aplicación. Por favor, contacta al administrador de la aplicación para solicitar acceso.",
+            "helpTitle": "Si crees que esto es un error, puedes:",
+            "help1": "Verificar que has iniciado sesión con la cuenta correcta",
+            "help2": "Contactar al administrador de la aplicación para obtener acceso",
+            "help3": "Intentar cerrar sesión y volver a iniciarla"
+        }
+    },
+    "import": {
+        "title": "Importar Datos",
+        "dragDrop": "Arrastra y suelta tu archivo aquí, o haz clic para seleccionar",
+        "selectFile": "Seleccionar Archivo",
+        "uploadTitle": "Subir Historial de Transacciones",
+        "importDesc": "Importa tus extractos bancarios o historial de transacciones desde archivos CSV o PDF.",
+        "importData": "Importar Datos",
+        "steps": {
+            "upload": "Subir",
+            "review": "Revisar",
+            "finish": "Finalizar"
+        },
+        "requirements": {
+            "title": "Requisitos del Archivo:",
+            "csv": "Los archivos CSV deben tener encabezados",
+            "csvHeaders": "Fecha, Cantidad, Descripción/Beneficiario",
+            "csvFields": "Opcional: Categoría, Notas",
+            "pdf": "Archivos PDF de bancos soportados",
+            "pdfType": "Formato estándar de extracto bancario",
+            "pdfData": "PDFs basados en texto (no imágenes escaneadas)"
+        },
+        "processingPdf": "Procesando PDF...",
+        "extractingData": "Extrayendo datos de la transacción...",
+        "reviewData": "Revisar Datos",
+        "importTransactions": "Importar {{count}} Transacciones",
+        "deleteSelected": "Eliminar Seleccionados",
+        "toast": {
+            "fileParsed": "Archivo Analizado",
+            "rowsFound": "Se encontraron {{count}} filas.",
+            "uploading": "Subiendo Archivo",
+            "uploadingDesc": "Enviando archivo al servidor...",
+            "analyzing": "Analizando",
+            "analyzingDesc": "Extrayendo datos del archivo...",
+            "pdfSuccess": "Se procesaron correctamente {{count}} transacciones.",
+            "imported": "Se importaron correctamente {{count}} transacciones."
+        },
+        "errors": {
+            "pdfFailed": "Falló el procesamiento del PDF",
+            "importFailed": "Falló la importación"
+        }
+    }
+}

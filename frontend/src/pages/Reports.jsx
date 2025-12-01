@@ -16,8 +16,10 @@ import ProjectionChart from "../components/reports/ProjectionChart";
 import ReportStats, { FinancialHealthScore } from "../components/reports/ReportStats";
 import { calculateProjection } from "../components/utils/projectionUtils";
 import { calculateBonusSavingsPotential } from "../components/utils/financialCalculations";
+import { useTranslation } from "../hooks/useTranslation";
 
 export default function Reports() {
+    const { t } = useTranslation();
     const { user, settings } = useSettings();
 
     // Period management
@@ -66,9 +68,9 @@ export default function Reports() {
                 {/* Header Section */}
                 <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
                     <div className="flex-1">
-                        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Financial Reports</h1>
+                        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{t('reports.title')}</h1>
                         <p className="text-gray-500 text-sm mt-1">
-                            Performance analysis
+                            {t('reports.subtitle')}
                         </p>
                     </div>
 

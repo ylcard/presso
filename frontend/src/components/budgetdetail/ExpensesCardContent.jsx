@@ -1,6 +1,8 @@
 import { formatCurrency, getCurrencySymbol } from "../utils/currencyUtils";
+import { useTranslation } from "react-i18next";
 
 export default function ExpensesCardContent({ budget, stats, settings }) {
+    const { t } = useTranslation();
     const hasPaid = stats.paid.totalBaseCurrencyAmount > 0 || stats.paid.foreignCurrencyDetails.length > 0;
     const hasUnpaid = stats.unpaid.totalBaseCurrencyAmount > 0 || stats.unpaid.foreignCurrencyDetails.length > 0;
 
@@ -8,7 +10,7 @@ export default function ExpensesCardContent({ budget, stats, settings }) {
         return (
             <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col items-center justify-center">
-                    <p className="text-xs text-gray-500 mb-1">Paid</p>
+                    <p className="text-xs text-gray-500 mb-1">{t('paid')}</p>
                     {stats.paid.totalBaseCurrencyAmount > 0 && (
                         <div className="text-lg font-bold text-gray-900">
                             {formatCurrency(stats.paid.totalBaseCurrencyAmount, settings)}
@@ -21,7 +23,7 @@ export default function ExpensesCardContent({ budget, stats, settings }) {
                     ))}
                 </div>
                 <div className="flex flex-col items-center justify-center">
-                    <p className="text-xs text-gray-500 mb-1">Unpaid</p>
+                    <p className="text-xs text-gray-500 mb-1">{t('unpaid')}</p>
                     {stats.unpaid.totalBaseCurrencyAmount > 0 && (
                         <div className="text-lg font-bold text-orange-600">
                             {formatCurrency(stats.unpaid.totalBaseCurrencyAmount, settings)}
@@ -38,7 +40,7 @@ export default function ExpensesCardContent({ budget, stats, settings }) {
     } else if (hasPaid) {
         return (
             <div className="flex flex-col items-center justify-center h-full">
-                <p className="text-xs text-gray-500 mb-1">Paid</p>
+                <p className="text-xs text-gray-500 mb-1">{t('paid')}</p>
                 {stats.paid.totalBaseCurrencyAmount > 0 && (
                     <div className="text-lg font-bold text-gray-900">
                         {formatCurrency(stats.paid.totalBaseCurrencyAmount, settings)}
@@ -54,7 +56,7 @@ export default function ExpensesCardContent({ budget, stats, settings }) {
     } else if (hasUnpaid) {
         return (
             <div className="flex flex-col items-center justify-center h-full">
-                <p className="text-xs text-gray-500 mb-1">Unpaid</p>
+                <p className="text-xs text-gray-500 mb-1">{t('unpaid')}</p>
                 {stats.unpaid.totalBaseCurrencyAmount > 0 && (
                     <div className="text-lg font-bold text-orange-600">
                         {formatCurrency(stats.unpaid.totalBaseCurrencyAmount, settings)}
@@ -68,6 +70,6 @@ export default function ExpensesCardContent({ budget, stats, settings }) {
             </div>
         );
     } else {
-        return <div className="text-center text-gray-400">No expenses</div>;
+        return <div className="text-center text-gray-400">{t('no_expenses')}</div>;
     }
 }
