@@ -12,6 +12,7 @@ import { useSettings } from "../utils/SettingsContext";
 import { useAllBudgets } from "../hooks/useBase44Entities";
 import { formatDateString, getFirstDayOfMonth } from "../utils/dateUtils";
 import TransactionFormContent from "./TransactionFormContent";
+import { useTranslation } from "react-i18next";
 
 export default function QuickAddTransaction({
     open,
@@ -30,6 +31,7 @@ export default function QuickAddTransaction({
     selectedMonth,
     selectedYear
 }) {
+    const { t } = useTranslation();
     const { user } = useSettings();
     const { allBudgets } = useAllBudgets(user);
 
@@ -70,7 +72,7 @@ export default function QuickAddTransaction({
             className={triggerClassName}
         >
             <Plus className="w-4 h-4 mr-2" />
-            Add Expense
+            {t('transactions.addExpense')}
         </CustomButton>
     );
 
@@ -98,7 +100,7 @@ export default function QuickAddTransaction({
             <DialogContent className="sm:max-w-[500px] fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
                 <DialogHeader>
                     <DialogTitle>
-                        {isEditMode ? 'Edit Transaction' : 'Quick Add Expense'}
+                        {isEditMode ? t('transactions.editTransaction') : t('transactions.quickAdd')}
                     </DialogTitle>
                 </DialogHeader>
                 <TransactionFormContent

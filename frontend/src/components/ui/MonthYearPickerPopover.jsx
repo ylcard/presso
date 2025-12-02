@@ -13,13 +13,13 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { useTranslation } from "react-i18next";
 
 export default function MonthYearPickerPopover({ currentMonth, currentYear, onMonthChange, children }) {
     const [open, setOpen] = useState(false);
     const [tempMonth, setTempMonth] = useState(currentMonth);
     const [tempYear, setTempYear] = useState(currentYear);
-
-
+    const { t } = useTranslation();
 
     // Generate year options: current year ± 5 years
     const currentYearNow = new Date().getFullYear();
@@ -46,10 +46,10 @@ export default function MonthYearPickerPopover({ currentMonth, currentYear, onMo
             </PopoverTrigger>
             <PopoverContent className="w-80" align="center">
                 <div className="space-y-4">
-                    <h4 className="font-semibold text-sm">Select Month & Year</h4>
+                    <h4 className="font-semibold text-sm">{t('select_month_year')}</h4>
 
                     <div className="space-y-2">
-                        <label className="text-xs font-medium text-gray-600">Month</label>
+                        <label className="text-xs font-medium text-gray-600">{t('month')}</label>
                         <Select
                             value={String(tempMonth)}
                             onValueChange={(value) => setTempMonth(parseInt(value))}
@@ -68,7 +68,7 @@ export default function MonthYearPickerPopover({ currentMonth, currentYear, onMo
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-xs font-medium text-gray-600">Year</label>
+                        <label className="text-xs font-medium text-gray-600">{t('year')}</label>
                         <Select
                             value={String(tempYear)}
                             onValueChange={(value) => setTempYear(parseInt(value))}
@@ -93,7 +93,7 @@ export default function MonthYearPickerPopover({ currentMonth, currentYear, onMo
                             onClick={handleCancel}
                             className="flex-1"
                         >
-                            Cancel
+                            {t('cancel')}
                         </CustomButton>
                         <CustomButton
                             variant="primary"
@@ -101,7 +101,7 @@ export default function MonthYearPickerPopover({ currentMonth, currentYear, onMo
                             onClick={handleApply}
                             className="flex-1"
                         >
-                            Apply
+                            {t('apply')}
                         </CustomButton>
                     </div>
                 </div>

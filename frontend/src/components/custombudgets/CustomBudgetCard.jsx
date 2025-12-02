@@ -10,6 +10,7 @@ import { createPageUrl } from "@/utils";
 import { formatCurrency, getCurrencySymbol } from "../utils/currencyUtils";
 import { motion } from "framer-motion";
 import { getProgressBarColor } from "../utils/progressBarColor";
+import { useTranslation } from "react-i18next";
 
 export default function CustomBudgetCard({
     budget,
@@ -20,6 +21,7 @@ export default function CustomBudgetCard({
     onStatusChange,
     hideActions = false
 }) {
+    const { t } = useTranslation();
     // Use pre-calculated stats if available (for system budgets), otherwise calculate inline
     const stats = useMemo(() => {
         if (budget.preCalculatedStats) {
@@ -79,7 +81,7 @@ export default function CustomBudgetCard({
                                         {budget.name}
                                     </h3>
                                     {budget.isSystemBudget && (
-                                        <Badge variant="outline" className="text-xs">System</Badge>
+                                        <Badge variant="outline" className="text-xs">{t('system')}</Badge>
                                     )}
                                 </div>
                             </Link>
@@ -119,7 +121,7 @@ export default function CustomBudgetCard({
                     <div className="space-y-4">
                         <div>
                             <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm text-gray-600">Budget Used</span>
+                                <span className="text-sm text-gray-600">{t('budget_used')}</span>
                                 <Badge variant={percentageUsed > 100 ? "destructive" : "default"}>
                                     {percentageUsed.toFixed(0)}%
                                 </Badge>
@@ -136,14 +138,14 @@ export default function CustomBudgetCard({
                                 <>
                                     <div>
                                         {/* <p className="text-xs text-gray-500 mb-1">Spent (Digital)</p> */}
-                                        <p className="text-xs text-gray-500 mb-1">Total Spent</p>
+                                        <p className="text-xs text-gray-500 mb-1">{t('total_spent')}</p>
                                         <p className="font-bold text-gray-900">
                                             {/* {formatCurrency(stats?.digital?.spent || 0, settings)} */}
                                             {formatCurrency(totalSpent, settings)}
                                         </p>
                                     </div>
                                     <div>
-                                        <p className="text-xs text-gray-500 mb-1">Original Budget</p>
+                                        <p className="text-xs text-gray-500 mb-1">{t('original_budget')}</p>
                                         <p className="font-bold text-gray-900">
                                             {formatCurrency(budget.originalAllocatedAmount || totalBudget, settings)}
                                         </p>
@@ -152,13 +154,13 @@ export default function CustomBudgetCard({
                             ) : (
                                 <>
                                     <div>
-                                        <p className="text-xs text-gray-500 mb-1">Remaining</p>
+                                        <p className="text-xs text-gray-500 mb-1">{t('remaining')}</p>
                                         <p className="font-bold text-gray-900">
                                             {formatCurrency(stats?.remaining || 0, settings)}
                                         </p>
                                     </div>
                                     <div>
-                                        <p className="text-xs text-gray-500 mb-1">Total Budget</p>
+                                        <p className="text-xs text-gray-500 mb-1">{t('total_budget')}</p>
                                         <p className="font-bold text-gray-900">
                                             {formatCurrency(totalBudget, settings)}
                                         </p>
@@ -170,11 +172,11 @@ export default function CustomBudgetCard({
                         <div className="flex items-center justify-between pt-2 border-t">
                             <div className="flex items-center gap-2 text-sm text-gray-600">
                                 <Receipt className="w-4 h-4" />
-                                <span>{stats?.totalTransactionCount || 0} expenses</span>
+                                <span>{stats?.totalTransactionCount || 0} {t('expenses')}</span>
                             </div>
                             {!isCompleted && (stats?.unpaid || 0) > 0 && (
                                 <Badge variant="outline" className="text-orange-600 border-orange-600">
-                                    {formatCurrency(stats.unpaid, settings)} unpaid
+                                    {formatCurrency(stats.unpaid, settings)} {t('unpaid')}
                                 </Badge>
                             )}
                         </div>
@@ -188,7 +190,7 @@ export default function CustomBudgetCard({
                                     className="flex-1 text-green-600 border-green-600 hover:bg-green-50"
                                 >
                                     <CheckCircle className="w-4 h-4 mr-2" />
-                                    Complete
+                                    {t('complete')}
                                 </CustomButton>
                             </div>
                         )}

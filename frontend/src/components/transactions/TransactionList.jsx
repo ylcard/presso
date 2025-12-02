@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, X, Trash, Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 export default function TransactionList({
     transactions,
@@ -31,6 +32,8 @@ export default function TransactionList({
     onDeleteSelected,
     isBulkDeleting
 }) {
+    const { t } = useTranslation();
+
     const categoryMap = categories.reduce((acc, cat) => {
         acc[cat.id] = cat;
         return acc;
@@ -40,7 +43,7 @@ export default function TransactionList({
         return (
             <Card className="border-none shadow-lg">
                 <CardHeader>
-                    <CardTitle>All Transactions</CardTitle>
+                    <CardTitle>{t('all_transactions')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-3">
@@ -57,11 +60,11 @@ export default function TransactionList({
         return (
             <Card className="border-none shadow-lg">
                 <CardHeader>
-                    <CardTitle>All Transactions</CardTitle>
+                    <CardTitle>{t('all_transactions')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="h-40 flex items-center justify-center text-gray-400">
-                        <p>No transactions found. Add your first one!</p>
+                        <p>{t('no_transactions_found_add_first')}</p>
                     </div>
                 </CardContent>
             </Card>
@@ -79,7 +82,7 @@ export default function TransactionList({
     const PaginationControls = () => (
         <div className="flex items-center gap-2">
             <div className="text-sm text-gray-500 mr-2">
-                Page {currentPage} of {totalPages}
+                {t('page_x_of_y', { current: currentPage, total: totalPages })}
             </div>
             <CustomButton
                 variant="outline"
@@ -104,14 +107,14 @@ export default function TransactionList({
     return (
         <Card className="border-none shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>All Transactions ({totalItems})</CardTitle>
+                <CardTitle>{t('all_transactions_count', { count: totalItems })}</CardTitle>
                 <div className="flex items-center gap-4">
                     {/* Top Pagination */}
                     {totalPages > 1 && <PaginationControls />}
 
                     {/* Items Per Page Selector */}
                     <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-500">Show:</span>
+                        <span className="text-sm text-gray-500">{t('show')}:</span>
                         <Select
                             value={String(itemsPerPage)}
                             onValueChange={(value) => onItemsPerPageChange(Number(value))}
@@ -138,7 +141,7 @@ export default function TransactionList({
                                 onCheckedChange={handleSelectAll}
                                 id="select-all"
                             />
-                            <label htmlFor="select-all" className="text-sm font-medium text-gray-600 cursor-pointer select-none">Select All on Page</label>
+                            <label htmlFor="select-all" className="text-sm font-medium text-gray-600 cursor-pointer select-none">{t('select_all_on_page')}</label>
                         </div>
                         <AnimatePresence>
                             {selectedIds.size > 0 && (
@@ -151,14 +154,14 @@ export default function TransactionList({
                                     className="flex items-center gap-2"
                                 >
                                     <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                                        {selectedIds.size} Selected Total
+                                        {t('selected_count', { count: selectedIds.size })}
                                     </span>
                                     <CustomButton
                                         variant="ghost"
                                         size="sm"
                                         onClick={onClearSelection}
                                         className="h-6 w-6 p-0 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full"
-                                        title="Clear Selection"
+                                        title={t('clear_selection')}
                                     >
                                         <X className="w-3 h-3" />
                                     </CustomButton>
@@ -171,7 +174,7 @@ export default function TransactionList({
                                         className="h-7 text-xs px-3"
                                     >
                                         {isBulkDeleting ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Trash className="w-3 h-3 mr-1" />}
-                                        Delete
+                                        {t('delete')}
                                     </CustomButton>
                                 </motion.div>
                             )}
@@ -199,7 +202,7 @@ export default function TransactionList({
                         ))
                     ) : (
                         <div className="h-20 flex items-center justify-center text-gray-400">
-                            <p>No transactions match your filters.</p>
+                            <p>{t('no_transactions_match_filters')}</p>
                         </div>
                     )}
                 </div>

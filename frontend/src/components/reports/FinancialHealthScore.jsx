@@ -4,6 +4,7 @@ import { Activity, TrendingUp, TrendingDown, ShieldCheck, AlertTriangle } from "
 import { getMonthlyPaidExpenses } from "../utils/financialCalculations";
 import { formatCurrency } from "../utils/currencyUtils";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 export default function FinancialHealthScore({
     monthlyIncome,
@@ -17,6 +18,8 @@ export default function FinancialHealthScore({
     isLoading,
     settings
 }) {
+    const { t } = useTranslation();
+
     const scoreData = useMemo(() => {
         if (isLoading) return null;
 
@@ -80,7 +83,7 @@ export default function FinancialHealthScore({
         return (
             <Card className="border-none shadow-sm h-full">
                 <CardHeader>
-                    <CardTitle>Financial Health</CardTitle>
+                    <CardTitle>{t('reports.healthScore.title')}</CardTitle>
                 </CardHeader>
                 <CardContent className="flex items-center justify-center h-[180px]">
                     <div className="w-32 h-32 rounded-full border-4 border-gray-100 animate-pulse" />
@@ -93,10 +96,10 @@ export default function FinancialHealthScore({
 
     // Color Logic
     let color = '#10B981'; // Green
-    let label = 'Excellent';
-    if (score < 80) { color = '#3B82F6'; label = 'Good'; } // Blue
-    if (score < 60) { color = '#F59E0B'; label = 'Fair'; } // Orange
-    if (score < 40) { color = '#EF4444'; label = 'Needs Work'; } // Red
+    let label = t('reports.healthScore.excellent');
+    if (score < 80) { color = '#3B82F6'; label = t('reports.healthScore.good'); } // Blue
+    if (score < 60) { color = '#F59E0B'; label = t('reports.healthScore.fair'); } // Orange
+    if (score < 40) { color = '#EF4444'; label = t('reports.healthScore.needsWork'); } // Red
 
     // SVG Arc Calculation
     const radius = 50;
@@ -108,14 +111,14 @@ export default function FinancialHealthScore({
             <div className="absolute top-0 right-0 p-4 opacity-5">
                 <Activity size={120} />
             </div>
-            
+
             <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2">
                     <Activity className="w-5 h-5 text-blue-600" />
-                    Financial Health
+                    {t('reports.healthScore.title')}
                 </CardTitle>
             </CardHeader>
-            
+
             <CardContent>
                 <div className="flex flex-col sm:flex-row items-center gap-8">
                     {/* Radial Gauge */}
@@ -149,23 +152,23 @@ export default function FinancialHealthScore({
 
                     {/* Breakdown */}
                     <div className="flex-1 w-full space-y-4">
-                        
+
                         {/* Factor 1: Savings */}
                         <div className="space-y-1">
                             <div className="flex justify-between text-sm">
                                 <span className="text-gray-600 flex items-center gap-1">
-                                    <TrendingUp className="w-3 h-3" /> Savings Rate
+                                    <TrendingUp className="w-3 h-3" /> {t('reports.healthScore.savingsRate')}
                                 </span>
                                 <span className="font-medium">{breakdown.savings}/50</span>
                             </div>
                             <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                                <div 
-                                    className="h-full bg-blue-500 rounded-full" 
-                                    style={{ width: `${(breakdown.savings / 50) * 100}%` }} 
+                                <div
+                                    className="h-full bg-blue-500 rounded-full"
+                                    style={{ width: `${(breakdown.savings / 50) * 100}%` }}
                                 />
                             </div>
                             <p className="text-[10px] text-gray-400">
-                                Current: {metrics.savingsRate.toFixed(1)}% (Target: 20%)
+                                {t('reports.healthScore.description', { rate: metrics.savingsRate.toFixed(1) })} {t('reports.healthScore.target')}
                             </p>
                         </div>
 
@@ -173,36 +176,36 @@ export default function FinancialHealthScore({
                         <div className="space-y-1">
                             <div className="flex justify-between text-sm">
                                 <span className="text-gray-600 flex items-center gap-1">
-                                    <ShieldCheck className="w-3 h-3" /> Solvency
+                                    <ShieldCheck className="w-3 h-3" /> {t('reports.healthScore.solvency')}
                                 </span>
                                 <span className="font-medium">{breakdown.solvency}/30</span>
                             </div>
                             <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                                <div 
-                                    className="h-full bg-emerald-500 rounded-full" 
-                                    style={{ width: `${(breakdown.solvency / 30) * 100}%` }} 
+                                <div
+                                    className="h-full bg-emerald-500 rounded-full"
+                                    style={{ width: `${(breakdown.solvency / 30) * 100}%` }}
                                 />
                             </div>
                         </div>
 
-                         {/* Factor 3: Trend */}
-                         <div className="space-y-1">
+                        {/* Factor 3: Trend */}
+                        <div className="space-y-1">
                             <div className="flex justify-between text-sm">
                                 <span className="text-gray-600 flex items-center gap-1">
-                                    {breakdown.trend >= 10 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />} 
-                                    Trend
+                                    {breakdown.trend >= 10 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                                    {t('reports.healthScore.trend')}
                                 </span>
                                 <span className="font-medium">{breakdown.trend}/20</span>
                             </div>
                             <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                                <div 
-                                    className="h-full bg-purple-500 rounded-full" 
-                                    style={{ width: `${(breakdown.trend / 20) * 100}%` }} 
+                                <div
+                                    className="h-full bg-purple-500 rounded-full"
+                                    style={{ width: `${(breakdown.trend / 20) * 100}%` }}
                                 />
                             </div>
                             {metrics.expenseDiff > 0 && (
                                 <p className="text-[10px] text-green-600">
-                                    Spent {formatCurrency(metrics.expenseDiff, settings)} less than last month
+                                    {t('reports.healthScore.spentLess', { amount: formatCurrency(metrics.expenseDiff, settings) })}
                                 </p>
                             )}
                         </div>

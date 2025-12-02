@@ -6,8 +6,10 @@ import { formatCurrency } from "../utils/currencyUtils";
 import { parseDate } from "../utils/dateUtils";
 import { motion } from "framer-motion";
 import { CheckCircle, Clock, AlertTriangle } from "lucide-react";
+import { useTranslation } from "../../hooks/useTranslation";
 
 export default function BudgetCard({ budget, stats, settings, onActivateBudget, size = 'md' }) {
+    const { t } = useTranslation();
     const isSystemBudget = budget.isSystemBudget || false;
     const isSavings = isSystemBudget && budget.systemBudgetType === 'savings';
 
@@ -58,13 +60,13 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget, 
         // let statColor = isOver ? 'text-red-500' : 'text-emerald-600';
         // let statLabel = isOver ? 'Over by' : 'Remaining';
         let statColor = isOver ? 'text-red-500' : 'text-blue-600';
-        let statLabel = isOver ? 'Over Limit' : 'Under Limit';
+        let statLabel = isOver ? t('budgets.card.overLimit') : t('budgets.card.underLimit');
 
         if (isSavings) {
             // If savings (actual) > target (alloc), we have a surplus (GOOD - Green)
             // If savings (actual) < target (alloc), we have a shortfall (BAD - Orange)
             statColor = isOver ? 'text-emerald-600' : 'text-amber-600';
-            statLabel = isOver ? 'Surplus' : 'Shortfall';
+            statLabel = isOver ? t('budgets.card.surplus') : t('budgets.card.shortfall');
             // Refactoring Nov 26
         } else {
             // For Needs/Wants (Ceilings), "Remaining" sounds like "Spend me!".
@@ -85,13 +87,20 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget, 
             statusColor: statColor,
             statusLabel: statLabel
         };
-    }, [stats, isSystemBudget, budget, isSavings]);
+    }, [stats, isSystemBudget, budget, isSavings, t]);
 
     // Visual Theme Helper
     const theme = useMemo(() => {
         const name = budget.name?.toLowerCase() || '';
 
-        // Needs (Red)
+        // System Budgets (Explicit Type Check)
+        if (isSystemBudget) {
+            if (budget.systemBudgetType === 'needs') return { main: '#EF4444', overlay: '#991B1B', bg: '#FEF2F2', text: 'text-red-600' };
+            if (budget.systemBudgetType === 'wants') return { main: '#F59E0B', overlay: '#B45309', bg: '#FFFBEB', text: 'text-amber-600' };
+            if (budget.systemBudgetType === 'savings') return { main: '#10B981', overlay: '#047857', bg: '#ECFDF5', text: 'text-emerald-600' };
+        }
+
+        // Custom Budgets (Name Matching Fallback)
         if (name.includes('need')) {
             return { main: '#EF4444', overlay: '#991B1B', bg: '#FEF2F2', text: 'text-red-600' };
         }
@@ -141,7 +150,7 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget, 
     // REVERSE LOGIC for Needs/Wants
     let displayPercentage = 0;
     let mainOffset = 0;
-    
+
     if (isSavings) {
         // Savings: Grow from 0 -> 100%
         displayPercentage = Math.min(percentage, 100);
@@ -180,7 +189,7 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget, 
                     <Link to={`/BudgetDetail?id=${budget.id}`} state={{ from: '/Budgets' }}>
                         <div className={`flex items-center gap-2 ${currentStyle.mb}`}>
                             <h3 className={`font-bold text-gray-900 hover:text-blue-600 transition-colors truncate flex-1 ${currentStyle.title}`}>
-                                {budget.name}
+                                {isSystemBudget ? t(`settings.goals.priorities.${budget.systemBudgetType}`) : budget.name}
                             </h3>
                             {/* Status Icons */}
                             {!isSystemBudget && (
@@ -204,7 +213,7 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget, 
                     {/* Activation prompt for planned budgets */}
                     {shouldActivate && onActivateBudget && (
                         <div className="mb-3 p-2 bg-amber-50 border border-amber-200 rounded-md">
-                            <p className="text-xs text-amber-800 mb-2">This budget's start date has arrived</p>
+                            <p className="text-xs text-amber-800 mb-2">{t('budgets.card.startDateArrived')}</p>
                             <CustomButton
                                 variant="warning"
                                 size="xs"
@@ -214,7 +223,7 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget, 
                                 }}
                                 className="w-full text-xs"
                             >
-                                Activate Now
+                                {t('budgets.card.activate')}
                             </CustomButton>
                         </div>
                     )}
@@ -249,7 +258,7 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget, 
                                 />
 
                                 {/* Overlay Ring (if > 100%) - Green for Savings, Red for Expenses */}
-                                {/* For Needs/Wants, if overbudget, maybe show a thin red warning ring? */}
+                                {/* For Needs/Wants, if overbudget, we might want a red ring? */}
                                 {isOverBudget && !isSavings && (
                                     <circle
                                         cx="50%" cy="50%" r={normalizedRadius}
@@ -286,7 +295,7 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget, 
                                 </span>
                                 {isOverBudget && !isSavings && (
                                     <span className={`font-bold text-white bg-red-500 rounded uppercase shadow-sm ${currentStyle.overText}`}>
-                                        Over
+                                        {t('budgets.card.over')}
                                     </span>
                                 )}
                                 {isOverBudget && isSavings && (
@@ -302,7 +311,7 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget, 
                     <div className={`grid grid-cols-2 mt-auto ${currentStyle.gap}`}>
                         {/* Row 1: Budget & Remaining */}
                         <div>
-                            <p className={`text-gray-400 mb-px ${currentStyle.statLabel}`}>{isSavings ? 'Target' : 'Budget'}</p>
+                            <p className={`text-gray-400 mb-px ${currentStyle.statLabel}`}>{isSavings ? t('budgets.card.target') : t('budgets.card.budget')}</p>
                             <p className={`font-semibold text-gray-700 truncate ${currentStyle.statVal}`}>
                                 {formatCurrency(allocated, settings)}
                             </p>
@@ -317,7 +326,7 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget, 
                             {/* Subliminal reinforcement: If it's not a savings budget and we are under limit, hint that this is savings */}
                             {!isSavings && !isOverBudget && (
                                 <p className="text-[9px] md:text-[10px] text-emerald-600/80 font-medium mt-0.5 text-right">
-                                    (Potential Savings)
+                                    {t('budgets.card.potentialSavings')}
                                 </p>
                             )}
                         </div>
@@ -327,7 +336,7 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget, 
 
                         {/* Row 2: Paid & Unpaid */}
                         <div>
-                            <p className={`text-gray-400 mb-px ${currentStyle.statLabel}`}>{isSavings ? 'Actual' : 'Paid'}</p>
+                            <p className={`text-gray-400 mb-px ${currentStyle.statLabel}`}>{isSavings ? t('budgets.card.actual') : t('budgets.card.paid')}</p>
                             <p className={`font-semibold text-gray-900 truncate ${currentStyle.statVal}`}>
                                 {formatCurrency(paid, settings)}
                             </p>
@@ -336,7 +345,7 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget, 
                             {/* Hide Unpaid for Savings as it doesn't apply */}
                             {!isSavings ? (
                                 <>
-                                    <p className={`text-gray-400 mb-px ${currentStyle.statLabel}`}>Unpaid</p>
+                                    <p className={`text-gray-400 mb-px ${currentStyle.statLabel}`}>{t('budgets.card.unpaid')}</p>
                                     <div className="flex items-center justify-end gap-1">
                                         <p className={`font-semibold truncate ${unpaid > 0 ? 'text-amber-600' : 'text-gray-300'} ${currentStyle.statVal}`}>
                                             {formatCurrency(unpaid, settings)}
@@ -345,7 +354,7 @@ export default function BudgetCard({ budget, stats, settings, onActivateBudget, 
                                 </>
                             ) : (
                                 <div className="h-full flex items-end justify-end">
-                                    <span className="text-xs text-gray-300 italic">Net Flow</span>
+                                    <span className="text-xs text-gray-300 italic">{t('budgets.card.netFlow')}</span>
                                 </div>
                             )}
                         </div>

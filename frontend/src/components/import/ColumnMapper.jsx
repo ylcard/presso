@@ -2,21 +2,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowRight } from "lucide-react";
-
-const REQUIRED_FIELDS = [
-    { key: 'date', label: 'Date', required: true },
-    { key: 'amount', label: 'Amount', required: true },
-    { key: 'title', label: 'Description/Title', required: true },
-    { key: 'type', label: 'Type (Income/Expense)', required: false },
-    { key: 'category', label: 'Category', required: false }
-];
+import { useTranslation } from "react-i18next";
 
 export default function ColumnMapper({ headers, mappings, onMappingChange }) {
+    const { t } = useTranslation();
+
+    const REQUIRED_FIELDS = [
+        { key: 'date', label: t('import.fields.date'), required: true },
+        { key: 'amount', label: t('import.fields.amount'), required: true },
+        { key: 'title', label: t('import.fields.description'), required: true },
+        { key: 'type', label: t('import.fields.type'), required: false },
+        { key: 'category', label: t('import.fields.category'), required: false }
+    ];
+
     return (
         <div className="space-y-6">
             <Card>
                 <CardHeader>
-                    <CardTitle className="text-lg">Map CSV Columns</CardTitle>
+                    <CardTitle className="text-lg">{t('import.mapColumns')}</CardTitle>
                 </CardHeader>
                 <CardContent className="grid gap-6">
                     {REQUIRED_FIELDS.map((field) => (
@@ -26,7 +29,7 @@ export default function ColumnMapper({ headers, mappings, onMappingChange }) {
                                     {field.label}
                                     {field.required && <span className="text-red-500 ml-1">*</span>}
                                 </Label>
-                                <p className="text-xs text-gray-500">App Field</p>
+                                <p className="text-xs text-gray-500">{t('import.appField')}</p>
                             </div>
 
                             <ArrowRight className="w-5 h-5 text-gray-400 hidden md:block" />
@@ -36,7 +39,7 @@ export default function ColumnMapper({ headers, mappings, onMappingChange }) {
                                 onValueChange={(value) => onMappingChange(field.key, value)}
                             >
                                 <SelectTrigger className={!mappings[field.key] && field.required ? "border-red-300" : ""}>
-                                    <SelectValue placeholder="Select CSV Column" />
+                                    <SelectValue placeholder={t('import.selectColumn')} />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {headers.map((header) => (

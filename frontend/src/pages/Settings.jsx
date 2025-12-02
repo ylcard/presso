@@ -21,8 +21,10 @@ import {
 import AmountInput from "../components/ui/AmountInput";
 import { Skeleton } from "@/components/ui/skeleton";
 import { showToast } from "@/components/ui/use-toast";
+import { useTranslation } from "../hooks/useTranslation";
 
 export default function Settings() {
+    const { t } = useTranslation();
     const { settings, updateSettings, user, refreshUser } = useSettings();
     const { logout } = useAuth();
 
@@ -171,11 +173,11 @@ export default function Settings() {
         // 3. Reset Goals
         syncLocalGoalsWithDb();
 
-        showToast({ title: "Changes Discarded", description: "Settings reverted to last saved state." });
+        showToast({ title: t('settings.toast.changesDiscarded'), description: t('settings.toast.changesDiscardedDesc') });
     };
 
     const handleResetToDefaults = () => {
-        if (!window.confirm("Are you sure you want to reset all settings to factory defaults?")) return;
+        if (!window.confirm(t('settings.confirmReset'))) return;
 
         // 1. Reset General Form to CONSTANT defaults
         resetForm(DEFAULT_SETTINGS);
@@ -186,7 +188,7 @@ export default function Settings() {
         // 4. Clear Absolute Values (since we are switching to percentage default)
         setAbsoluteValues({ needs: '', wants: '', savings: '' });
 
-        showToast({ title: "Reset Applied", description: "Settings reset to defaults. Click Save to apply." });
+        showToast({ title: t('settings.toast.resetApplied'), description: t('settings.toast.resetAppliedDesc') });
     };
 
     const handleGlobalSave = async () => {
@@ -257,10 +259,10 @@ export default function Settings() {
             });
 
             await Promise.all(promises);
-            showToast({ title: "Success", description: "All changes saved successfully" });
+            showToast({ title: t('success'), description: t('settings.toast.savedSuccess') });
         } catch (error) {
             console.error('Save error:', error);
-            showToast({ title: "Error", description: "Failed to save settings.", variant: "destructive" });
+            showToast({ title: t('error'), description: t('settings.toast.saveFailed'), variant: "destructive" });
         } finally {
             setIsGlobalSaving(false);
         }
@@ -273,18 +275,18 @@ export default function Settings() {
         <div className="min-h-screen p-4 md:p-8 pb-24">
             <div className="max-w-4xl mx-auto space-y-8">
                 <div>
-                    <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Settings</h1>
-                    <p className="text-gray-500 mt-1">Manage your preferences and financial goals</p>
+                    <h1 className="text-3xl md:text-4xl font-bold text-gray-900">{t('settings.title')}</h1>
+                    <p className="text-gray-500 mt-1">{t('settings.subtitle')}</p>
                 </div>
 
                 <Card className="border-none shadow-lg">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <SettingsIcon className="w-5 h-5" />
-                            Application Preferences
+                            {t('settings.appPreferences.title')}
                         </CardTitle>
                         <CardDescription>
-                            Manage currency formatting and budget allocation goals
+                            {t('settings.appPreferences.description')}
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
@@ -325,12 +327,12 @@ export default function Settings() {
                         {/* SECTION 1: CURRENCY & FORMATTING */}
                         <div className="space-y-6">
                             <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
-                                <h3 className="font-semibold text-gray-900">Currency & Formatting</h3>
+                                <h3 className="font-semibold text-gray-900">{t('settings.currency.title')}</h3>
                             </div>
 
                             {/* ... Currency Inputs ... */}
                             <div className="space-y-2">
-                                <Label htmlFor="currency">Currency</Label>
+                                <Label htmlFor="currency">{t('settings.currency.label')}</Label>
                                 <Select value={formData.baseCurrency || 'USD'} onValueChange={handleCurrencyChange}>
                                     <SelectTrigger><SelectValue /></SelectTrigger>
                                     <SelectContent>
@@ -343,22 +345,22 @@ export default function Settings() {
 
                             <div className="grid md:grid-cols-2 gap-6">
                                 <div className="space-y-2">
-                                    <Label>Position</Label>
+                                    <Label>{t('settings.currency.position')}</Label>
                                     <Select value={formData.currencyPosition} onValueChange={(v) => handleFormChange('currencyPosition', v)}>
                                         <SelectTrigger><SelectValue /></SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="before">Before ($100)</SelectItem>
-                                            <SelectItem value="after">After (100€)</SelectItem>
+                                            <SelectItem value="before">{t('settings.currency.positionBefore')} ($100)</SelectItem>
+                                            <SelectItem value="after">{t('settings.currency.positionAfter')} (100€)</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>View Mode</Label>
+                                    <Label>{t('settings.currency.viewMode')}</Label>
                                     <Select value={formData.budgetViewMode || 'bars'} onValueChange={(v) => handleFormChange('budgetViewMode', v)}>
                                         <SelectTrigger><SelectValue /></SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="bars">Bars</SelectItem>
-                                            <SelectItem value="cards">Cards</SelectItem>
+                                            <SelectItem value="bars">{t('settings.currency.viewModeBars')}</SelectItem>
+                                            <SelectItem value="cards">{t('settings.currency.viewModeCards')}</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -367,23 +369,23 @@ export default function Settings() {
                             {/* ... Formatting Inputs ... */}
                             <div className="grid md:grid-cols-2 gap-6">
                                 <div className="space-y-2">
-                                    <Label>Thousand Separator</Label>
+                                    <Label>{t('settings.currency.thousandSeparator')}</Label>
                                     <Select value={formData.thousandSeparator} onValueChange={(v) => handleFormChange('thousandSeparator', v)}>
                                         <SelectTrigger><SelectValue /></SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value=",">Comma (,)</SelectItem>
-                                            <SelectItem value=".">Period (.)</SelectItem>
-                                            <SelectItem value=" ">Space</SelectItem>
+                                            <SelectItem value=",">{t('settings.currency.separatorComma')} (,)</SelectItem>
+                                            <SelectItem value=".">{t('settings.currency.separatorPeriod')} (.)</SelectItem>
+                                            <SelectItem value=" ">{t('settings.currency.separatorSpace')}</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Decimal Separator</Label>
+                                    <Label>{t('settings.currency.decimalSeparator')}</Label>
                                     <Select value={formData.decimalSeparator} onValueChange={(v) => handleFormChange('decimalSeparator', v)}>
                                         <SelectTrigger><SelectValue /></SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value=".">Period (.)</SelectItem>
-                                            <SelectItem value=",">Comma (,)</SelectItem>
+                                            <SelectItem value=".">{t('settings.currency.separatorPeriod')} (.)</SelectItem>
+                                            <SelectItem value=",">{t('settings.currency.separatorComma')} (,)</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -391,18 +393,18 @@ export default function Settings() {
 
                             <div className="grid md:grid-cols-2 gap-6">
                                 <div className="space-y-2">
-                                    <Label>Decimal Places</Label>
+                                    <Label>{t('settings.currency.decimalPlaces')}</Label>
                                     <Input type="number" min="0" max="4" value={formData.decimalPlaces} onChange={(e) => handleFormChange('decimalPlaces', parseInt(e.target.value) || 0)} />
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="flex items-center gap-2 pt-8 cursor-pointer">
                                         <input type="checkbox" checked={formData.hideTrailingZeros} onChange={(e) => handleFormChange('hideTrailingZeros', e.target.checked)} className="rounded border-gray-300" />
-                                        Hide Trailing Zeros
+                                        {t('settings.currency.hideTrailingZeros')}
                                     </Label>
                                 </div>
                             </div>
                             <div className="p-4 bg-slate-50 rounded-lg border border-slate-100">
-                                <p className="text-xs text-gray-500 mb-1">Preview</p>
+                                <p className="text-xs text-gray-500 mb-1">{t('settings.currency.preview')}</p>
                                 <p className="text-2xl font-bold text-gray-900">{formatCurrency(previewAmount, formData)}</p>
                             </div>
                         </div>
@@ -412,9 +414,9 @@ export default function Settings() {
                             <div>
                                 <div className="flex items-center gap-2 mb-1">
                                     <Target className="w-5 h-5 text-gray-900" />
-                                    <h3 className="font-semibold text-gray-900">Goal Allocation</h3>
+                                    <h3 className="font-semibold text-gray-900">{t('settings.goals.title')}</h3>
                                 </div>
-                                <p className="text-sm text-gray-500">Define how your monthly income is split between Needs, Wants, and Savings.</p>
+                                <p className="text-sm text-gray-500">{t('settings.goals.description')}</p>
                             </div>
 
                             {loadingGoals ? (
@@ -423,8 +425,8 @@ export default function Settings() {
                                 <>
                                     {/* Mode Switcher */}
                                     <div className="flex items-center justify-center p-1 bg-gray-100 rounded-lg">
-                                        <button type="button" onClick={() => setLocalGoalMode(true)} className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${!isAbsoluteMode ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Percentage</button>
-                                        <button type="button" onClick={() => setLocalGoalMode(false)} className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${isAbsoluteMode ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Absolute Values</button>
+                                        <button type="button" onClick={() => setLocalGoalMode(true)} className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${!isAbsoluteMode ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>{t('settings.goals.modes.percentage')}</button>
+                                        <button type="button" onClick={() => setLocalGoalMode(false)} className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${isAbsoluteMode ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>{t('settings.goals.modes.absolute')}</button>
                                     </div>
 
                                     {/* SLIDER VIEW (Percentage) */}
@@ -457,7 +459,7 @@ export default function Settings() {
                                                         <div key={key} className="space-y-1.5">
                                                             <Label className="text-xs justify-start font-semibold uppercase tracking-wider text-gray-500 flex items-center gap-2">
                                                                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: config.color }} />
-                                                                {config.label}
+                                                                {t(`settings.goals.priorities.${key}`)}
                                                             </Label>
                                                             <div>
                                                                 <AmountInput
@@ -471,7 +473,7 @@ export default function Settings() {
                                                     ))}
                                             </div>
                                             <div className="flex justify-end items-center gap-4 pt-2 border-t border-gray-100">
-                                                <span className="text-sm font-medium text-gray-500">Total Allocated</span>
+                                                <span className="text-sm font-medium text-gray-500">{t('settings.goals.totalAllocated')}</span>
                                                 <span className="text-lg font-bold text-gray-900">
                                                     {formData.currencySymbol} {Object.values(absoluteValues).reduce((acc, val) => acc + (Number(val) || 0), 0).toLocaleString()}
                                                 </span>
@@ -487,9 +489,9 @@ export default function Settings() {
                                                     <Lock className="w-4 h-4" />
                                                 </div>
                                                 <div className="space-y-0.5">
-                                                    <p className="text-sm font-bold text-gray-900">Inflation Protection</p>
+                                                    <p className="text-sm font-bold text-gray-900">{t('settings.goals.inflation.title')}</p>
                                                     <p className="text-xs text-gray-500 max-w-[280px] sm:max-w-md">
-                                                        Prevents lifestyle creep. If income spikes, budgets are calculated on the lower of your current vs average income.
+                                                        {t('settings.goals.inflation.description')}
                                                     </p>
                                                 </div>
                                             </div>
@@ -508,7 +510,7 @@ export default function Settings() {
                                                 <div key={key} className="text-center space-y-1">
                                                     <div className="flex items-center justify-center gap-2 mb-1">
                                                         <div className="w-2 h-2 rounded-full" style={{ backgroundColor: config.color }} />
-                                                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">{config.label}</span>
+                                                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">{t(`settings.goals.priorities.${key}`)}</span>
                                                     </div>
                                                     <div className="text-2xl font-bold text-gray-900">{Math.round(currentValues[key])}%</div>
                                                 </div>
@@ -527,7 +529,7 @@ export default function Settings() {
                         variant="outline"
                         className="w-full sm:w-auto text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
                     >
-                        Reset to Defaults
+                        {t('settings.actions.reset')}
                     </CustomButton>
 
                     <CustomButton
@@ -535,7 +537,7 @@ export default function Settings() {
                         variant="outline"
                         className="w-full sm:w-auto text-gray-600 hover:text-gray-900"
                     >
-                        Log Out
+                        {t('settings.actions.logout')}
                     </CustomButton>
 
                     <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -546,7 +548,7 @@ export default function Settings() {
                                     variant="ghost"
                                     className="w-full sm:w-auto"
                                 >
-                                    Discard Changes
+                                    {t('settings.actions.discard')}
                                 </CustomButton>
                             </div>
                         )}
@@ -557,7 +559,7 @@ export default function Settings() {
                             variant="primary"
                             className="w-full sm:w-auto min-w-[140px]"
                         >
-                            {isGlobalSaving ? 'Saving...' : <><Save className="w-4 h-4 mr-2" />Save Settings</>}
+                            {isGlobalSaving ? t('common.saving') : <><Save className="w-4 h-4 mr-2" />{t('settings.actions.save')}</>}
                         </CustomButton>
                     </div>
                 </div>

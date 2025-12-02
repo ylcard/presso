@@ -16,8 +16,10 @@ import { getCustomBudgetStats } from "../components/utils/financialCalculations"
 import BudgetCard from "../components/budgets/BudgetCard";
 import MonthNavigator from "../components/ui/MonthNavigator";
 import QuickAddBudget from "../components/dashboard/QuickAddBudget";
+import { useTranslation } from "../hooks/useTranslation";
 
 export default function Budgets() {
+    const { t } = useTranslation();
     const { user, settings } = useSettings();
     const [showQuickAddBudget, setShowQuickAddBudget] = useState(false);
     const { selectedMonth, setSelectedMonth, selectedYear, setSelectedYear, displayDate, monthStart, monthEnd } = usePeriod();
@@ -62,8 +64,8 @@ export default function Budgets() {
             <div className="max-w-7xl mx-auto space-y-6">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
-                        <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Budgets</h1>
-                        <p className="text-gray-500 mt-1">Manage your budgets for {displayDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
+                        <h1 className="text-3xl md:text-4xl font-bold text-gray-900">{t('budgets.title')}</h1>
+                        <p className="text-gray-500 mt-1">{t('budgets.subtitle', { date: displayDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) })}</p>
                     </div>
                 </div>
 
@@ -82,12 +84,12 @@ export default function Budgets() {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <span className="px-3 py-1 rounded-lg text-sm bg-blue-50 text-blue-600">
-                                    System Budgets
+                                    {t('budgets.system.title')}
                                 </span>
                                 <span className="text-gray-400">({systemBudgetsWithStats.length})</span>
                             </CardTitle>
                             <p className="text-sm text-gray-500 mt-2">
-                                Automatically managed based on your budget goals. These update based on your monthly income.
+                                {t('budgets.system.description')}
                             </p>
                         </CardHeader>
                         <CardContent>
@@ -120,17 +122,17 @@ export default function Budgets() {
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <span className="px-3 py-1 rounded-lg text-sm bg-purple-50 text-purple-600">
-                                    Custom Budgets
+                                    {t('budgets.custom.title')}
                                 </span>
                             </div>
                             <CustomButton variant="create" onClick={() => setShowQuickAddBudget(true)}>
                                 <Plus className="w-4 h-4 mr-2" />
-                                Create Custom Budget
+                                {t('budgets.custom.create')}
                             </CustomButton>
                         </CardHeader>
                         <CardContent>
                             <div className="h-40 flex items-center justify-center text-gray-400">
-                                <p>No custom budgets yet. Create your first one!</p>
+                                <p>{t('budgets.custom.empty')}</p>
                             </div>
                         </CardContent>
                     </Card>
@@ -140,17 +142,17 @@ export default function Budgets() {
                             <div>
                                 <div className="flex items-center gap-2 mb-2">
                                     <span className="px-3 py-1 rounded-lg text-sm bg-purple-50 text-purple-600">
-                                        Custom Budgets
+                                        {t('budgets.custom.title')}
                                     </span>
                                     <span className="text-gray-400">({sortedCustomBudgets.length})</span>
                                 </div>
                                 <p className="text-sm text-gray-500">
-                                    Custom budgets containing wants expenses, sorted by status and date
+                                    {t('budgets.custom.description')}
                                 </p>
                             </div>
                             <CustomButton variant="create" onClick={() => setShowQuickAddBudget(true)}>
                                 <Plus className="w-4 h-4 mr-2" />
-                                Create Custom Budget
+                                {t('budgets.custom.create')}
                             </CustomButton>
                         </CardHeader>
                         <CardContent>

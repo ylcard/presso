@@ -10,6 +10,7 @@ import { PRESET_COLORS } from "../utils/constants";
 import { normalizeAmount } from "../utils/generalUtils";
 import { usePeriod } from "../hooks/usePeriod";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useTranslation } from "react-i18next";
 
 export default function CustomBudgetForm({
     budget,
@@ -17,6 +18,7 @@ export default function CustomBudgetForm({
     onCancel,
     isSubmitting
 }) {
+    const { t } = useTranslation();
     const { monthStart, monthEnd } = usePeriod();
 
     const [formData, setFormData] = useState({
@@ -81,12 +83,12 @@ export default function CustomBudgetForm({
 
             <div className="grid grid-cols-2 gap-3 items-start">
                 <div className="flex flex-col space-y-2">
-                    <Label htmlFor="name">Budget Name</Label>
+                    <Label htmlFor="name">{t('budget_name')}</Label>
                     <Input
                         id="name"
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        placeholder="e.g., Manchester Trip"
+                        placeholder={t('budget_name_placeholder')}
                         required
                         autoFocus
                         autoComplete="off"
@@ -94,7 +96,7 @@ export default function CustomBudgetForm({
                 </div>
 
                 <div className="flex flex-col space-y-2">
-                    <Label>Date Range</Label>
+                    <Label>{t('date_range')}</Label>
                     <DateRangePicker
                         startDate={formData.startDate}
                         endDate={formData.endDate}
@@ -105,7 +107,7 @@ export default function CustomBudgetForm({
 
             <div className="grid grid-cols-1 gap-3 items-end">
                 <div className="space-y-2">
-                    <Label htmlFor="allocatedAmount">Budget Limit</Label>
+                    <Label htmlFor="allocatedAmount">{t('budget_limit')}</Label>
                     <AmountInput
                         id="allocatedAmount"
                         value={formData.allocatedAmount}
@@ -117,7 +119,7 @@ export default function CustomBudgetForm({
             </div>
 
             <div className="space-y-2">
-                <Label className="text-sm">Color</Label>
+                <Label className="text-sm">{t('color')}</Label>
                 <div className="flex gap-2">
                     {PRESET_COLORS.map((color) => (
                         <button
@@ -133,12 +135,12 @@ export default function CustomBudgetForm({
             </div>
 
             <div className="space-y-2">
-                <Label htmlFor="description">Description (Optional)</Label>
+                <Label htmlFor="description">{t('description_optional')}</Label>
                 <Textarea
                     id="description"
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="Add details about this budget..."
+                    placeholder={t('description_placeholder')}
                     rows={2}
                     className="resize-none"
                 />
@@ -146,14 +148,14 @@ export default function CustomBudgetForm({
 
             <div className="flex justify-end gap-3 pt-2">
                 <CustomButton type="button" variant="outline" onClick={onCancel}>
-                    Cancel
+                    {t('cancel')}
                 </CustomButton>
                 <CustomButton
                     type="submit"
                     disabled={isSubmitting}
                     variant="primary"
                 >
-                    {isSubmitting ? 'Saving...' : budget ? 'Update Budget' : 'Create Budget'}
+                    {isSubmitting ? t('saving') : budget ? t('update_budget') : t('create_budget')}
                 </CustomButton>
             </div>
         </form>

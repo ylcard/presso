@@ -21,6 +21,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import { SUPPORTED_CURRENCIES } from "../utils/constants";
+import { useTranslation } from "react-i18next";
 
 /**
  * Custom input component designed for monetary amounts.
@@ -38,6 +39,8 @@ import { SUPPORTED_CURRENCIES } from "../utils/constants";
  * @param {object} props.... - Remaining props passed directly to the underlying Input component.
  * @returns {JSX.Element} The styled amount input with currency symbol or selector.
  */
+
+
 export default function AmountInput({
     value,
     onChange,
@@ -50,6 +53,7 @@ export default function AmountInput({
 }) {
     const { settings } = useSettings();
     const [open, setOpen] = useState(false);
+    const { t } = useTranslation();
 
     // Use provided currencySymbol or fall back to user's base currency
     const displaySymbol = currencySymbol || settings.currencySymbol;
@@ -134,8 +138,8 @@ export default function AmountInput({
                 </PopoverTrigger>
                 <PopoverContent className="w-[120px] p-0" align="start">
                     <Command>
-                        <CommandInput placeholder="Search..." className="h-8 text-xs" />
-                        <CommandEmpty>No currency.</CommandEmpty>
+                        <CommandInput placeholder={t('search_placeholder')} className="h-8 text-xs" />
+                        <CommandEmpty>{t('no_currency')}</CommandEmpty>
                         <CommandGroup className="max-h-64 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
                             {SUPPORTED_CURRENCIES.map((c) => (
                                 <CommandItem

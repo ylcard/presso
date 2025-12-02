@@ -25,6 +25,7 @@ import { differenceInDays, parseISO, startOfDay } from "date-fns";
 import { normalizeAmount } from "../utils/generalUtils";
 import { useCategoryRules } from "../hooks/useBase44Entities";
 import { categorizeTransaction } from "../utils/transactionCategorization";
+import { useTranslation } from "react-i18next";
 
 export default function TransactionFormContent({
     initialTransaction = null,
@@ -39,6 +40,7 @@ export default function TransactionFormContent({
     const { confirmAction } = useConfirm();
     const { exchangeRates, refreshRates, isRefreshing, refetch, isLoading } = useExchangeRates();
     const { rules } = useCategoryRules(user);
+    const { t } = useTranslation();
 
     // Force fetch rates on mount if empty
     useEffect(() => {
@@ -160,8 +162,8 @@ export default function TransactionFormContent({
                         date: formatDateString(startDate)
                     }));
                     toast({
-                        title: "Date Updated",
-                        description: `Date adjusted to match "${selectedBudget.name}" period.`,
+                        title: t('date_updated'),
+                        description: t('date_adjusted_message', { budgetName: selectedBudget.name }),
                     });
                 }
             }
@@ -275,13 +277,13 @@ export default function TransactionFormContent({
 
         if (result.success) {
             toast({
-                title: result.alreadyFresh ? "Rates Up to Date" : (result.skipped ? "Historical Rate Skipped" : "Success"),
+                title: result.alreadyFresh ? t('rates_up_to_date') : (result.skipped ? t('historical_rate_skipped') : t('success')),
                 description: result.message,
                 variant: result.skipped ? "warning" : "default"
             });
         } else {
             toast({
-                title: "Error",
+                title: t('error'),
                 description: result.message,
                 variant: "destructive",
             });
@@ -294,10 +296,10 @@ export default function TransactionFormContent({
 
         if (existingRateDetails) {
             confirmAction(
-                "Update Exchange Rate?",
-                `A rate for this date already exists (${existingRateDetails.rate} from ${formatDate(existingRateDetails.date)}). Do you want to fetch a new one?`,
+                t('update_exchange_rate_title'),
+                t('update_exchange_rate_message', { rate: existingRateDetails.rate, date: formatDate(existingRateDetails.date) }),
                 () => executeRefresh(true),
-                { confirmText: "Update" }
+                { confirmText: t('update') }
             );
         } else {
             await executeRefresh(false);
@@ -313,7 +315,7 @@ export default function TransactionFormContent({
 
         // Validation: Budget is required for expenses
         if (formData.type === 'expense' && !formData.customBudgetId) {
-            setValidationError("Please select a budget for this expense.");
+            setValidationError(t('budget_required_error'));
             return;
         }
 
@@ -328,7 +330,7 @@ export default function TransactionFormContent({
 
             // AUTO-FETCH ON SUBMIT: If rate is missing and not paid, try to fetch it now
             if ((!sourceRate || !targetRate) && !formData.isPaid) {
-                toast({ title: "Fetching Exchange Rates...", description: "Please wait while we update rates." });
+                toast({ title: t('fetching_rates'), description: t('fetching_rates_desc') });
 
                 const result = await refreshRates(
                     formData.originalCurrency,
@@ -337,17 +339,17 @@ export default function TransactionFormContent({
                 );
 
                 if (!result.success) {
-                    setValidationError("Failed to fetch exchange rates. Please try again or enter amount manually.");
+                    setValidationError(t('fetch_rates_failed'));
                     return;
                 }
 
-                setValidationError("Exchange rates updated. Please review the rate and click Save again.");
+                setValidationError(t('rates_updated_review'));
                 return;
             }
 
             if (!sourceRate || !targetRate) {
                 if (!formData.isPaid) {
-                    setValidationError("Exchange rate is missing. Please fetch rates manually or mark as paid.");
+                    setValidationError(t('rate_missing_error'));
                     return;
                 }
             }
@@ -423,12 +425,12 @@ export default function TransactionFormContent({
 
             {/* Title */}
             <div className="space-y-2">
-                <Label htmlFor="title">Title</Label>
+                <Label htmlFor="title">{t('title')}</Label>
                 <Input
                     id="title"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    placeholder="e.g., Salary, Groceries, Coffee"
+                    placeholder={t('title_placeholder')}
                     required
                     autoComplete="off"
                 />
@@ -437,7 +439,7 @@ export default function TransactionFormContent({
             {/* Amount and Currency (Combined) */}
             <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                    <Label htmlFor="amount">Amount</Label>
+                    <Label htmlFor="amount">{t('amount')}</Label>
                     {isForeignCurrency && (
                         <div className="flex items-center gap-2">
                             {(() => {
@@ -451,14 +453,14 @@ export default function TransactionFormContent({
                                     return (
                                         <span
                                             className={`text-xs ${isOld ? 'text-amber-600' : 'text-gray-500'}`}
-                                            title={`Rate: ${rateDetails.rate} (from ${formatDate(rateDetails.date)}) - ${age} days diff`}
+                                            title={t('rate_tooltip', { rate: rateDetails.rate, date: formatDate(rateDetails.date), age })}
                                         >
-                                            Rate: {rateDetails.rate} ({formatDate(rateDetails.date, 'MMM d')}{isOld ? ', Old' : ''})
+                                            {t('rate_label', { rate: rateDetails.rate, date: formatDate(rateDetails.date, 'MMM d') })}{isOld ? t('old_rate_suffix') : ''}
                                         </span>
                                     );
                                 }
-                                if (isLoading) return <span className="text-xs text-gray-400">Loading...</span>;
-                                return <span className="text-xs text-amber-600">No rate</span>;
+                                if (isLoading) return <span className="text-xs text-gray-400">{t('loading')}</span>;
+                                return <span className="text-xs text-amber-600">{t('no_rate')}</span>;
                             })()}
                             <CustomButton
                                 type="button"
@@ -498,7 +500,7 @@ export default function TransactionFormContent({
                         })}
                     />
                     <Label htmlFor="isCashExpense" className="cursor-pointer flex items-center gap-2">
-                        Paid with cash
+                        {t('paid_with_cash')}
                     </Label>
                 </div>
             )}
@@ -507,22 +509,22 @@ export default function TransactionFormContent({
             <div className="space-y-2">
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                        <Label htmlFor="date">Date</Label>
+                        <Label htmlFor="date">{t('date')}</Label>
                         <DatePicker
                             value={formData.date}
                             onChange={(value) => setFormData({ ...formData, date: value })}
-                            placeholder="Select date"
+                            placeholder={t('select_date')}
                         />
                     </div>
 
                     {/* Payment Date - appears next to Date when isPaid is checked */}
                     <AnimatePresenceContainer show={formData.type === 'expense' && formData.isPaid && !formData.isCashExpense}>
                         <div className="space-y-2">
-                            <Label htmlFor="paidDate">Payment Date</Label>
+                            <Label htmlFor="paidDate">{t('payment_date')}</Label>
                             <DatePicker
                                 value={formData.paidDate || formData.date}
                                 onChange={(value) => setFormData({ ...formData, paidDate: value })}
-                                placeholder="Payment date"
+                                placeholder={t('payment_date')}
                             />
                         </div>
                     </AnimatePresenceContainer>
@@ -541,7 +543,7 @@ export default function TransactionFormContent({
                             })}
                         />
                         <Label htmlFor="isPaid" className="cursor-pointer">
-                            Mark as paid
+                            {t('mark_as_paid')}
                         </Label>
                     </div>
                 )}
@@ -553,7 +555,7 @@ export default function TransactionFormContent({
                     <div className="grid grid-cols-2 gap-4">
                         {/* Category */}
                         <div className="space-y-2">
-                            <Label htmlFor="category">Category</Label>
+                            <Label htmlFor="category">{t('category')}</Label>
                             <CategorySelect
                                 value={formData.category_id}
                                 onValueChange={(value) => setFormData({ ...formData, category_id: value })}
@@ -563,25 +565,25 @@ export default function TransactionFormContent({
 
                         {/* Financial Priority */}
                         <div className="space-y-2">
-                            <Label htmlFor="financial_priority">Financial Priority</Label>
+                            <Label htmlFor="financial_priority">{t('financial_priority')}</Label>
                             <Select
                                 value={formData.financial_priority || ''}
                                 onValueChange={(value) => setFormData({ ...formData, financial_priority: value || '' })}
                             >
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Select priority" />
+                                    <SelectValue placeholder={t('select_priority')} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="needs">Needs</SelectItem>
-                                    <SelectItem value="wants">Wants</SelectItem>
-                                    <SelectItem value="savings">Savings</SelectItem>
+                                    <SelectItem value="needs">{t('priority_needs')}</SelectItem>
+                                    <SelectItem value="wants">{t('priority_wants')}</SelectItem>
+                                    <SelectItem value="savings">{t('priority_savings')}</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                     </div>
                     {/* Budget (REQUIRED for expenses) */}
                     <div className="space-y-2">
-                        <Label htmlFor="customBudget">Budget Allocation</Label>
+                        <Label htmlFor="customBudget">{t('budget_allocation')}</Label>
                         <Popover open={isBudgetOpen} onOpenChange={setIsBudgetOpen} modal={true}>
                             <PopoverTrigger asChild>
                                 <CustomButton
@@ -592,19 +594,19 @@ export default function TransactionFormContent({
                                 >
                                     {formData.customBudgetId
                                         ? allBudgets.find((b) => b.id === formData.customBudgetId)?.name
-                                        : "Select budget..."}
+                                        : t('select_budget')}
                                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                 </CustomButton>
                             </PopoverTrigger>
                             <PopoverContent className="w-[300px] p-0" align="start">
                                 <Command shouldFilter={false} className="h-auto overflow-hidden">
                                     <CommandInput
-                                        placeholder="Search budgets..."
+                                        placeholder={t('search_budgets')}
                                         onValueChange={setBudgetSearchTerm}
                                     />
                                     <CommandList>
-                                        <CommandEmpty>No relevant budget found.</CommandEmpty>
-                                        <CommandGroup heading={budgetSearchTerm ? "Search Results" : undefined}>
+                                        <CommandEmpty>{t('no_budget_found')}</CommandEmpty>
+                                        <CommandGroup heading={budgetSearchTerm ? t('search_results') : undefined}>
                                             {visibleOptions.map((budget) => (
                                                 <CommandItem
                                                     key={budget.id}
@@ -639,12 +641,12 @@ export default function TransactionFormContent({
 
             {/* Notes */}
             <div className="space-y-2">
-                <Label htmlFor="notes">Notes</Label>
+                <Label htmlFor="notes">{t('notes')}</Label>
                 <Textarea
                     id="notes"
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    placeholder="Additional details..."
+                    placeholder={t('notes_placeholder')}
                     rows={2}
                 />
             </div>
@@ -652,14 +654,14 @@ export default function TransactionFormContent({
             {/* Action Buttons */}
             <div className="flex justify-end gap-3 pt-2">
                 <CustomButton type="button" variant="outline" onClick={onCancel}>
-                    Cancel
+                    {t('cancel')}
                 </CustomButton>
                 <CustomButton
                     type="submit"
                     disabled={isSubmitting}
                     variant="primary"
                 >
-                    {isSubmitting ? 'Saving...' : (initialTransaction && initialTransaction.id) ? 'Update' : 'Add'}
+                    {isSubmitting ? t('saving') : (initialTransaction && initialTransaction.id) ? t('update') : t('add')}
                 </CustomButton>
             </div>
         </form>

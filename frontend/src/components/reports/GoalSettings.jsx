@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { Target, Save, GripVertical, Lock } from "lucide-react";
@@ -6,12 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import AmountInput from "../ui/AmountInput";
 import { Label } from "@/components/ui/label";
-
-const priorityConfig = {
-    needs: { label: "Needs", color: "#EF4444", description: "Essential expenses" },
-    wants: { label: "Wants", color: "#F59E0B", description: "Discretionary spending" },
-    savings: { label: "Savings", color: "#10B981", description: "Savings and investments" }
-};
+import { useTranslation } from 'react-i18next';
 
 export default function GoalSettings({
     // State Props
@@ -29,8 +24,15 @@ export default function GoalSettings({
     // Actions
     onSave              // function
 }) {
+    const { t } = useTranslation();
     const containerRef = useRef(null);
     const [activeThumb, setActiveThumb] = useState(null);
+
+    const priorityConfig = useMemo(() => ({
+        needs: { label: t('reports.kpi.needs'), color: "#EF4444", description: t('settings.goals.descriptions.needs', "Essential expenses") },
+        wants: { label: t('reports.kpi.wants'), color: "#F59E0B", description: t('settings.goals.descriptions.wants', "Discretionary spending") },
+        savings: { label: t('reports.kpi.savings'), color: "#10B981", description: t('settings.goals.descriptions.savings', "Savings and investments") }
+    }), [t]);
 
     const isAbsoluteMode = !goalMode;
 
@@ -75,7 +77,7 @@ export default function GoalSettings({
         return (
             <Card className="border-none shadow-lg sticky top-6">
                 <CardHeader>
-                    <CardTitle>Goal Settings</CardTitle>
+                    <CardTitle>{t('settings.goals.title')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <Skeleton className="h-96 w-full" />
@@ -89,7 +91,7 @@ export default function GoalSettings({
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <Target className="w-5 h-5" />
-                    Goal Allocation
+                    {t('settings.goals.title')}
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -101,14 +103,14 @@ export default function GoalSettings({
                         onClick={() => setGoalMode(true)}
                         className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${!isAbsoluteMode ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                     >
-                        Percentage
+                        {t('settings.goals.modes.percentage')}
                     </button>
                     <button
                         type="button"
                         onClick={() => setGoalMode(false)}
                         className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${isAbsoluteMode ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                     >
-                        Absolute Values
+                        {t('settings.goals.modes.absolute')}
                     </button>
                 </div>
 
@@ -186,7 +188,7 @@ export default function GoalSettings({
                             ))}
                         </div>
                         <div className="flex justify-between items-center pt-2 border-t border-gray-100">
-                            <span className="text-sm font-medium text-gray-500">Total Allocated</span>
+                            <span className="text-sm font-medium text-gray-500">{t('settings.goals.totalAllocated')}</span>
                             <span className="text-lg font-bold text-gray-900">
                                 $ {Object.values(absoluteValues).reduce((acc, val) => acc + (Number(val) || 0), 0).toLocaleString()}
                             </span>
@@ -202,8 +204,8 @@ export default function GoalSettings({
                                 <Lock className="w-4 h-4" />
                             </div>
                             <div>
-                                <p className="text-sm font-bold text-gray-900">Fixed Lifestyle Mode</p>
-                                <p className="text-[10px] text-gray-500">If income rises, keep Needs budget fixed and save the rest.</p>
+                                <p className="text-sm font-bold text-gray-900">{t('settings.goals.inflation.title')}</p>
+                                <p className="text-[10px] text-gray-500">{t('settings.goals.inflation.description')}</p>
                             </div>
                         </div>
                         <Switch
@@ -245,7 +247,7 @@ export default function GoalSettings({
                     className="w-full"
                 >
                     <Save className="w-4 h-4 mr-2" />
-                    {isSaving ? 'Saving...' : 'Save Goals'}
+                    {isSaving ? t('common.saving') : t('settings.actions.save')}
                 </CustomButton>
             </CardContent>
         </Card>

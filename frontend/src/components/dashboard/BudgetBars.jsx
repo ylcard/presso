@@ -8,6 +8,7 @@ import BudgetBar from "../custombudgets/BudgetBar";
 import BudgetCard from "../budgets/BudgetCard";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function BudgetBars({
     systemBudgets,
@@ -20,11 +21,13 @@ export default function BudgetBars({
     monthlyIncome,
     baseCurrency,
     onCreateBudget,
+    onActivateBudget,
     preCalculatedSystemData,
     preCalculatedCustomData,
     preCalculatedSavings,
     showSystem = true
 }) {
+    const { t } = useTranslation();
 
     // 1. Initialize local state with global setting (Default to 'bars' if undefined)
     const [viewMode, setViewMode] = useState(settings.budgetViewMode || 'bars');
@@ -67,11 +70,12 @@ export default function BudgetBars({
                             <AlertTriangle className="w-5 h-5 text-orange-600" />
                             <div>
                                 <p className="font-semibold text-orange-900">
-                                    Savings Target Not Met
+                                    {t('components.budgetBars.savingsTargetNotMet')}
                                 </p>
                                 <p className="text-sm text-orange-700">
-                                    You're short {formatCurrency(savingsShortfall, settings)} of your savings goal.
-                                    Target: {formatCurrency(savingsTarget, settings)}, Actual: {formatCurrency(totalActualSavings, settings)}
+                                    {t('components.budgetBars.shortMessage', { amount: formatCurrency(savingsShortfall, settings) })}
+                                    {' '}
+                                    {t('components.budgetBars.targetActual', { target: formatCurrency(savingsTarget, settings), actual: formatCurrency(totalActualSavings, settings) })}
                                 </p>
                             </div>
                         </div>
@@ -84,14 +88,14 @@ export default function BudgetBars({
                     <CardHeader className="flex flex-row items-center justify-between">
                         <CardTitle className="flex items-center gap-2">
                             <span className="px-3 py-1 rounded-lg text-sm bg-blue-50 text-blue-600">
-                                System Budgets
+                                {t('components.budgetBars.systemBudgets')}
                             </span>
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-center justify-end gap-2 mb-4">
                             <Label htmlFor="view-mode-custom" className="text-sm text-gray-500 cursor-pointer min-w-[65px] text-right">
-                                {viewMode === 'cards' ? 'Card View' : 'Bar View'}
+                                {viewMode === 'cards' ? t('components.budgetBars.cardView') : t('components.budgetBars.barView')}
                             </Label>
                             <Switch
                                 id="view-mode-custom"
@@ -117,6 +121,7 @@ export default function BudgetBars({
                                             stats={budget.stats}
                                             settings={settings}
                                             size="sm"
+                                            onActivateBudget={onActivateBudget}
                                         />
                                     </div>
                                 )
@@ -131,7 +136,7 @@ export default function BudgetBars({
                     <CardHeader className="flex flex-row items-center justify-between">
                         <div className="flex items-center gap-2">
                             <span className="px-3 py-1 rounded-lg text-sm bg-purple-50 text-purple-600">
-                                Custom Budgets
+                                {t('budgets.custom.title')}
                             </span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -161,14 +166,14 @@ export default function BudgetBars({
                                 onClick={onCreateBudget}
                             >
                                 <Plus className="w-4 h-4 mr-2" />
-                                New Budget
+                                {t('components.budgetBars.newBudget')}
                             </CustomButton>
                         </div>
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-center justify-end gap-2 mb-4">
                             <Label htmlFor="view-mode-custom" className="text-sm text-gray-500 cursor-pointer min-w-[65px] text-right">
-                                {viewMode === 'cards' ? 'Card View' : 'Bar View'}
+                                {viewMode === 'cards' ? t('components.budgetBars.cardView') : t('components.budgetBars.barView')}
                             </Label>
                             <Switch
                                 id="view-mode-custom"
@@ -193,6 +198,7 @@ export default function BudgetBars({
                                             stats={budget.stats}
                                             settings={settings}
                                             size="sm"
+                                            onActivateBudget={onActivateBudget}
                                         />
                                     </div>
                                 )
@@ -221,14 +227,13 @@ export default function BudgetBars({
                         <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mb-4">
                             <Plus className="w-6 h-6 text-purple-600" />
                         </div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">No Custom Budgets</h3>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('components.budgetBars.noCustomBudgets')}</h3>
                         <p className="text-sm text-gray-500 max-w-sm mb-6">
-                            You haven't set up any custom budgets for this month yet.
-                            Create one to track specific spending categories.
+                            {t('components.budgetBars.noCustomBudgetsDesc')}
                         </p>
                         <CustomButton variant="create" onClick={onCreateBudget} className="min-w-[200px] shadow-md hover:shadow-lg transition-shadow">
                             <Plus className="w-4 h-4 mr-2" />
-                            Create First Budget
+                            {t('components.budgetBars.createFirstBudget')}
                         </CustomButton>
                     </CardContent>
                 </Card>

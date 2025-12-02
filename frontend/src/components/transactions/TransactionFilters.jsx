@@ -9,9 +9,11 @@ import CategorySelect from "../ui/CategorySelect";
 import { useMemo } from "react";
 import { isDateInRange } from "../utils/dateUtils";
 import { usePeriod } from "../hooks/usePeriod";
+import { useTranslation } from "react-i18next";
 
 export default function TransactionFilters({ filters, setFilters, categories, allCustomBudgets = [] }) {
     const { monthStart, monthEnd } = usePeriod();
+    const { t } = useTranslation();
 
     const handleCategoryChange = (newCategories) => {
         setFilters({ ...filters, category: newCategories });
@@ -68,7 +70,7 @@ export default function TransactionFilters({ filters, setFilters, categories, al
                     <div className="relative flex-1 max-w-md">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
                         <Input
-                            placeholder="Search transactions..."
+                            placeholder={t('search_transactions_placeholder')}
                             className="pl-9"
                             value={filters.search}
                             onChange={(e) => setFilters({ ...filters, search: e.target.value })}
@@ -88,7 +90,7 @@ export default function TransactionFilters({ filters, setFilters, categories, al
                                 className="text-gray-500 hover:text-red-600"
                             >
                                 <X className="w-4 h-4 mr-1" />
-                                Clear
+                                {t('clear')}
                             </CustomButton>
                         )}
                     </div>
@@ -98,7 +100,7 @@ export default function TransactionFilters({ filters, setFilters, categories, al
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                     {/* Type */}
                     <div className="space-y-1">
-                        <Label className="text-xs text-gray-500">Type</Label>
+                        <Label className="text-xs text-gray-500">{t('type')}</Label>
                         <Select
                             value={filters.type}
                             onValueChange={(value) => setFilters({ ...filters, type: value })}
@@ -107,28 +109,28 @@ export default function TransactionFilters({ filters, setFilters, categories, al
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All Types</SelectItem>
-                                <SelectItem value="income">Income</SelectItem>
-                                <SelectItem value="expense">Expense</SelectItem>
+                                <SelectItem value="all">{t('all_types')}</SelectItem>
+                                <SelectItem value="income">{t('income')}</SelectItem>
+                                <SelectItem value="expense">{t('expense')}</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
                     {/* Category (Multi-select) */}
                     <div className="space-y-1 lg:col-span-1">
-                        <Label className="text-xs text-gray-500">Category</Label>
+                        <Label className="text-xs text-gray-500">{t('category')}</Label>
                         <CategorySelect
                             value={filters.category}
                             onValueChange={handleCategoryChange}
                             categories={categories}
-                            placeholder="All Categories"
+                            placeholder={t('all_categories')}
                             multiple={true}
                         />
                     </div>
 
                     {/* Financial Priority */}
                     <div className="space-y-1">
-                        <Label className="text-xs text-gray-500">Priority</Label>
+                        <Label className="text-xs text-gray-500">{t('priority')}</Label>
                         <Select
                             value={filters.financialPriority}
                             onValueChange={(value) => setFilters({ ...filters, financialPriority: value })}
@@ -137,26 +139,26 @@ export default function TransactionFilters({ filters, setFilters, categories, al
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All Priorities</SelectItem>
-                                <SelectItem value="needs">Needs</SelectItem>
-                                <SelectItem value="wants">Wants</SelectItem>
-                                <SelectItem value="savings">Savings</SelectItem>
+                                <SelectItem value="all">{t('all_priorities')}</SelectItem>
+                                <SelectItem value="needs">{t('priority_needs')}</SelectItem>
+                                <SelectItem value="wants">{t('priority_wants')}</SelectItem>
+                                <SelectItem value="savings">{t('priority_savings')}</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
                     {/* Custom Budget */}
                     <div className="space-y-1">
-                        <Label className="text-xs text-gray-500">Budget</Label>
+                        <Label className="text-xs text-gray-500">{t('budget')}</Label>
                         <Select
                             value={filters.customBudgetId}
                             onValueChange={(value) => setFilters({ ...filters, customBudgetId: value })}
                         >
                             <SelectTrigger className="h-9">
-                                <SelectValue placeholder="All Budgets" />
+                                <SelectValue placeholder={t('all_budgets')} />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All Budgets</SelectItem>
+                                <SelectItem value="all">{t('all_budgets')}</SelectItem>
                                 {filteredCustomBudgets.map(b => (
                                     <SelectItem key={b.id} value={b.id}>
                                         {b.name}
@@ -168,7 +170,7 @@ export default function TransactionFilters({ filters, setFilters, categories, al
 
                     {/* Payment Status */}
                     <div className="space-y-1">
-                        <Label className="text-xs text-gray-500">Payment</Label>
+                        <Label className="text-xs text-gray-500">{t('payment')}</Label>
                         <Select
                             value={filters.paymentStatus}
                             onValueChange={(value) => setFilters({ ...filters, paymentStatus: value })}
@@ -177,16 +179,16 @@ export default function TransactionFilters({ filters, setFilters, categories, al
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All Status</SelectItem>
-                                <SelectItem value="paid">Paid</SelectItem>
-                                <SelectItem value="unpaid">Unpaid</SelectItem>
+                                <SelectItem value="all">{t('all_status')}</SelectItem>
+                                <SelectItem value="paid">{t('paid')}</SelectItem>
+                                <SelectItem value="unpaid">{t('unpaid')}</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
                     {/* Cash Status */}
                     <div className="space-y-1">
-                        <Label className="text-xs text-gray-500">Cash</Label>
+                        <Label className="text-xs text-gray-500">{t('cash')}</Label>
                         <Select
                             value={filters.cashStatus}
                             onValueChange={(value) => setFilters({ ...filters, cashStatus: value })}
@@ -195,9 +197,9 @@ export default function TransactionFilters({ filters, setFilters, categories, al
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All</SelectItem>
-                                <SelectItem value="cash_only">Cash</SelectItem>
-                                <SelectItem value="exclude_cash">Card</SelectItem>
+                                <SelectItem value="all">{t('all')}</SelectItem>
+                                <SelectItem value="cash_only">{t('cash')}</SelectItem>
+                                <SelectItem value="exclude_cash">{t('card')}</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>

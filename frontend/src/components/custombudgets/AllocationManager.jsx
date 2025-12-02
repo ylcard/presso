@@ -7,6 +7,7 @@ import AllocationCard from "./AllocationCard";
 import ConfirmDialog from "../ui/ConfirmDialog";
 import { useSettings } from "../utils/SettingsContext";
 import { formatCurrency } from "../utils/currencyUtils";
+import { useTranslation } from "react-i18next";
 
 export default function AllocationManager({
     customBudget,
@@ -19,6 +20,7 @@ export default function AllocationManager({
     isSubmitting
 }) {
     const { settings, user } = useSettings();
+    const { t } = useTranslation();
     const [showForm, setShowForm] = useState(false);
     const [editingAllocation, setEditingAllocation] = useState(null);
     const [deleteAllocationId, setDeleteAllocationId] = useState(null);
@@ -60,9 +62,9 @@ export default function AllocationManager({
         <Card className="border-none shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                    <CardTitle>Budget Allocations</CardTitle>
+                    <CardTitle>{t('allocations.title')}</CardTitle>
                     <p className="text-sm text-gray-500 mt-1">
-                        Allocate portions of your budget to specific categories
+                        {t('allocations.description')}
                     </p>
                 </div>
                 <CustomButton
@@ -71,12 +73,12 @@ export default function AllocationManager({
                     variant="create"
                 >
                     <Plus className="w-4 h-4 mr-2" />
-                    Allocate Funds
+                    {t('allocations.allocateFunds')}
                 </CustomButton>
             </CardHeader>
             <CardContent className="space-y-6">
                 <div className="max-w-xs p-6 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border-2 border-dashed border-gray-300">
-                    <p className="text-lg text-center font-bold text-gray-600 mb-4">Unallocated Funds</p>
+                    <p className="text-lg text-center font-bold text-gray-600 mb-4">{t('allocations.unallocatedFunds')}</p>
 
                     <div className="flex flex-col items-center">
                         <p className={`text-3xl font-bold ${remainingFunds < 0 ? 'text-red-600' : 'text-gray-900'}`}>
@@ -99,7 +101,7 @@ export default function AllocationManager({
                 {/* Allocations List */}
                 {allocations.length === 0 ? (
                     <div className="h-40 flex items-center justify-center text-gray-400 border-2 border-dashed border-gray-200 rounded-xl">
-                        <p>No allocations yet. Add your first one!</p>
+                        <p>{t('allocations.emptyState')}</p>
                     </div>
                 ) : (
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -126,11 +128,11 @@ export default function AllocationManager({
                 <ConfirmDialog
                     open={!!deleteAllocationId}
                     onOpenChange={(open) => !open && setDeleteAllocationId(null)}
-                    title="Delete Allocation?"
-                    message="Are you sure you want to delete this allocation? This action cannot be undone."
+                    title={t('allocations.deleteConfirm.title')}
+                    message={t('allocations.deleteConfirm.message')}
                     onConfirm={confirmDelete}
-                    confirmText="Delete"
-                    cancelText="Cancel"
+                    confirmText={t('common.delete')}
+                    cancelText={t('common.cancel')}
                     isDestructive={true}
                 />
             </CardContent>

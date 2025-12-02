@@ -13,15 +13,13 @@ import { useGoalActions } from "../hooks/useActions";
 import React, { useState, useEffect, useRef, cloneElement } from "react";
 import { getMonthName } from "../utils/dateUtils";
 import confetti from "canvas-confetti";
-
+import { useTranslation } from "react-i18next";
 
 // --- COMPACT GOAL EDITOR COMPONENT ---
 const QuickGoalsEditor = ({ goals, settings, updateSettings, user, onClose }) => {
+    const { t } = useTranslation();
     const { handleGoalUpdate, isSaving } = useGoalActions(user, goals);
     const [mode, setMode] = useState(settings.goalMode ?? true); // true = %, false = $
-
-    // Refactoring goal setting feature
-    // const [values, setValues] = useState({ needs: '', wants: '', savings: '' });
 
     // State for Absolute Mode
     const [absValues, setAbsValues] = useState({ needs: '', wants: '', savings: '' });
@@ -35,19 +33,8 @@ const QuickGoalsEditor = ({ goals, settings, updateSettings, user, onClose }) =>
     useEffect(() => {
         const map = {};
         goals.forEach(g => {
-            // Refactoring goal setting feature
-            // map[g.priority] = mode
-            //     ? (g.target_percentage || 0)
-            //     : (g.target_amount || 0);
             map[g.priority] = { pct: g.target_percentage, amt: g.target_amount };
         });
-        // Refactoring oal setting feature
-        //     setValues({
-        //         needs: map.needs ?? (mode ? 50 : 0),
-        //         wants: map.wants ?? (mode ? 30 : 0),
-        //         savings: map.savings ?? (mode ? 20 : 0)
-        //     });
-        // }, [goals, mode]);
 
         if (mode) {
             // Percentage: Setup splits
@@ -102,10 +89,6 @@ const QuickGoalsEditor = ({ goals, settings, updateSettings, user, onClose }) =>
             await updateSettings({ goalMode: mode });
         }
 
-        // Refactoring goal setting feature
-        // 2. Update Goals
-        // const promises = Object.entries(values).map(([priority, val]) => {
-
         // 2. Prepare Data
         let payloadMap = {};
 
@@ -127,9 +110,6 @@ const QuickGoalsEditor = ({ goals, settings, updateSettings, user, onClose }) =>
 
         // 3. Update Goals
         const promises = Object.entries(payloadMap).map(([priority, numVal]) => {
-            // Refactoring goal setting feature
-            // const numVal = Number(val) || 0;
-
             const payload = mode
                 ? { target_percentage: numVal }
                 : { target_amount: numVal };
@@ -150,7 +130,7 @@ const QuickGoalsEditor = ({ goals, settings, updateSettings, user, onClose }) =>
     return (
         <div className="space-y-3 w-60">
             <div className="flex items-center justify-between">
-                <h4 className="font-medium text-xs text-muted-foreground uppercase tracking-wider">Target Goals</h4>
+                <h4 className="font-medium text-xs text-muted-foreground uppercase tracking-wider">{t('dashboard.remaining.targetGoals')}</h4>
                 <div className="flex bg-muted p-0.5 rounded-md">
                     <button onClick={() => setMode(true)} className={`px-2 py-0.5 text-[10px] font-medium rounded-sm transition-all ${mode ? 'bg-white shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground'}`}>%</button>
                     <button onClick={() => setMode(false)} className={`px-2 py-0.5 text-[10px] font-medium rounded-sm transition-all ${!mode ? 'bg-white shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground'}`}>$</button>
@@ -214,7 +194,7 @@ const QuickGoalsEditor = ({ goals, settings, updateSettings, user, onClose }) =>
             )}
 
             <Button onClick={handleSave} disabled={isSaving} className="w-full h-7 text-xs mt-2">
-                {isSaving ? 'Saving...' : 'Update Targets'}
+                {isSaving ? t('saving') : t('dashboard.remaining.updateTargets')}
             </Button>
         </div>
     );
@@ -236,9 +216,8 @@ export default function RemainingBudgetCard({
     selectedMonth,
     selectedYear
 }) {
-    // Refactoring to add quick goal change to page
-    // const { updateSettings } = useSettings();
     const { updateSettings, user } = useSettings();
+    const { t } = useTranslation();
     const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
     if (!settings) return null;
@@ -258,10 +237,6 @@ export default function RemainingBudgetCard({
     const needsBudget = systemBudgets.find(sb => sb.systemBudgetType === 'needs');
     const wantsBudget = systemBudgets.find(sb => sb.systemBudgetType === 'wants');
 
-    // Nov 28 - bugfix wrong bar values
-    // const needsLimit = needsBudget?.budgetAmount || 0;
-    // const wantsLimit = wantsBudget?.budgetAmount || 0;
-
     // Helper to resolve the actual limit for the month based on Goal Mode
     const resolveLimit = (type) => {
         const budget = systemBudgets.find(sb => sb.systemBudgetType === type);
@@ -272,14 +247,9 @@ export default function RemainingBudgetCard({
         const goal = goals.find(g => g.priority === type);
         if (!goal) return 0;
 
-        // implenting the logic for fixed mode
-        // if (settings.goalMode === false) return goal.target_amount || 0; // Absolute Mode
-        // return (safeIncome * (goal.target_percentage || 0)) / 100;       // Percentage Mode
-
         // 3. Use centralized logic (Handles Absolute, Percentage AND Inflation Protection)
         // Note: 'safeIncome' here acts as the 'monthlyIncome' argument
         return resolveBudgetLimit(goal, safeIncome, settings, historicalAverage);
-
     };
 
     const needsLimit = resolveLimit('needs');
@@ -361,13 +331,9 @@ export default function RemainingBudgetCard({
     // Date Context
     const now = new Date();
     const isCurrentMonth =
-        // now.getMonth() === (settings.selectedMonth ?? now.getMonth()) &&
-        // now.getFullYear() === (settings.selectedYear ?? now.getFullYear());
         now.getMonth() === selectedMonth &&
         now.getFullYear() === selectedYear;
 
-    // const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-    // Calculate days based strictly on the selected props
     const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
 
     const currentDay = now.getDate();
@@ -377,9 +343,6 @@ export default function RemainingBudgetCard({
     const isEmptyMonth = (!currentMonthIncome || currentMonthIncome === 0) && (!currentMonthExpenses || currentMonthExpenses === 0);
 
     // Get explicit month name for the empty state message
-    // safeMonth no longer required
-    // const safeMonth = settings.selectedMonth ?? now.getMonth();
-    // const monthName = getMonthName(safeMonth);
     const monthName = getMonthName(selectedMonth);
 
     // --- CONFETTI LOGIC ---
@@ -400,8 +363,6 @@ export default function RemainingBudgetCard({
         // AND ensure this isn't just the page loading (wait 1s buffer)
         const isDataLoading = Date.now() - componentMountTime.current < 1000;
 
-        // fixing confetti being naughty
-        // if (!isDataLoading && (!prevIncome || prevIncome === 0) && currentIncome > 0) {
         if (!isDataLoading && isSameContext && (!prevIncome || prevIncome === 0) && currentIncome > 0) {
             // Trigger Confetti!
             const duration = 3000;
@@ -434,8 +395,6 @@ export default function RemainingBudgetCard({
 
         // Update ref for next render
         prevIncomeRef.current = currentIncome;
-        // Fixing confetti being naughty
-        // }, [currentMonthIncome]);
         prevMonthRef.current = selectedMonth;
         prevYearRef.current = selectedYear;
     }, [currentMonthIncome, selectedMonth, selectedYear]);
@@ -475,8 +434,6 @@ export default function RemainingBudgetCard({
 
     // --- RENDER: SIMPLE BAR ---
     const renderSimpleBar = () => {
-        // const needsLabel = `${Math.round(needsPct)}%`;
-        // const wantsLabel = `${Math.round(wantsPct)}%`;
         const needsLabel = `${Math.round(needsUtil)}%`;
         const wantsLabel = `${Math.round(wantsUtil)}%`;
         const savingsLabel = `${Math.round(savingsPct)}%`;
@@ -492,7 +449,7 @@ export default function RemainingBudgetCard({
                     {needsPct > 8 && (
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className={`text-xs sm:text-sm z-10 whitespace-nowrap ${getStatusStyles(needsTotal, needsLimit, 'needs')}`}>
                             {needsTotal > needsLimit && <AlertCircle className="w-3 h-3 inline mr-1" />}
-                            {FINANCIAL_PRIORITIES.needs.label} {needsLabel}
+                            {t('settings.goals.priorities.needs')} {needsLabel}
                         </motion.div>
                     )}
                 </AnimatedSegment>
@@ -508,7 +465,7 @@ export default function RemainingBudgetCard({
                             {(wantsTotal / wantsLimit) > 0.9 && !(isCurrentMonth && isEndOfMonth && (wantsTotal / wantsLimit) <= 1) && (
                                 <Zap className="w-3 h-3 inline mr-1 fill-current" />
                             )}
-                            {FINANCIAL_PRIORITIES.wants.label} {wantsLabel}
+                            {t('settings.goals.priorities.wants')} {wantsLabel}
                         </motion.div>
                     )}
                 </AnimatedSegment>
@@ -517,7 +474,7 @@ export default function RemainingBudgetCard({
                     <AnimatedSegment width={savingsPct} className="bg-emerald-500">
                         {savingsPct > 8 && (
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="text-white/90 font-medium text-xs sm:text-sm flex items-center gap-1 whitespace-nowrap">
-                                Save {savingsLabel}
+                                {t('dashboard.remaining.save')} {savingsLabel}
                             </motion.div>
                         )}
                     </AnimatedSegment>
@@ -613,7 +570,7 @@ export default function RemainingBudgetCard({
                 {/* SAVINGS */}
                 {efficiencyBarPct > 0 && (
                     <AnimatedSegment width={efficiencyBarPct} className="bg-emerald-300 border-r border-white/20">
-                        <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-emerald-800 opacity-75 group-hover:opacity-100 transition-opacity whitespace-nowrap overflow-hidden">Extra</div>
+                        <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-emerald-800 opacity-75 group-hover:opacity-100 transition-opacity whitespace-nowrap overflow-hidden">{t('dashboard.remaining.extra')}</div>
                     </AnimatedSegment>
                 )}
                 {targetSavingsBarPct > 0 && (
@@ -649,7 +606,7 @@ export default function RemainingBudgetCard({
                     />
                 )}
                 <LayoutList className="w-3.5 h-3.5" />
-                Simple
+                {t('dashboard.remaining.simple')}
             </button>
             <button
                 onClick={() => handleViewToggle(false)}
@@ -664,7 +621,7 @@ export default function RemainingBudgetCard({
                     />
                 )}
                 <BarChart3 className="w-3.5 h-3.5" />
-                Detailed
+                {t('dashboard.remaining.detailed')}
             </button>
         </div>
     );
@@ -682,7 +639,6 @@ export default function RemainingBudgetCard({
                                 {!isEmptyMonth && (
                                     <motion.div
                                         key="view-toggle"
-                                        // key={`view-toggle-${selectedMonth}-${selectedYear}`}
                                         initial={{ opacity: 0, scale: 0.8, x: 20 }}
                                         animate={{ opacity: 1, scale: 1, x: 0 }}
                                         exit={{ opacity: 0, scale: 0.8, x: 20 }}
@@ -722,30 +678,30 @@ export default function RemainingBudgetCard({
                                 <Calendar className="w-8 h-8 text-emerald-600" />
                             </div>
                             <div className="space-y-2 max-w-sm">
-                                <h3 className="text-xl font-bold text-gray-900">Ready to plan for {monthName}?</h3>
+                                <h3 className="text-xl font-bold text-gray-900">{t('dashboard.remaining.readyToPlan', { month: monthName })}</h3>
                                 <p className="text-gray-500 text-sm leading-relaxed">
-                                    Start by adding your expected income to see your savings potential and unlock your budget goals.
+                                    {t('dashboard.remaining.startPlanning')}
                                 </p>
                             </div>
                         </div>
 
-                    ) : ( // Non-empty state continues below
+                    ) : (
                         <>
                             <div className="flex items-end justify-between">
                                 <div>
                                     {isTotalOver ? (
                                         <h2 className="text-3xl font-bold text-red-600 flex items-center gap-2">
-                                            Over Limit <AlertCircle className="w-6 h-6" />
+                                            {t('dashboard.remaining.overLimit')} <AlertCircle className="w-6 h-6" />
                                         </h2>
                                     ) : (
                                         <h2 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-                                            {Math.round(savingsPctDisplay)}% <span className="text-lg font-medium text-gray-500">Saved</span>
+                                            {Math.round(savingsPctDisplay)}% <span className="text-lg font-medium text-gray-500">{t('dashboard.remaining.saved')}</span>
                                         </h2>
                                     )}
                                     <div className="text-sm text-gray-500 mt-1">
                                         {currentMonthIncome > 0 ? (
-                                            <>Spent <strong className={isTotalOver ? "text-red-600" : "text-gray-900"}>{formatCurrency(totalSpent, settings)}</strong> of <strong>{formatCurrency(currentMonthIncome, settings)}</strong></>
-                                        ) : "No income recorded."}
+                                            <>{t('dashboard.remaining.spent')} <strong className={isTotalOver ? "text-red-600" : "text-gray-900"}>{formatCurrency(totalSpent, settings)}</strong> {t('dashboard.remaining.of')} <strong>{formatCurrency(currentMonthIncome, settings)}</strong></>
+                                        ) : t('dashboard.remaining.noIncome')}
                                     </div>
                                 </div>
 
@@ -753,7 +709,7 @@ export default function RemainingBudgetCard({
                                     <div className="text-right hidden sm:block">
                                         <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-100">
                                             <TrendingUp className="w-3 h-3 text-emerald-600" />
-                                            <span className="text-xs font-medium text-emerald-700">Efficiency: +{formatCurrency(bonusSavingsPotential, settings)}</span>
+                                            <span className="text-xs font-medium text-emerald-700">{t('dashboard.remaining.efficiency')}: +{formatCurrency(bonusSavingsPotential, settings)}</span>
                                         </div>
                                     </div>
                                 )}
@@ -761,7 +717,7 @@ export default function RemainingBudgetCard({
                                     <div className="text-right hidden sm:block">
                                         <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-50 border border-gray-100">
                                             <Target className="w-3 h-3 text-gray-500" />
-                                            <span className="text-xs font-medium text-gray-600">Left: {formatCurrency(savingsAmount, settings)}</span>
+                                            <span className="text-xs font-medium text-gray-600">{t('dashboard.remaining.left')}: {formatCurrency(savingsAmount, settings)}</span>
                                         </div>
                                     </div>
                                 )}
@@ -774,19 +730,19 @@ export default function RemainingBudgetCard({
                                     <div className="flex gap-4 items-center">
                                         <span className="flex items-center gap-1.5">
                                             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: needsColor }}></div>
-                                            {FINANCIAL_PRIORITIES.needs.label}
+                                            {t('settings.goals.priorities.needs')}
                                         </span>
                                         <span className="flex items-center gap-1.5">
                                             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: wantsColor }}></div>
-                                            {FINANCIAL_PRIORITIES.wants.label}
+                                            {t('settings.goals.priorities.wants')}
                                         </span>
                                         {!isSimpleView && (
                                             <>
                                                 <span className="flex items-center gap-1 ml-2">
-                                                    <div className="w-2 h-2 bg-gray-400 rounded-sm"></div> Paid
+                                                    <div className="w-2 h-2 bg-gray-400 rounded-sm"></div> {t('paid')}
                                                 </span>
                                                 <span className="flex items-center gap-1">
-                                                    <div className="w-2 h-2 bg-gray-400/50 rounded-sm" style={{ backgroundImage: 'linear-gradient(45deg,rgba(255,255,255,.3) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.3) 50%,rgba(255,255,255,.3) 75%,transparent 75%,transparent)', backgroundSize: '8px 8px' }}></div> Plan
+                                                    <div className="w-2 h-2 bg-gray-400/50 rounded-sm" style={{ backgroundImage: 'linear-gradient(45deg,rgba(255,255,255,.3) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.3) 50%,rgba(255,255,255,.3) 75%,transparent 75%,transparent)', backgroundSize: '8px 8px' }}></div> {t('dashboard.remaining.plan')}
                                                 </span>
                                             </>
                                         )}
@@ -797,7 +753,7 @@ export default function RemainingBudgetCard({
                                             <PopoverTrigger asChild>
                                                 <button className="flex items-center gap-1 text-xs hover:text-blue-600 transition-colors outline-none">
                                                     <Target size={14} />
-                                                    <span>Goals</span>
+                                                    <span>{t('settings.goals.title')}</span>
                                                 </button>
                                             </PopoverTrigger>
                                             <PopoverContent className="w-auto p-3" align="end">
@@ -811,8 +767,6 @@ export default function RemainingBudgetCard({
                                             </PopoverContent>
                                         </Popover>
                                     </div>
-
-
                                 </div>
                             </div>
                         </>

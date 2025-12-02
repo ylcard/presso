@@ -1,13 +1,14 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "../utils/currencyUtils";
 import MonthNavigator from "../ui/MonthNavigator";
 import { Wallet } from "lucide-react";
 import { getMonthBoundaries } from "../utils/dateUtils";
 import { getMonthlyIncome, getMonthlyPaidExpenses } from "../utils/financialCalculations";
+import { useTranslation } from 'react-i18next';
 
 // 1. Helper function is defined OUTSIDE the component for cleaner structure and useMemo
-const calculateTrendData = (allTransactions, currentMonth, currentYear, monthsToShow = 6) => {
+const calculateTrendData = (allTransactions, currentMonth, currentYear, monthsToShow = 6, locale = 'en-US') => {
     const result = [];
     for (let i = monthsToShow - 1; i >= 0; i--) {
         let targetMonth = currentMonth - i;
@@ -19,7 +20,7 @@ const calculateTrendData = (allTransactions, currentMonth, currentYear, monthsTo
         }
 
         const d = new Date(targetYear, targetMonth, 1);
-        const label = d.toLocaleDateString('en-US', { month: 'short' });
+        const label = d.toLocaleDateString(locale, { month: 'short' });
 
         const { monthStart, monthEnd } = getMonthBoundaries(targetMonth, targetYear);
 
@@ -42,11 +43,12 @@ export default function TrendChart({
     setSelectedYear
 }) {
     const [monthsToShow, setMonthsToShow] = useState(6);
+    const { t, i18n } = useTranslation();
 
     const data = useMemo(() => {
         // Pass the raw data and the target period for trend calculation
-        return calculateTrendData(allTransactions, currentMonth, currentYear, monthsToShow);
-    }, [allTransactions, currentMonth, currentYear, monthsToShow]);
+        return calculateTrendData(allTransactions, currentMonth, currentYear, monthsToShow, i18n.language);
+    }, [allTransactions, currentMonth, currentYear, monthsToShow, i18n.language]);
 
     // Check for sufficient data (Threshold: at least 2 months with non-zero activity)
     const activeMonths = data.filter(item => item.income > 0 || item.expense > 0).length;
@@ -59,7 +61,7 @@ export default function TrendChart({
         <Card className="border-none shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <div className="flex items-center gap-4">
-                    <CardTitle className="text-lg font-semibold text-gray-800">Trend Analysis</CardTitle>
+                    <CardTitle className="text-lg font-semibold text-gray-800">{t('reports.charts.trend')}</CardTitle>
                     <div className="flex items-center bg-gray-100 rounded-lg p-1">
                         <button
                             onClick={() => setMonthsToShow(3)}
@@ -95,8 +97,8 @@ export default function TrendChart({
                 {isInsufficientData ? (
                     <div className="h-52 flex flex-col items-center justify-center text-center text-gray-500 bg-gray-50 rounded-lg border border-dashed">
                         <Wallet className="w-6 h-6 mb-2" />
-                        <p className="font-semibold">Insufficient Data</p>
-                        <p className="text-sm mt-1">Need activity in at least {monthsToShow === 3 ? 'one month' : 'two months'} to visualize a trend.</p>
+                        <p className="font-semibold">{t('reports.charts.insufficientData')}</p>
+                        <p className="text-sm mt-1">{t('reports.charts.insufficientDataDesc', { count: 2 })}</p>
                     </div>
                 ) : (
                     <>
@@ -142,13 +144,13 @@ export default function TrendChart({
                                             {/* Hover Tooltip */}
                                             <div className="absolute bottom-12 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-800 text-white text-xs p-2 rounded shadow-lg z-10 whitespace-nowrap pointer-events-none">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-emerald-300">In: {formatCurrency(item.income, settings)}</span>
+                                                    <span className="text-emerald-300">{t('reports.charts.in')} {formatCurrency(item.income, settings)}</span>
                                                 </div>
                                                 <div className="flex items-center gap-2 mt-1">
-                                                    <span className="text-rose-300">Out: {formatCurrency(item.expense, settings)}</span>
+                                                    <span className="text-rose-300">{t('reports.charts.out')} {formatCurrency(item.expense, settings)}</span>
                                                 </div>
                                                 <div className="flex items-center gap-2 mt-1 border-t border-gray-700 pt-1">
-                                                    <span className={`${netFlow >= 0 ? 'text-blue-300' : 'text-red-300'}`}>Net: {formatCurrency(netFlow, settings)}</span>
+                                                    <span className={`${netFlow >= 0 ? 'text-blue-300' : 'text-red-300'}`}>{t('reports.charts.net')} {formatCurrency(netFlow, settings)}</span>
                                                 </div>
                                             </div>
 
@@ -159,10 +161,10 @@ export default function TrendChart({
                         </div>
                         <div className="flex justify-center items-center gap-6 mt-6 pb-2">
                             <div className="flex items-center text-xs font-medium text-gray-600">
-                                <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2"></span> Income
+                                <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2"></span> {t('reports.kpi.income')}
                             </div>
                             <div className="flex items-center text-xs font-medium text-gray-600">
-                                <span className="inline-block w-2.5 h-2.5 rounded-full bg-rose-500 mr-2"></span> Expense
+                                <span className="inline-block w-2.5 h-2.5 rounded-full bg-rose-500 mr-2"></span> {t('reports.kpi.expenses')}
                             </div>
                         </div>
                     </>

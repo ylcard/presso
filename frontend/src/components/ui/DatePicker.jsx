@@ -18,6 +18,7 @@ import { useSettings } from "../utils/SettingsContext";
 import { parseDate, formatDateString, formatDate, getMonthName } from "../utils/dateUtils";
 import { useNavigation } from "react-day-picker";
 import { setMonth, setYear, startOfMonth } from "date-fns";
+import { useTranslation } from "react-i18next";
 
 /**
  * Custom Caption Label component for the Calendar.
@@ -112,13 +113,18 @@ function CalendarCaptionLabel({ displayMonth }) {
  * @param {string} [props.className=""] - Additional class names for the trigger button.
  * @returns {JSX.Element} The date picker component.
  */
-export default function DatePicker({ value, onChange, placeholder = "Pick a date", className = "" }) {
+
+export default function DatePicker({ value, onChange, placeholder, className = "" }) {
     const { settings } = useSettings();
+    const { t } = useTranslation();
 
     /**
      * @type {[boolean, function(boolean)]} Internal state to control the open/closed state of the Popover.
      */
     const [open, setOpen] = useState(false);
+
+    // Default placeholder if not provided
+    const displayPlaceholder = placeholder || t('pick_date');
 
     // Parse the date string to a Date object
     const dateValue = value ? parseDate(value) : undefined;
@@ -146,7 +152,7 @@ export default function DatePicker({ value, onChange, placeholder = "Pick a date
                     className={`w-full justify-start text-left font-normal ${!value && "text-muted-foreground"} ${className}`}
                 >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {value ? formatDate(value, settings.dateFormat) : <span>{placeholder}</span>}
+                    {value ? formatDate(value, settings.dateFormat) : <span>{displayPlaceholder}</span>}
                 </CustomButton>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start" sideOffset={4}>

@@ -8,6 +8,7 @@ import { getCategoryIcon } from "../utils/iconMapConfig";
 import QuickAddTransaction from "./QuickAddTransaction";
 import { detectCrossPeriodSettlement } from "../utils/calculationEngine";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useTranslation } from "react-i18next";
 
 export default function TransactionItem({
     transaction,
@@ -23,6 +24,7 @@ export default function TransactionItem({
     onSelect
 }) {
     const { settings } = useSettings();
+    const { t } = useTranslation();
 
     const isIncome = transaction.type === 'income';
     const isPaid = transaction.isPaid;
@@ -86,7 +88,7 @@ export default function TransactionItem({
                             <>
                                 <span className="text-gray-300">•</span>
                                 <p className="text-xs text-green-600">
-                                    Paid {format(new Date(transaction.paidDate), showYear ? "MMM d, yyyy" : "MMM d")}
+                                    {t('paid_date', { date: format(new Date(transaction.paidDate), showYear ? "MMM d, yyyy" : "MMM d") })}
                                 </p>
                             </>
                         )}
@@ -106,7 +108,7 @@ export default function TransactionItem({
                         <div className="mt-2 flex items-center gap-2">
                             <div className="px-2 py-1 bg-orange-50 text-orange-700 text-xs rounded-md border border-orange-200 flex items-center gap-1">
                                 <Circle className="w-3 h-3 fill-orange-500" />
-                                <span>Linked to {crossPeriodInfo.bucketName} ({crossPeriodInfo.originalPeriod})</span>
+                                <span>{t('linked_to_bucket', { bucketName: crossPeriodInfo.bucketName, originalPeriod: crossPeriodInfo.originalPeriod })}</span>
                             </div>
                         </div>
                     )}

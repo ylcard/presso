@@ -5,8 +5,10 @@ import { useCategories } from "../components/hooks/useBase44Entities";
 import { useCategoryActions } from "../components/hooks/useActions";
 import CategoryForm from "../components/categories/CategoryForm";
 import CategoryGrid from "../components/categories/CategoryGrid";
+import { useTranslation } from "../hooks/useTranslation";
 
 export default function Categories() {
+    const { t } = useTranslation();
     // UI state
     const [showForm, setShowForm] = useState(false);
     const [editingCategory, setEditingCategory] = useState(null);
@@ -25,8 +27,8 @@ export default function Categories() {
             <div className="max-w-7xl mx-auto space-y-6">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
-                        <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Categories</h1>
-                        <p className="text-gray-500 mt-1">Organize your transactions with custom categories</p>
+                        <h1 className="text-3xl md:text-4xl font-bold text-gray-900">{t('categories.title')}</h1>
+                        <p className="text-gray-500 mt-1">{t('categories.subtitle')}</p>
                     </div>
                     <CustomButton
                         onClick={() => {
@@ -36,7 +38,7 @@ export default function Categories() {
                         variant="create"
                     >
                         <Plus className="w-4 h-4 mr-2" />
-                        Add Category
+                        {t('categories.add')}
                     </CustomButton>
                 </div>
 

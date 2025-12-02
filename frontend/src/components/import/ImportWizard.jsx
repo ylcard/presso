@@ -14,12 +14,7 @@ import { categorizeTransaction } from "@/components/utils/transactionCategorizat
 import { createPageUrl } from "@/utils";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
-
-const STEPS = [
-    { id: 1, label: "Upload" },
-    { id: 2, label: "Review" },
-    { id: 3, label: "Finish" }
-];
+import { useTranslation } from "react-i18next";
 
 // Helper: parses any string into a clean absolute float
 // Removes currency symbols, handles "50.00-" or "(50.00)" accounting formats
@@ -32,6 +27,7 @@ const parseCleanRawAmount = (value) => {
 };
 
 export default function ImportWizard({ onSuccess }) {
+    const { t } = useTranslation();
     const [step, setStep] = useState(1);
     const [file, setFile] = useState(null);
     const [csvData, setCsvData] = useState({ headers: [], data: [] });
@@ -47,6 +43,12 @@ export default function ImportWizard({ onSuccess }) {
     const navigate = useNavigate();
     const [isLoadingPdf, setIsLoadingPdf] = useState(false);
 
+    const STEPS = [
+        { id: 1, label: t('import.steps.upload') },
+        { id: 2, label: t('import.steps.review') },
+        { id: 3, label: t('import.steps.finish') }
+    ];
+
     const handleFileSelect = async (selectedFile) => {
         setFile(selectedFile);
         setError(null); // Clear previous errors on new file select
@@ -58,7 +60,7 @@ export default function ImportWizard({ onSuccess }) {
             const parsed = parseCSV(text);
             setCsvData(parsed);
             setShowColumnMapper(true);
-            showToast({ title: "File parsed", description: `Found ${parsed.data.length} rows.` });
+            showToast({ title: t('import.toast.fileParsed'), description: t('import.toast.rowsFound', { count: parsed.data.length }) });
         }
     };
 
@@ -66,10 +68,10 @@ export default function ImportWizard({ onSuccess }) {
         setIsLoadingPdf(true);
         setError(null);
         try {
-            showToast({ title: "Uploading...", description: "Uploading file for analysis." });
+            showToast({ title: t('import.toast.uploading'), description: t('import.toast.uploadingDesc') });
             const { file_url } = await base44.integrations.Core.UploadFile({ file: file });
 
-            showToast({ title: "Analyzing...", description: "Extracting data from PDF. This may take a moment." });
+            showToast({ title: t('import.toast.analyzing'), description: t('import.toast.analyzingDesc') });
             const result = await base44.integrations.Core.ExtractDataFromUploadedFile({
                 file_url: file_url,
                 json_schema: {
@@ -132,12 +134,12 @@ export default function ImportWizard({ onSuccess }) {
 
                 return {
                     date: txDate,
-                    title: item.reason || 'Untitled Transaction',
+                    title: item.reason || t('common.untitledTransaction'),
                     amount: rawMagnitude, // UI always sees positive
                     originalAmount: isNegative ? -rawMagnitude : rawMagnitude, // Keep record of original sign
                     originalCurrency: settings?.baseCurrency || 'USD',
                     type,
-                    category: catResult.categoryName || 'Uncategorized',
+                    category: catResult.categoryName || t('common.uncategorized'),
                     categoryId: catResult.categoryId || null,
                     financial_priority: catResult.priority || 'wants',
                     isPaid: !!pdDate,
@@ -149,10 +151,10 @@ export default function ImportWizard({ onSuccess }) {
 
             setProcessedData(processed);
             setStep(2);
-            showToast({ title: "Success", description: `Extracted ${processed.length} transactions from PDF.` });
+            showToast({ title: t('common.success'), description: t('import.toast.pdfSuccess', { count: processed.length }) });
         } catch (error) {
             console.error('PDF Processing Error:', error);
-            setError(`PDF Processing Failed: ${error.message || "Unknown error"}`);
+            setError(`${t('import.errors.pdfFailed')}: ${error.message || "Unknown error"}`);
             setFile(null);
         } finally {
             setIsLoadingPdf(false);
@@ -180,7 +182,7 @@ export default function ImportWizard({ onSuccess }) {
 
             // Enhanced categorization
             // First check if CSV has an explicit category column
-            let catResult = { categoryId: null, categoryName: 'Uncategorized', priority: 'wants' };
+            let catResult = { categoryId: null, categoryName: t('common.uncategorized'), priority: 'wants' };
 
             if (mappings.category && row[mappings.category]) {
                 const csvCat = row[mappings.category];
@@ -201,12 +203,12 @@ export default function ImportWizard({ onSuccess }) {
 
             return {
                 date: row[mappings.date],
-                title: row[mappings.title] || 'Untitled Transaction',
+                title: row[mappings.title] || t('common.untitledTransaction'),
                 amount: rawMagnitude, // Store as positive for Review UI
                 originalAmount: type === 'expense' ? -rawMagnitude : rawMagnitude,
                 originalCurrency: settings?.baseCurrency || 'USD',
                 type,
-                category: catResult.categoryName || 'Uncategorized',
+                category: catResult.categoryName || t('common.uncategorized'),
                 categoryId: catResult.categoryId || null,
                 financial_priority: catResult.priority || 'wants',
                 isPaid: true, // Assume bank import data is already paid/settled
@@ -244,7 +246,7 @@ export default function ImportWizard({ onSuccess }) {
 
             await base44.entities.Transaction.bulkCreate(transactionsToCreate);
 
-            showToast({ title: "Success", description: `Imported ${transactionsToCreate.length} transactions.` });
+            showToast({ title: t('common.success'), description: t('import.toast.imported', { count: transactionsToCreate.length }) });
             if (onSuccess) {
                 onSuccess();
             } else {
@@ -252,7 +254,7 @@ export default function ImportWizard({ onSuccess }) {
             }
         } catch (error) {
             console.error(error);
-            showToast({ title: "Error", description: "Failed to import transactions.", variant: "destructive" });
+            showToast({ title: t('common.error'), description: t('import.errors.importFailed'), variant: "destructive" });
         } finally {
             setIsProcessing(false);
         }
@@ -303,8 +305,8 @@ export default function ImportWizard({ onSuccess }) {
                         <div className="flex flex-col items-center justify-center h-64 space-y-4">
                             <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
                             <div className="text-center">
-                                <h3 className="text-lg font-semibold text-gray-900">Processing PDF</h3>
-                                <p className="text-sm text-gray-500">Extracting transaction data...</p>
+                                <h3 className="text-lg font-semibold text-gray-900">{t('import.processingPdf')}</h3>
+                                <p className="text-sm text-gray-500">{t('import.extractingData')}</p>
                             </div>
                         </div>
                     ) : showColumnMapper ? (
@@ -320,12 +322,12 @@ export default function ImportWizard({ onSuccess }) {
                                 <CustomButton variant="outline" onClick={() => {
                                     setShowColumnMapper(false);
                                     setFile(null);
-                                }}>Back</CustomButton>
+                                }}>{t('common.back')}</CustomButton>
                                 <CustomButton
                                     onClick={processData}
                                     disabled={!mappings.date || !mappings.amount || !mappings.title}
                                 >
-                                    Review Data <ArrowRight className="w-4 h-4 ml-2" />
+                                    {t('import.reviewData')} <ArrowRight className="w-4 h-4 ml-2" />
                                 </CustomButton>
                             </div>
                         </div>
@@ -349,10 +351,10 @@ export default function ImportWizard({ onSuccess }) {
                                 setStep(1);
                                 // If we have CSV data, go back to mapper, otherwise file uploader
                                 if (csvData.data.length > 0) setShowColumnMapper(true);
-                            }}>Back</CustomButton>
+                            }}>{t('common.back')}</CustomButton>
                             <CustomButton variant="primary" onClick={handleImport} disabled={isProcessing}>
                                 {isProcessing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
-                                Import {processedData.length} Transactions
+                                {t('import.importTransactions', { count: processedData.length })}
                             </CustomButton>
                         </div>
                     </div>
@@ -369,6 +371,7 @@ export function ImportWizardDialog({
     renderTrigger = true
 }) {
     const [open, setOpen] = useState(false);
+    const { t } = useTranslation();
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -380,15 +383,15 @@ export function ImportWizardDialog({
                         className={triggerClassName}
                     >
                         <Upload className="w-4 h-4 mr-2" />
-                        Import Data
+                        {t('import.importData')}
                     </CustomButton>
                 </DialogTrigger>
             )}
 
             <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Import Data</DialogTitle>
-                    <DialogDescription>Upload and import transactions from CSV files</DialogDescription>
+                    <DialogTitle>{t('import.importData')}</DialogTitle>
+                    <DialogDescription>{t('import.importDesc')}</DialogDescription>
                 </DialogHeader>
                 <ImportWizard onSuccess={() => setOpen(false)} />
             </DialogContent>

@@ -4,16 +4,18 @@ import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import CustomBudgetCard from "./CustomBudgetCard";
 import { useSettings } from "../utils/SettingsContext";
-
-const statusConfig = {
-    active: { label: "Active", color: "text-green-600", bg: "bg-green-50" },
-    completed: { label: "Completed", color: "text-blue-600", bg: "bg-blue-50" },
-    archived: { label: "Archived", color: "text-gray-600", bg: "bg-gray-50" }
-};
+import { useTranslation } from "react-i18next";
 
 export default function CustomBudgetList({ customBudgets, onEdit, onDelete }) {
+    const { t } = useTranslation();
     const { settings } = useSettings();
     const queryClient = useQueryClient();
+
+    const statusConfig = {
+        active: { label: t('status_active'), color: "text-green-600", bg: "bg-green-50" },
+        completed: { label: t('status_completed'), color: "text-blue-600", bg: "bg-blue-50" },
+        archived: { label: t('status_archived'), color: "text-gray-600", bg: "bg-gray-50" }
+    };
 
     const { data: transactions = [] } = useQuery({
         queryKey: ['transactions'],
@@ -52,11 +54,11 @@ export default function CustomBudgetList({ customBudgets, onEdit, onDelete }) {
         return (
             <Card className="border-none shadow-lg">
                 <CardHeader>
-                    <CardTitle>Your Custom Budgets</CardTitle>
+                    <CardTitle>{t('your_custom_budgets')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="h-40 flex items-center justify-center text-gray-400">
-                        <p>No custom budgets yet. Create your first one!</p>
+                        <p>{t('no_custom_budgets')}</p>
                     </div>
                 </CardContent>
             </Card>
@@ -71,7 +73,7 @@ export default function CustomBudgetList({ customBudgets, onEdit, onDelete }) {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <span className="px-3 py-1 rounded-lg text-sm bg-blue-50 text-blue-600">
-                                System Budgets
+                                {t('system_budgets')}
                             </span>
                             <span className="text-gray-400">({groupedBudgets.systemBudgets.length})</span>
                         </CardTitle>

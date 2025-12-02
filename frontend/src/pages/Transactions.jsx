@@ -16,8 +16,10 @@ import QuickAddTransaction from "../components/transactions/QuickAddTransaction"
 import QuickAddIncome from "../components/transactions/QuickAddIncome";
 import TransactionList from "../components/transactions/TransactionList";
 import TransactionFilters from "../components/transactions/TransactionFilters";
+import { useTranslation } from "../hooks/useTranslation";
 
 export default function Transactions() {
+    const { t } = useTranslation();
     const { user } = useSettings();
     const { confirmAction } = useConfirm();
     const queryClient = useQueryClient();
@@ -91,8 +93,8 @@ export default function Transactions() {
         if (selectedIds.size === 0) return;
 
         confirmAction(
-            "Delete Transactions",
-            `Are you sure you want to delete ${selectedIds.size} selected transactions? This action cannot be undone.`,
+            t('transactions.delete.title'),
+            t('transactions.delete.message', { count: selectedIds.size }),
             async () => {
                 setIsBulkDeleting(true);
                 try {
@@ -108,11 +110,11 @@ export default function Transactions() {
                     }
 
                     queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.TRANSACTIONS] });
-                    showToast({ title: "Success", description: `Deleted ${selectedIds.size} transactions.` });
+                    showToast({ title: t('common.success'), description: t('transactions.delete.successMessage', { count: selectedIds.size }) });
                     setSelectedIds(new Set()); // Clear selection
                 } catch (error) {
                     console.error("Bulk delete error:", error);
-                    showToast({ title: "Error", description: "Failed to delete some transactions.", variant: "destructive" });
+                    showToast({ title: t('common.error'), description: t('transactions.delete.errorMessage'), variant: "destructive" });
                 } finally {
                     setIsBulkDeleting(false);
                 }
@@ -126,8 +128,8 @@ export default function Transactions() {
             <div className="max-w-6xl mx-auto space-y-6">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
-                        <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Transactions</h1>
-                        <p className="text-gray-500 mt-1">Track your income and expenses</p>
+                        <h1 className="text-3xl md:text-4xl font-bold text-gray-900">{t('transactions.title')}</h1>
+                        <p className="text-gray-500 mt-1">{t('transactions.subtitle')}</p>
                     </div>
                     <div className="flex flex-wrap items-center gap-4">
                         {/* Add Income - Success Variant (Green) */}
@@ -136,7 +138,7 @@ export default function Transactions() {
                             onClick={() => setShowAddIncome(true)}
                         >
                             <ArrowDown className="w-4 h-4 mr-2" />
-                            Add Income
+                            {t('transactions.addIncome')}
                         </CustomButton>
 
                         {/* Add Expense - Create Variant (Blue/Purple Gradient) */}
@@ -145,7 +147,7 @@ export default function Transactions() {
                             onClick={() => setShowAddExpense(true)}
                         >
                             <Plus className="w-4 h-4 mr-2" />
-                            Add Expense
+                            {t('transactions.addExpense')}
                         </CustomButton>
 
                         {/* Modals (Logic only, no triggers) */}

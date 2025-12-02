@@ -30,8 +30,10 @@ import QuickAddTransaction from "../components/transactions/QuickAddTransaction"
 import QuickAddIncome from "../components/transactions/QuickAddIncome";
 import QuickAddBudget from "../components/dashboard/QuickAddBudget";
 import { ImportWizardDialog } from "../components/import/ImportWizard";
+import { useTranslation } from "../hooks/useTranslation";
 
 export default function Dashboard() {
+    const { t } = useTranslation();
     const { user, settings } = useSettings();
     const [showQuickAdd, setShowQuickAdd] = useState(false);
     const [showQuickAddIncome, setShowQuickAddIncome] = useState(false);
@@ -118,8 +120,8 @@ export default function Dashboard() {
             <div className="max-w-7xl mx-auto space-y-6">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
-                        <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Dashboard</h1>
-                        <p className="text-gray-500 mt-1">Welcome back, {user?.name || 'User'}!</p>
+                        <h1 className="text-3xl md:text-4xl font-bold text-gray-900">{t('dashboard.title')}</h1>
+                        <p className="text-gray-500 mt-1">{t('dashboard.welcome', { name: user?.full_name || 'User' })}</p>
                     </div>
                 </div>
 
@@ -209,6 +211,7 @@ export default function Dashboard() {
                             baseCurrency={settings.baseCurrency}
                             onDeleteBudget={budgetActions.handleDelete}
                             onCompleteBudget={(id) => budgetActions.handleStatusChange(id, 'completed')}
+                            onActivateBudget={(id) => budgetActions.handleStatusChange(id, 'active')}
                             onCreateBudget={() => setShowQuickAddBudget(true)}
                         />
                     </div>

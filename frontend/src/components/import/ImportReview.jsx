@@ -5,16 +5,18 @@ import { CustomButton } from "@/components/ui/CustomButton";
 import { Trash2 } from "lucide-react";
 import { formatCurrency } from "@/components/utils/currencyUtils";
 import { useSettings } from "@/components/utils/SettingsContext";
+import { useTranslation } from "react-i18next";
 
 export default function ImportReview({ data, onDeleteRow }) {
     const { settings } = useSettings();
+    const { t } = useTranslation();
 
     return (
         <Card>
             <CardHeader>
                 <CardTitle className="flex justify-between items-center">
-                    <span>Review Transactions</span>
-                    <Badge variant="outline">{data.length} records found</Badge>
+                    <span>{t('import.reviewTransactions')}</span>
+                    <Badge variant="outline">{data.length} {t('import.recordsFound')}</Badge>
                 </CardTitle>
             </CardHeader>
             <CardContent>
@@ -22,11 +24,11 @@ export default function ImportReview({ data, onDeleteRow }) {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Date</TableHead>
-                                <TableHead>Title</TableHead>
-                                <TableHead>Category</TableHead>
-                                <TableHead className="text-right">Amount</TableHead>
-                                <TableHead>Type</TableHead>
+                                <TableHead>{t('import.fields.date')}</TableHead>
+                                <TableHead>{t('import.fields.title')}</TableHead>
+                                <TableHead>{t('import.fields.category')}</TableHead>
+                                <TableHead className="text-right">{t('import.fields.amount')}</TableHead>
+                                <TableHead>{t('import.fields.type')}</TableHead>
                                 <TableHead className="w-[50px]"></TableHead>
                             </TableRow>
                         </TableHeader>
@@ -36,14 +38,14 @@ export default function ImportReview({ data, onDeleteRow }) {
                                     <TableCell>{row.date}</TableCell>
                                     <TableCell>{row.title}</TableCell>
                                     <TableCell>
-                                        <Badge variant="secondary">{row.category || 'Uncategorized'}</Badge>
+                                        <Badge variant="secondary">{row.category || t('uncategorized')}</Badge>
                                     </TableCell>
                                     <TableCell className={`text-right font-medium ${row.type === 'expense' ? 'text-red-600' : 'text-green-600'}`}>
                                         {formatCurrency(Math.abs(row.amount), settings)}
                                     </TableCell>
                                     <TableCell>
                                         <Badge variant={row.type === 'expense' ? 'destructive' : 'default'}>
-                                            {row.type}
+                                            {row.type === 'expense' ? t('expense') : t('income')}
                                         </Badge>
                                     </TableCell>
                                     <TableCell>

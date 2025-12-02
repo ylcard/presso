@@ -4,6 +4,7 @@ import { formatCurrency } from "../utils/currencyUtils";
 import { getMonthlyPaidExpenses } from "../utils/financialCalculations";
 import { estimateCurrentMonth } from "../utils/projectionUtils";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 export default function ReportStats({
     transactions = [],
@@ -17,6 +18,8 @@ export default function ReportStats({
     endDate,
     bonusSavingsPotential = 0
 }) {
+    const { t } = useTranslation();
+
     if (isLoading) {
         return (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -74,7 +77,7 @@ export default function ReportStats({
             <Card className="border-none shadow-sm">
                 <CardContent className="p-6 text-center">
                     <div className="flex flex-col items-center">
-                        <p className="text-sm font-medium text-gray-500">Savings Rate</p>
+                        <p className="text-sm font-medium text-gray-500">{t('reports.stats.savingsRate')}</p>
                         <motion.h3
                             initial={{ y: 5, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
@@ -86,7 +89,7 @@ export default function ReportStats({
                         {/* Analysis Badge */}
                         <div className={`flex items-center gap-1 mt-2 text-xs font-medium ${savingsRateDiff >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                             {getArrow(savingsRateDiff)}
-                            <span>{Math.abs(savingsRateDiff).toFixed(1)}% vs last month</span>
+                            <span>{t('reports.stats.vsLastMonth', { value: Math.abs(savingsRateDiff).toFixed(1) })}</span>
                         </div>
                     </div>
                     <div className="mt-4 flex justify-center">
@@ -100,7 +103,7 @@ export default function ReportStats({
             <Card className="border-none shadow-sm">
                 <CardContent className="p-6 text-center">
                     <div className="flex flex-col items-center">
-                        <p className="text-sm font-medium text-gray-500">Net Flow</p>
+                        <p className="text-sm font-medium text-gray-500">{t('reports.stats.netFlow')}</p>
                         <motion.h3
                             initial={{ y: 5, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
@@ -112,17 +115,17 @@ export default function ReportStats({
                         {/* Analysis Badge - Comparison vs Last Month */}
                         <div className={`flex items-center gap-1 mt-2 text-xs font-medium ${netFlowDiffPercent >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                             {getArrow(netFlowDiffPercent)}
-                            <span>{Math.abs(netFlowDiffPercent).toFixed(0)}% vs last month</span>
+                            <span>{t('reports.stats.vsLastMonth', { value: Math.abs(netFlowDiffPercent).toFixed(0) })}</span>
                         </div>
                         {/* Projection Badge */}
                         {isCurrentMonth ? (
                             <div className={`flex items-center gap-1 mt-2 text-xs font-medium ${projectedNetFlow >= 0 ? 'text-blue-600' : 'text-rose-500'}`}>
                                 <Target className="w-3 h-3" />
-                                <span>Proj. End of Month: {formatCurrency(projectedNetFlow, settings)}</span>
+                                <span>{t('reports.stats.projEndOfMonth', { amount: formatCurrency(projectedNetFlow, settings) })}</span>
                             </div>
                         ) : (
                             <div className="flex items-center gap-1 mt-2 text-xs font-medium text-gray-400">
-                                <span>Closed</span>
+                                <span>{t('reports.stats.closed')}</span>
                             </div>
                         )}
                     </div>
@@ -137,7 +140,7 @@ export default function ReportStats({
             <Card className="border-none shadow-sm">
                 <CardContent className="p-6 text-center">
                     <div className="flex flex-col items-center">
-                        <p className="text-sm font-medium text-gray-500">Efficiency Bonus</p>
+                        <p className="text-sm font-medium text-gray-500">{t('reports.stats.efficiencyBonus')}</p>
                         <motion.h3
                             initial={{ y: 5, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
@@ -147,7 +150,7 @@ export default function ReportStats({
                             {formatCurrency(bonusSavingsPotential, settings)}
                         </motion.h3>
                         <div className="flex items-center gap-1 mt-2 text-xs font-medium text-emerald-600/80">
-                            <span>Unspent Needs & Wants</span>
+                            <span>{t('reports.stats.unspentNeedsWants')}</span>
                         </div>
                     </div>
                     <div className="mt-4 flex justify-center">
@@ -173,6 +176,7 @@ export function FinancialHealthScore({
     isLoading,
     settings
 }) {
+    const { t } = useTranslation();
     if (isLoading) return null;
 
     // 1. Current Month Data
@@ -210,10 +214,10 @@ export function FinancialHealthScore({
 
     // Visuals
     let color = '#10B981'; // Green
-    let label = 'Excellent';
-    if (totalScore < 80) { color = '#3B82F6'; label = 'Good'; }
-    if (totalScore < 60) { color = '#F59E0B'; label = 'Fair'; }
-    if (totalScore < 40) { color = '#EF4444'; label = 'Needs Work'; }
+    let label = t('health_score_excellent');
+    if (totalScore < 80) { color = '#3B82F6'; label = t('health_score_good'); }
+    if (totalScore < 60) { color = '#F59E0B'; label = t('health_score_fair'); }
+    if (totalScore < 40) { color = '#EF4444'; label = t('health_score_needs_work'); }
 
     return (
         <Card className="border-none shadow-sm h-full overflow-hidden relative mt-6">
@@ -242,22 +246,22 @@ export function FinancialHealthScore({
                 {/* Text Summary */}
                 <div className="flex-1">
                     <h3 className="font-bold text-lg text-gray-900 flex items-center gap-2">
-                        <Activity className="w-5 h-5 text-blue-600" /> Financial Health
+                        <Activity className="w-5 h-5 text-blue-600" /> {t('financial_health')}
                     </h3>
                     <p className="text-sm text-gray-500 mt-1">
-                        Your score is based on your {Math.round(currentSavingsRate * 100)}% savings rate, budget efficiency, and month-over-month improvement.
+                        {t('health_score_description', { savingsRate: Math.round(currentSavingsRate * 100) })}
                     </p>
                     <div className="flex gap-4 mt-4">
                         <div className="text-xs">
-                            <span className="block text-gray-400">Savings</span>
+                            <span className="block text-gray-400">{t('savings')}</span>
                             <span className="font-semibold">{Math.round(savingsScore)}/50</span>
                         </div>
                         <div className="text-xs">
-                            <span className="block text-gray-400">Efficiency</span>
+                            <span className="block text-gray-400">{t('efficiency')}</span>
                             <span className="font-semibold">{Math.round(efficiencyScore)}/30</span>
                         </div>
                         <div className="text-xs">
-                            <span className="block text-gray-400">Trend</span>
+                            <span className="block text-gray-400">{t('trend')}</span>
                             <span className="font-semibold">{Math.round(trendScore)}/20</span>
                         </div>
                     </div>
