@@ -59,6 +59,23 @@ const createEntityProxy = (resource) => ({
         const response = await apiClient.get(url, { params });
         return response.data || response;
     },
+    filter: async (params) => {
+        const map = {
+            'Transaction': '/api/transactions',
+            'Category': '/api/categories',
+            'CategoryRule': '/api/category-rules',
+            'BudgetGoal': '/api/budget-goals',
+            'SystemBudget': '/api/system-budgets',
+            'CustomBudget': '/api/custom-budgets',
+            'CustomBudgetAllocation': '/api/allocations',
+            'MiniBudget': '/api/mini-budgets',
+            'ExchangeRate': '/api/exchange-rates',
+            'CashWallet': '/api/cash-wallet',
+        };
+        const url = map[resource] || `/api/${resource.toLowerCase()}s`;
+        const response = await apiClient.get(url, { params });
+        return response.data || response;
+    },
     get: async (id) => {
         const map = {
             'Transaction': '/api/transactions',
