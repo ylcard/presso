@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { localApiClient } from "@/api/localApiClient";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { QUERY_KEYS } from "./queryKeys";
 import { getMonthlyIncome, resolveBudgetLimit } from "../utils/financialCalculations";
@@ -11,7 +11,9 @@ export const useTransactions = () => {
     const { isAuthenticated } = useAuth();
     const { data: transactions = [], isLoading, error } = useQuery({
         queryKey: [QUERY_KEYS.TRANSACTIONS],
-        queryFn: () => base44.entities.Transaction.list('date', 1000),
+        // Deprecating the use of .list()
+        // queryFn: () => localApiClient.entities.Transaction.list('date', 1000),
+        queryFn: () => localApiClient.entities.Transaction.filter({ sort: 'date', limit: 1000 }),
         initialData: [],
         enabled: isAuthenticated,
     });
@@ -24,7 +26,7 @@ export const useCategories = () => {
     const { isAuthenticated } = useAuth();
     const { data: categories = [], isLoading } = useQuery({
         queryKey: [QUERY_KEYS.CATEGORIES],
-        queryFn: () => base44.entities.Category.list(),
+        queryFn: () => localApiClient.entities.Category.list(),
         initialData: [],
         enabled: isAuthenticated,
     });
@@ -38,7 +40,9 @@ export const useGoals = (user) => {
         queryKey: [QUERY_KEYS.GOALS],
         queryFn: async () => {
             if (!user) return [];
-            return await base44.entities.BudgetGoal.list();
+            // Deprecating the use of .list()
+            // return await localApiClient.entities.BudgetGoal.list();
+            return await localApiClient.entities.BudgetGoal.filter({ user_email: user.email });
         },
         initialData: [],
         enabled: !!user,
@@ -53,7 +57,12 @@ export const useCustomBudgetsAll = (user) => {
         queryKey: [QUERY_KEYS.CUSTOM_BUDGETS],
         queryFn: async () => {
             if (!user) return [];
-            return await base44.entities.CustomBudget.list('-startDate');
+            // Deprecating the use of .list()
+            // return await localApiClient.entities.CustomBudget.list('-startDate');
+            return await localApiClient.entities.CustomBudget.filter({ 
+                sort: '-startDate', 
+                user_email: user.email 
+            });
         },
         initialData: [],
         enabled: !!user,
@@ -68,7 +77,9 @@ export const useSystemBudgetsAll = (user) => {
         queryKey: [QUERY_KEYS.ALL_SYSTEM_BUDGETS],
         queryFn: async () => {
             if (!user) return [];
-            return await base44.entities.SystemBudget.list();
+            // Deprecating the use of .list()
+            // return await localApiClient.entities.SystemBudget.list();
+            return await localApiClient.entities.SystemBudget.filter({ user_email: user.email });
         },
         initialData: [],
         enabled: !!user,
@@ -83,11 +94,17 @@ export const useSystemBudgetsForPeriod = (user, monthStart, monthEnd) => {
         queryKey: [QUERY_KEYS.SYSTEM_BUDGETS, monthStart, monthEnd],
         queryFn: async () => {
             if (!user) return [];
-            const all = await base44.entities.SystemBudget.list();
-            return all.filter(sb =>
-                sb.startDate === monthStart &&
-                sb.endDate === monthEnd
-            );
+            // Deprecating the use of .list()
+            // const all = await localApiClient.entities.SystemBudget.list();
+            // return all.filter(sb =>
+            //     sb.startDate === monthStart &&
+            //     sb.endDate === monthEnd
+            // );
+            return await localApiClient.entities.SystemBudget.filter({
+                user_email: user.email,
+                startDate: monthStart,
+                endDate: monthEnd
+            });
         },
         initialData: [],
         enabled: !!user && !!monthStart && !!monthEnd,
@@ -101,7 +118,7 @@ export const useAllocations = (budgetId) => {
     const { data: allocations = [], isLoading } = useQuery({
         queryKey: [QUERY_KEYS.ALLOCATIONS, budgetId],
         queryFn: async () => {
-            return await base44.entities.CustomBudget.getAllocations(budgetId);
+            return await localApiClient.entities.CustomBudget.getAllocations(budgetId);
         },
         initialData: [],
         enabled: !!budgetId,
@@ -117,8 +134,11 @@ export const useAllBudgets = (user) => {
         queryFn: async () => {
             if (!user) return [];
 
-            const customBudgets = await base44.entities.CustomBudget.list();
-            const systemBudgets = await base44.entities.SystemBudget.list();
+            // Deprecating the use of .list()
+            // const customBudgets = await localApiClient.entities.CustomBudget.list();
+            // const systemBudgets = await localApiClient.entities.SystemBudget.list();
+            const customBudgets = await localApiClient.entities.CustomBudget.filter({ user_email: user.email });
+            const systemBudgets = await localApiClient.entities.SystemBudget.filter({ user_email: user.email });
 
             // Include ALL custom budgets (both active and completed)
             const userCustomBudgets = customBudgets;
@@ -144,10 +164,16 @@ export const useCategoryRules = (user) => {
         queryKey: ['CATEGORY_RULES'],
         queryFn: async () => {
             if (!user) return [];
-            const allRules = await base44.entities.CategoryRule.list();
-            // Sort by priority (ascending)
-            return allRules
-                .sort((a, b) => (a.priority || 0) - (b.priority || 0));
+            // Deprecating the use of .list()
+            //     const allRules = await localApiClient.entities.CategoryRule.list();
+            //     Sort by priority (ascending)
+            //     return allRules
+            //         .sort((a, b) => (a.priority || 0) - (b.priority || 0));
+            // },
+            return await localApiClient.entities.CategoryRule.filter({
+                user_email: user.email,
+                sort: 'priority' // Assumes backend supports sort param
+            });
         },
         initialData: [],
         enabled: !!user,
@@ -266,22 +292,31 @@ export const useSystemBudgetManagement = (
                         const shouldUpdate = (allowUpdates || existingBudget.budgetAmount === 0) && Math.abs(existingBudget.budgetAmount - amount) > 0.01;
 
                         if (shouldUpdate) {
-                            await base44.entities.SystemBudget.update(existingBudget.id, {
+                            await localApiClient.entities.SystemBudget.update(existingBudget.id, {
                                 budgetAmount: amount
                             });
                             needsInvalidation = true;
                         }
                     } else {
                         // Check for duplicates before creating to prevent race conditions or multiple creations
-                        const allSystemBudgetsCheck = await base44.entities.SystemBudget.list();
-                        const duplicateCheck = allSystemBudgetsCheck.find(sb =>
-                            sb.systemBudgetType === type &&
-                            sb.startDate === monthStart &&
-                            sb.endDate === monthEnd
-                        );
 
-                        if (!duplicateCheck) {
-                            await base44.entities.SystemBudget.create({
+                        // Deprecating the use of .list()
+                        // const allSystemBudgetsCheck = await localApiClient.entities.SystemBudget.list();
+                        // const duplicateCheck = allSystemBudgetsCheck.find(sb =>
+                        //     sb.systemBudgetType === type &&
+                        //     sb.startDate === monthStart &&
+                        //     sb.endDate === monthEnd
+                        // );
+                        const duplicateCheck = await localApiClient.entities.SystemBudget.filter({
+                            systemBudgetType: type,
+                            startDate: monthStart,
+                            endDate: monthEnd
+                        });
+
+                        // Deprecating the use of .list()
+                        // if (!duplicateCheck) {
+                        if (duplicateCheck.length === 0) {
+                            await localApiClient.entities.SystemBudget.create({
                                 name: type.charAt(0).toUpperCase() + type.slice(1),
                                 budgetAmount: amount,
                                 startDate: monthStart,

@@ -37,10 +37,26 @@ apiClient.interceptors.response.use(
 
 // Helper to create entity proxy
 const createEntityProxy = (resource) => ({
-    list: async (sort, limit) => {
+    list: async (sort, limit, skip, fields) => {
         const params = {};
-        if (sort) params.sort = sort;
+        
+        // Map SDK 'sort' (e.g. '-date') to backend 'sortBy'/'order'
+        if (sort) {
+            if (sort.startsWith('-')) {
+                params.sortBy = sort.substring(1);
+                params.order = 'desc';
+            } else {
+                params.sortBy = sort;
+                params.order = 'asc';
+            }
+        }
+        
         if (limit) params.limit = limit;
+        
+        // Map SDK 'skip' to backend 'page'
+        if (skip !== undefined && limit) {
+            params.page = Math.floor(skip / limit) + 1;
+        }
 
         const map = {
             'Transaction': '/api/transactions',
@@ -50,11 +66,47 @@ const createEntityProxy = (resource) => ({
             'SystemBudget': '/api/system-budgets',
             'CustomBudget': '/api/custom-budgets',
             'CustomBudgetAllocation': '/api/allocations',
-            'MiniBudget': '/api/mini-budgets',
             'ExchangeRate': '/api/exchange-rates',
-            'CashWallet': '/api/cash-wallet',
         };
 
+        const url = map[resource] || `/api/${resource.toLowerCase()}s`;
+        const response = await apiClient.get(url, { params });
+        return response.data || response;
+    },
+    filter: async (query, sort, limit, skip, fields) => {
+        const params = { ...query };
+        const finalSort = sort || params.sort;
+        const finalLimit = limit || params.limit;
+        const finalSkip = skip || params.skip;
+
+        if (finalSort) {
+            if (finalSort.startsWith('-')) {
+                params.sortBy = finalSort.substring(1);
+                params.order = 'desc';
+            } else {
+                params.sortBy = finalSort;
+                params.order = 'asc';
+            }
+            delete params.sort;
+        }
+
+        if (finalLimit) params.limit = finalLimit;
+
+        if (finalSkip !== undefined && finalLimit) {
+            params.page = Math.floor(finalSkip / finalLimit) + 1;
+            delete params.skip;
+        }
+
+        const map = {
+            'Transaction': '/api/transactions',
+            'Category': '/api/categories',
+            'CategoryRule': '/api/category-rules',
+            'BudgetGoal': '/api/budget-goals',
+            'SystemBudget': '/api/system-budgets',
+            'CustomBudget': '/api/custom-budgets',
+            'CustomBudgetAllocation': '/api/allocations',
+            'ExchangeRate': '/api/exchange-rates',
+        };
         const url = map[resource] || `/api/${resource.toLowerCase()}s`;
         const response = await apiClient.get(url, { params });
         return response.data || response;
@@ -68,9 +120,7 @@ const createEntityProxy = (resource) => ({
             'SystemBudget': '/api/system-budgets',
             'CustomBudget': '/api/custom-budgets',
             'CustomBudgetAllocation': '/api/allocations',
-            'MiniBudget': '/api/mini-budgets',
             'ExchangeRate': '/api/exchange-rates',
-            'CashWallet': '/api/cash-wallet',
         };
         const url = map[resource] || `/api/${resource.toLowerCase()}s`;
         const response = await apiClient.get(`${url}/${id}`);
@@ -84,8 +134,6 @@ const createEntityProxy = (resource) => ({
             'BudgetGoal': '/api/budget-goals',
             'SystemBudget': '/api/system-budgets',
             'CustomBudget': '/api/custom-budgets',
-            'MiniBudget': '/api/mini-budgets',
-            'CashWallet': '/api/cash-wallet',
         };
         const url = map[resource] || `/api/${resource.toLowerCase()}s`;
         const response = await apiClient.post(url, data);
@@ -99,8 +147,6 @@ const createEntityProxy = (resource) => ({
             'BudgetGoal': '/api/budget-goals',
             'SystemBudget': '/api/system-budgets',
             'CustomBudget': '/api/custom-budgets',
-            'MiniBudget': '/api/mini-budgets',
-            'CashWallet': '/api/cash-wallet',
         };
         const url = map[resource] || `/api/${resource.toLowerCase()}s`;
         const response = await apiClient.put(`${url}/${id}`, data);
@@ -114,11 +160,72 @@ const createEntityProxy = (resource) => ({
             'BudgetGoal': '/api/budget-goals',
             'SystemBudget': '/api/system-budgets',
             'CustomBudget': '/api/custom-budgets',
-            'MiniBudget': '/api/mini-budgets',
-            'CashWallet': '/api/cash-wallet',
         };
         const url = map[resource] || `/api/${resource.toLowerCase()}s`;
         const response = await apiClient.delete(`${url}/${id}`);
+        return response.data || response;
+    },
+    deleteMany: async (query) => {
+        const map = {
+            'Transaction': '/api/transactions',
+            'Category': '/api/categories',
+            'CategoryRule': '/api/category-rules',
+            'BudgetGoal': '/api/budget-goals',
+            'SystemBudget': '/api/system-budgets',
+            'CustomBudget': '/api/custom-budgets',
+            'CustomBudgetAllocation': '/api/allocations',
+            'ExchangeRate': '/api/exchange-rates',
+        };
+        const url = map[resource] || `/api/${resource.toLowerCase()}s`;
+        const response = await apiClient.delete(url, { data: query });
+        return response.data || response;
+    },
+    bulkCreate: async (data) => {
+        const map = {
+            'Transaction': '/api/transactions',
+            'Category': '/api/categories',
+            'CategoryRule': '/api/category-rules',
+            'BudgetGoal': '/api/budget-goals',
+            'SystemBudget': '/api/system-budgets',
+            'CustomBudget': '/api/custom-budgets',
+            'ExchangeRate': '/api/exchange-rates',
+        };
+        const url = map[resource] || `/api/${resource.toLowerCase()}s`;
+        const response = await apiClient.post(`${url}/bulk`, data);
+        return response.data || response;
+    },
+    // Not yet implemented on the backend
+    bulkUpdate: async (data) => {
+        const map = {
+            'Transaction': '/api/transactions',
+            'Category': '/api/categories',
+            'CategoryRule': '/api/category-rules',
+            'BudgetGoal': '/api/budget-goals',
+            'SystemBudget': '/api/system-budgets',
+            'CustomBudget': '/api/custom-budgets',
+        };
+        const url = map[resource] || `/api/${resource.toLowerCase()}s`;
+        const response = await apiClient.put(`${url}/bulk`, data);
+        return response.data || response;
+    },
+    importEntities: async (file) => {
+        const map = {
+            'Transaction': '/api/transactions',
+            'Category': '/api/categories',
+            'CategoryRule': '/api/category-rules',
+            'BudgetGoal': '/api/budget-goals',
+            'SystemBudget': '/api/system-budgets',
+            'CustomBudget': '/api/custom-budgets',
+        };
+        const url = map[resource] || `/api/${resource.toLowerCase()}s`;
+        const formData = new FormData();
+        formData.append("file", file, file.name);
+        
+        const response = await apiClient.post(`${url}/import`, formData, {
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+        });
         return response.data || response;
     },
 });
@@ -189,10 +296,8 @@ export const localApiClient = {
             }
         },
         CustomBudgetAllocation: createEntityProxy('CustomBudgetAllocation'), // Kept for compatibility but might fail if used directly
-        MiniBudget: createEntityProxy('MiniBudget'),
         CategoryRule: createEntityProxy('CategoryRule'),
         ExchangeRate: createEntityProxy('ExchangeRate'),
-        CashWallet: createEntityProxy('CashWallet'),
         UserSettings: {
             filter: async (filters) => {
                 const response = await apiClient.get('/api/settings');
