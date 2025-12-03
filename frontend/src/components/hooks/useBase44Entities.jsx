@@ -11,7 +11,9 @@ export const useTransactions = () => {
     const { isAuthenticated } = useAuth();
     const { data: transactions = [], isLoading, error } = useQuery({
         queryKey: [QUERY_KEYS.TRANSACTIONS],
-        queryFn: () => localApiClient.entities.Transaction.list('date', 1000),
+        // Deprecating the use of .list()
+        // queryFn: () => localApiClient.entities.Transaction.list('date', 1000),
+        queryFn: () => base44.entities.Transaction.filter({ sort: 'date', limit: 1000 }),
         initialData: [],
         enabled: isAuthenticated,
     });
@@ -38,7 +40,9 @@ export const useGoals = (user) => {
         queryKey: [QUERY_KEYS.GOALS],
         queryFn: async () => {
             if (!user) return [];
-            return await localApiClient.entities.BudgetGoal.list();
+            // Deprecating the use of .list()
+            // return await localApiClient.entities.BudgetGoal.list();
+            return await base44.entities.BudgetGoal.filter({ user_email: user.email });
         },
         initialData: [],
         enabled: !!user,
@@ -53,7 +57,12 @@ export const useCustomBudgetsAll = (user) => {
         queryKey: [QUERY_KEYS.CUSTOM_BUDGETS],
         queryFn: async () => {
             if (!user) return [];
-            return await localApiClient.entities.CustomBudget.list('-startDate');
+            // Deprecating the use of .list()
+            // return await localApiClient.entities.CustomBudget.list('-startDate');
+            return await base44.entities.CustomBudget.filter({ 
+                sort: '-startDate', 
+                user_email: user.email 
+            });
         },
         initialData: [],
         enabled: !!user,
@@ -68,7 +77,9 @@ export const useSystemBudgetsAll = (user) => {
         queryKey: [QUERY_KEYS.ALL_SYSTEM_BUDGETS],
         queryFn: async () => {
             if (!user) return [];
-            return await localApiClient.entities.SystemBudget.list();
+            // Deprecating the use of .list()
+            // return await localApiClient.entities.SystemBudget.list();
+            return await base44.entities.SystemBudget.filter({ user_email: user.email });
         },
         initialData: [],
         enabled: !!user,
@@ -90,6 +101,7 @@ export const useSystemBudgetsForPeriod = (user, monthStart, monthEnd) => {
             //     sb.endDate === monthEnd
             // );
             return await localApiClient.entities.SystemBudget.filter({
+                user_email: user.email,
                 startDate: monthStart,
                 endDate: monthEnd
             });
@@ -122,8 +134,11 @@ export const useAllBudgets = (user) => {
         queryFn: async () => {
             if (!user) return [];
 
-            const customBudgets = await localApiClient.entities.CustomBudget.list();
-            const systemBudgets = await localApiClient.entities.SystemBudget.list();
+            // Deprecating the use of .list()
+            // const customBudgets = await localApiClient.entities.CustomBudget.list();
+            // const systemBudgets = await localApiClient.entities.SystemBudget.list();
+            const customBudgets = await base44.entities.CustomBudget.filter({ user_email: user.email });
+            const systemBudgets = await base44.entities.SystemBudget.filter({ user_email: user.email });
 
             // Include ALL custom budgets (both active and completed)
             const userCustomBudgets = customBudgets;
@@ -149,10 +164,16 @@ export const useCategoryRules = (user) => {
         queryKey: ['CATEGORY_RULES'],
         queryFn: async () => {
             if (!user) return [];
-            const allRules = await localApiClient.entities.CategoryRule.list();
-            // Sort by priority (ascending)
-            return allRules
-                .sort((a, b) => (a.priority || 0) - (b.priority || 0));
+            // Deprecating the use of .list()
+            //     const allRules = await localApiClient.entities.CategoryRule.list();
+            //     Sort by priority (ascending)
+            //     return allRules
+            //         .sort((a, b) => (a.priority || 0) - (b.priority || 0));
+            // },
+            return await base44.entities.CategoryRule.filter({
+                user_email: user.email,
+                sort: 'priority' // Assumes backend supports sort param
+            });
         },
         initialData: [],
         enabled: !!user,
