@@ -37,10 +37,26 @@ apiClient.interceptors.response.use(
 
 // Helper to create entity proxy
 const createEntityProxy = (resource) => ({
-    list: async (sort, limit) => {
+    list: async (sort, limit, skip, fields) => {
         const params = {};
-        if (sort) params.sort = sort;
+        
+        // Map SDK 'sort' (e.g. '-date') to backend 'sortBy'/'order'
+        if (sort) {
+            if (sort.startsWith('-')) {
+                params.sortBy = sort.substring(1);
+                params.order = 'desc';
+            } else {
+                params.sortBy = sort;
+                params.order = 'asc';
+            }
+        }
+        
         if (limit) params.limit = limit;
+        
+        // Map SDK 'skip' to backend 'page'
+        if (skip !== undefined && limit) {
+            params.page = Math.floor(skip / limit) + 1;
+        }
 
         const map = {
             'Transaction': '/api/transactions',
@@ -59,7 +75,38 @@ const createEntityProxy = (resource) => ({
         const response = await apiClient.get(url, { params });
         return response.data || response;
     },
-    filter: async (params) => {
+    // Matches SDK signature: filter(query, sort, limit, skip, fields)
+    filter: async (query, sort, limit, skip, fields) => {
+        // 1. Flatten the query object for the local backend (which doesn't support 'q' param)
+        // We also check if sort/limit were passed inside the query object (supporting previous refactor style)
+        const params = { ...query };
+        
+        const finalSort = sort || params.sort;
+        const finalLimit = limit || params.limit;
+        const finalSkip = skip || params.skip;
+
+        // 2. Map Sort
+        if (finalSort) {
+            if (finalSort.startsWith('-')) {
+                params.sortBy = finalSort.substring(1);
+                params.order = 'desc';
+            } else {
+                params.sortBy = finalSort;
+                params.order = 'asc';
+            }
+            // Cleanup if it was in the query object
+            delete params.sort;
+        }
+
+        // 3. Map Limit
+        if (finalLimit) params.limit = finalLimit;
+
+        // 4. Map Skip -> Page
+        if (finalSkip !== undefined && finalLimit) {
+            params.page = Math.floor(finalSkip / finalLimit) + 1;
+            delete params.skip;
+        }
+
         const map = {
             'Transaction': '/api/transactions',
             'Category': '/api/categories',
