@@ -582,8 +582,10 @@ export const useReportData = (user) => {
     queryKey: ['goals'],
     queryFn: async () => {
       if (!user) return [];
-      const allGoals = await localApiClient.entities.BudgetGoal.list();
-      return allGoals.filter(g => g.user_email === user.email);
+      // Deprecating the use of .list()
+      // const allGoals = await localApiClient.entities.BudgetGoal.list();
+      // return allGoals.filter(g => g.user_email === user.email);
+      return await localApiClient.entities.BudgetGoal.filter({ user_email: user.email });
     },
     initialData: [],
     enabled: !!user,
