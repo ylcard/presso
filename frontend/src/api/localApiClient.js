@@ -173,6 +173,8 @@ const createEntityProxy = (resource) => ({
             'BudgetGoal': '/api/budget-goals',
             'SystemBudget': '/api/system-budgets',
             'CustomBudget': '/api/custom-budgets',
+            'CustomBudgetAllocation': '/api/allocations',
+            'ExchangeRate': '/api/exchange-rates',
         };
         const url = map[resource] || `/api/${resource.toLowerCase()}s`;
         const response = await apiClient.delete(url, { data: query });
@@ -190,6 +192,20 @@ const createEntityProxy = (resource) => ({
         };
         const url = map[resource] || `/api/${resource.toLowerCase()}s`;
         const response = await apiClient.post(`${url}/bulk`, data);
+        return response.data || response;
+    },
+    // Not yet implemented on the backend
+    bulkUpdate: async (data) => {
+        const map = {
+            'Transaction': '/api/transactions',
+            'Category': '/api/categories',
+            'CategoryRule': '/api/category-rules',
+            'BudgetGoal': '/api/budget-goals',
+            'SystemBudget': '/api/system-budgets',
+            'CustomBudget': '/api/custom-budgets',
+        };
+        const url = map[resource] || `/api/${resource.toLowerCase()}s`;
+        const response = await apiClient.put(`${url}/bulk`, data);
         return response.data || response;
     },
     importEntities: async (file) => {
