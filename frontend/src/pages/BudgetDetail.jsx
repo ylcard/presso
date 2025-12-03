@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { localApiClient } from "@/api/localApiClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CustomButton } from "@/components/ui/CustomButton";
@@ -59,23 +59,47 @@ export default function BudgetDetail() {
         queryFn: async () => {
             if (!budgetId) return null;
 
-            const allCustomBudgets = await base44.entities.CustomBudget.list();
-            const customBudget = allCustomBudgets.find(cb => cb.id === budgetId);
+            // Deprecating the use of .list()
+            // const allCustomBudgets = await localApiClient.entities.CustomBudget.list();
+            // const customBudget = allCustomBudgets.find(cb => cb.id === budgetId);
 
-            if (customBudget) {
-                return { ...customBudget, isSystemBudget: customBudget.isSystemBudget || false };
+            // if (customBudget) {
+            //     return { ...customBudget, isSystemBudget: customBudget.isSystemBudget || false };
+            // }
+            // Try fetching as CustomBudget first
+            try {
+                const customBudget = await localApiClient.entities.CustomBudget.get(budgetId);
+                if (customBudget) {
+                    return { ...customBudget, isSystemBudget: customBudget.isSystemBudget || false };
+                }
+            } catch (error) {
+                // If 404 or other error, proceed to check SystemBudget
             }
 
-            const allSystemBudgets = await base44.entities.SystemBudget.list();
-            const systemBudget = allSystemBudgets.find(sb => sb.id === budgetId);
+            // Deprecating the use of .list()
+            // const allSystemBudgets = await localApiClient.entities.SystemBudget.list();
+            // const systemBudget = allSystemBudgets.find(sb => sb.id === budgetId);
 
-            if (systemBudget) {
-                return {
-                    ...systemBudget,
-                    isSystemBudget: true,
-                    allocatedAmount: systemBudget.budgetAmount
-                };
-            }
+            // if (systemBudget) {
+            //     return {
+            //         ...systemBudget,
+            //         isSystemBudget: true,
+            //         allocatedAmount: systemBudget.budgetAmount
+            //     };
+            // }
+            // Try fetching as SystemBudget
+            try {
+                const systemBudget = await localApiClient.entities.SystemBudget.get(budgetId);
+                if (systemBudget) {
+                    return {
+                        ...systemBudget,
+                        isSystemBudget: true,
+                        allocatedAmount: systemBudget.budgetAmount
+                    };
+                }
+            } catch (error) {
+                // Budget not found in either table
+             }
 
             return null;
         },
@@ -85,7 +109,9 @@ export default function BudgetDetail() {
 
     const { data: transactions = [] } = useQuery({
         queryKey: ['transactions'],
-        queryFn: () => base44.entities.Transaction.list('date', 1000),
+        // Deprecating the use of .list()
+        // queryFn: () => localApiClient.entities.Transaction.list('date', 1000),
+        queryFn: () => localApiClient.entities.Transaction.filter({ sort: 'date', limit: 1000 }),
         initialData: [],
     });
 
@@ -94,15 +120,20 @@ export default function BudgetDetail() {
 
     const { data: categories = [] } = useQuery({
         queryKey: ['categories'],
-        queryFn: () => base44.entities.Category.list(),
+        // Deprecating the use of .list()
+        // queryFn: () => localApiClient.entities.Category.list(),
+        queryFn: () => localApiClient.entities.Category.filter({}),
         initialData: [],
     });
 
     const { data: allBudgets = [] } = useQuery({
         queryKey: ['allBudgets'],
         queryFn: async () => {
-            const customB = await base44.entities.CustomBudget.list();
-            const sysB = await base44.entities.SystemBudget.list();
+            // Deprecating the use of .list()
+            // const customB = await localApiClient.entities.CustomBudget.list();
+            // const sysB = await localApiClient.entities.SystemBudget.list();
+            const customB = await localApiClient.entities.CustomBudget.filter({});
+            const sysB = await localApiClient.entities.SystemBudget.filter({});
             return [...customB, ...sysB.map(sb => ({ ...sb, isSystemBudget: true, allocatedAmount: sb.budgetAmount }))];
         },
         initialData: [],
@@ -111,7 +142,9 @@ export default function BudgetDetail() {
     const { data: allCustomBudgets = [] } = useQuery({
         queryKey: ['allCustomBudgets'],
         queryFn: async () => {
-            const all = await base44.entities.CustomBudget.list();
+            // Deprecating the use of .list()
+            // const all = await localApiClient.entities.CustomBudget.list();
+            const all = await localApiClient.entities.CustomBudget.filter({});
             return all;
         },
         initialData: [],
@@ -120,7 +153,7 @@ export default function BudgetDetail() {
     const { data: allocations = [] } = useQuery({
         queryKey: ['allocations', budgetId],
         queryFn: async () => {
-            return await base44.entities.CustomBudget.getAllocations(budgetId);
+            return await localApiClient.entities.CustomBudget.getAllocations(budgetId);
         },
         initialData: [],
         enabled: !!budgetId && budget && !budget.isSystemBudget,
@@ -131,7 +164,7 @@ export default function BudgetDetail() {
     const transactionActions = useTransactionActions();
 
     const createTransactionMutation = useMutation({
-        mutationFn: (data) => base44.entities.Transaction.create(data),
+        mutationFn: (data) => localApiClient.entities.Transaction.create(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['transactions'] });
             setShowQuickAdd(false);
@@ -139,21 +172,21 @@ export default function BudgetDetail() {
     });
 
     const createAllocationMutation = useMutation({
-        mutationFn: (data) => base44.entities.CustomBudget.createAllocation(budgetId, data),
+        mutationFn: (data) => localApiClient.entities.CustomBudget.createAllocation(budgetId, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['allocations', budgetId] });
         },
     });
 
     const updateAllocationMutation = useMutation({
-        mutationFn: ({ id, data }) => base44.entities.CustomBudget.updateAllocation(budgetId, id, data),
+        mutationFn: ({ id, data }) => localApiClient.entities.CustomBudget.updateAllocation(budgetId, id, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['allocations', budgetId] });
         },
     });
 
     const deleteAllocationMutation = useMutation({
-        mutationFn: (id) => base44.entities.CustomBudget.deleteAllocation(budgetId, id),
+        mutationFn: (id) => localApiClient.entities.CustomBudget.deleteAllocation(budgetId, id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['allocations', budgetId] });
         },
@@ -164,7 +197,7 @@ export default function BudgetDetail() {
             const budgetToComplete = budget;
             if (!budgetToComplete) return;
 
-            await base44.entities.CustomBudget.update(id, {
+            await localApiClient.entities.CustomBudget.update(id, {
                 status: 'completed'
             });
         },
@@ -180,7 +213,7 @@ export default function BudgetDetail() {
             if (!budgetToReactivate) return;
 
             // Simply set back to active
-            await base44.entities.CustomBudget.update(id, {
+            await localApiClient.entities.CustomBudget.update(id, {
                 status: 'active',
             });
         },
