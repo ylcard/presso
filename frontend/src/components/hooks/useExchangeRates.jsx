@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { localApiClient } from "@/api/localApiClient";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { QUERY_KEYS } from "./queryKeys";
 import { areRatesFresh } from "../utils/currencyCalculations";
@@ -14,7 +14,9 @@ export const useExchangeRates = () => {
     // Fetch all exchange rates for the current user
     const { data: exchangeRates = [], isLoading, refetch } = useQuery({
         queryKey: [QUERY_KEYS.EXCHANGE_RATES],
-        queryFn: () => base44.entities.ExchangeRate.list('-date'),
+        // Deprecating the use of .list()
+        // queryFn: () => localApiClient.entities.ExchangeRate.list('-date'),
+        queryFn: () => localApiClient.entities.ExchangeRate.filter({ sort: '-date' }),
         staleTime: 1000 * 60 * 10, // OPTIMIZATION: Trust the cache for 10 minutes to prevent DB reads on window focus
     });
 
@@ -38,7 +40,9 @@ export const useExchangeRates = () => {
         try {
             const ratesToCheck = await queryClient.ensureQueryData({
                 queryKey: [QUERY_KEYS.EXCHANGE_RATES],
-                queryFn: () => base44.entities.ExchangeRate.list('-date'),
+                // Deprecating the use of .list()
+                // queryFn: () => localApiClient.entities.ExchangeRate.list('-date'),
+                queryFn: () => localApiClient.entities.ExchangeRate.filter({ sort: '-date' }),
                 staleTime: 1000 * 60 * 10,
             });
 
@@ -90,7 +94,7 @@ For example, if 1 GBP = 1.25 USD, the entry should be "GBP": 1.25
 
 Only include the rates for the currencies I listed above.`;
 
-            const response = await base44.integrations.Core.InvokeLLM({
+            const response = await localApiClient.integrations.Core.InvokeLLM({
                 prompt: prompt,
                 add_context_from_internet: true,
                 response_json_schema: {
@@ -142,12 +146,12 @@ Only include the rates for the currencies I listed above.`;
 
             // Bulk create new rates
             if (ratesToCreate.length > 0) {
-                await base44.entities.ExchangeRate.bulkCreate(ratesToCreate);
+                await localApiClient.entities.ExchangeRate.bulkCreate(ratesToCreate);
             }
 
             // Update existing rates individually
             for (const { id, rate } of ratesToUpdate) {
-                await base44.entities.ExchangeRate.update(id, { rate });
+                await localApiClient.entities.ExchangeRate.update(id, { rate });
             }
 
             // Invalidate the query to refresh the data
