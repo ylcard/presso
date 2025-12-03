@@ -1,6 +1,6 @@
 
 import { useState, useMemo, useEffect } from "react";
-import { base44 } from "@/api/base44Client";
+import { localApiClient } from "@/api/localApiClient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   calculateRemainingBudget,
@@ -29,13 +29,13 @@ export const useMonthNavigation = () => {
 export const useTransactionsData = () => {
   const { data: transactions = [], isLoading: transactionsLoading } = useQuery({
     queryKey: ['transactions'],
-    queryFn: () => base44.entities.Transaction.list('-date'),
+    queryFn: () => localApiClient.entities.Transaction.list('-date'),
     initialData: [],
   });
 
   const { data: categories = [], isLoading: categoriesLoading } = useQuery({
     queryKey: ['categories'],
-    queryFn: () => base44.entities.Category.list(),
+    queryFn: () => localApiClient.entities.Category.list(),
     initialData: [],
   });
 
@@ -52,8 +52,10 @@ export const useBudgetGoals = (user) => {
     queryKey: ['goals'],
     queryFn: async () => {
       if (!user) return [];
-      const allGoals = await base44.entities.BudgetGoal.list();
-      return allGoals.filter(g => g.user_email === user.email);
+      // Deprecating the use of .list()
+      // const allGoals = await localApiClient.entities.BudgetGoal.list();
+      // return allGoals.filter(g => g.user_email === user.email);
+      return await localApiClient.entities.BudgetGoal.filter({ user_email: user.email });
     },
     initialData: [],
     enabled: !!user,
@@ -68,8 +70,10 @@ export const useAllMiniBudgets = (user) => {
     queryKey: ['miniBudgets'],
     queryFn: async () => {
       if (!user) return [];
-      const all = await base44.entities.MiniBudget.list('-startDate');
-      return all.filter(mb => mb.user_email === user.email);
+      // Deprecating the use of .list()
+      // const all = await localApiClient.entities.MiniBudget.list('-startDate');
+      // return all.filter(mb => mb.user_email === user.email);
+      return await localApiClient.entities.MiniBudget.filter({ sort: '-startDate', user_email: user.email });
     },
     initialData: [],
     enabled: !!user,
@@ -84,8 +88,10 @@ export const useAllSystemBudgets = (user) => {
     queryKey: ['allSystemBudgets'],
     queryFn: async () => {
       if (!user) return [];
-      const all = await base44.entities.SystemBudget.list();
-      return all.filter(sb => sb.user_email === user.email);
+      // Deprecating the use of .list()
+      // const all = await localApiClient.entities.SystemBudget.list();
+      // return all.filter(sb => sb.user_email === user.email);
+      return await localApiClient.entities.SystemBudget.filter({ user_email: user.email });
     },
     initialData: [],
     enabled: !!user,
@@ -103,12 +109,18 @@ export const useSystemBudgets = (user, selectedMonth, selectedYear) => {
     queryKey: ['systemBudgets', selectedMonth, selectedYear],
     queryFn: async () => {
       if (!user) return [];
-      const all = await base44.entities.SystemBudget.list();
-      return all.filter(sb => 
-        sb.user_email === user.email &&
-        sb.startDate === monthStart && 
-        sb.endDate === monthEnd
-      );
+      // Deprecating the use of .list()
+      // const all = await localApiClient.entities.SystemBudget.list();
+      // return all.filter(sb => 
+      //   sb.user_email === user.email &&
+      //   sb.startDate === monthStart && 
+      //   sb.endDate === monthEnd
+      // );
+      return await localApiClient.entities.SystemBudget.filter({
+        user_email: user.email,
+        startDate: monthStart,
+        endDate: monthEnd
+      });
     },
     initialData: [],
     enabled: !!user,
@@ -156,22 +168,31 @@ export const useSystemBudgetManagement = (
           
           if (existingBudget) {
             if (Math.abs(existingBudget.budgetAmount - amount) > 0.01) {
-              await base44.entities.SystemBudget.update(existingBudget.id, {
+              await localApiClient.entities.SystemBudget.update(existingBudget.id, {
                 budgetAmount: amount
               });
               needsInvalidation = true;
             }
           } else {
-            const allSystemBudgetsCheck = await base44.entities.SystemBudget.list();
-            const duplicateCheck = allSystemBudgetsCheck.find(sb => 
-              sb.user_email === user.email &&
-              sb.systemBudgetType === type &&
-              sb.startDate === monthStart &&
-              sb.endDate === monthEnd
-            );
-            
-            if (!duplicateCheck) {
-              await base44.entities.SystemBudget.create({
+            // Deprecating the use of .list()
+            // const allSystemBudgetsCheck = await localApiClient.entities.SystemBudget.list();
+            // const duplicateCheck = allSystemBudgetsCheck.find(sb => 
+            //   sb.user_email === user.email &&
+            //   sb.systemBudgetType === type &&
+            //   sb.startDate === monthStart &&
+            //   sb.endDate === monthEnd
+            // );
+            const duplicateCheck = await localApiClient.entities.SystemBudget.filter({
+              user_email: user.email,
+              systemBudgetType: type,
+              startDate: monthStart,
+              endDate: monthEnd
+            });
+
+            // Deprecating the use of .list()
+            // if (!duplicateCheck) {
+            if (duplicateCheck.length === 0) {
+              await localApiClient.entities.SystemBudget.create({
                 name: type.charAt(0).toUpperCase() + type.slice(1),
                 budgetAmount: amount,
                 startDate: monthStart,
@@ -248,7 +269,7 @@ export const useTransactionMutations = (setShowQuickAdd, setShowQuickAddIncome) 
   const queryClient = useQueryClient();
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Transaction.create(data),
+    mutationFn: (data) => localApiClient.entities.Transaction.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['systemBudgets'] });
@@ -268,7 +289,7 @@ export const useBudgetMutations = (user, transactions, allMiniBudgets, setShowQu
   const queryClient = useQueryClient();
 
   const createBudgetMutation = useMutation({
-    mutationFn: (data) => base44.entities.MiniBudget.create({
+    mutationFn: (data) => localApiClient.entities.MiniBudget.create({
       ...data,
       user_email: user.email,
       isSystemBudget: false
@@ -285,10 +306,10 @@ export const useBudgetMutations = (user, transactions, allMiniBudgets, setShowQu
       const budgetTransactions = transactions.filter(t => t.miniBudgetId === id);
       
       for (const transaction of budgetTransactions) {
-        await base44.entities.Transaction.delete(transaction.id);
+        await localApiClient.entities.Transaction.delete(transaction.id);
       }
       
-      await base44.entities.MiniBudget.delete(id);
+      await localApiClient.entities.MiniBudget.delete(id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['miniBudgets'] });
@@ -305,7 +326,7 @@ export const useBudgetMutations = (user, transactions, allMiniBudgets, setShowQu
       const budgetTransactions = transactions.filter(t => t.miniBudgetId === id && t.isPaid);
       const actualSpent = budgetTransactions.reduce((sum, t) => sum + t.amount, 0);
       
-      await base44.entities.MiniBudget.update(id, { 
+      await localApiClient.entities.MiniBudget.update(id, { 
         status: 'completed',
         allocatedAmount: actualSpent,
         originalAllocatedAmount: budget.originalAllocatedAmount || budget.allocatedAmount
@@ -414,7 +435,7 @@ export const useTransactionActions = (setShowForm, setEditingTransaction) => {
   const queryClient = useQueryClient();
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Transaction.create(data),
+    mutationFn: (data) => localApiClient.entities.Transaction.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       setShowForm(false);
@@ -423,7 +444,7 @@ export const useTransactionActions = (setShowForm, setEditingTransaction) => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Transaction.update(id, data),
+    mutationFn: ({ id, data }) => localApiClient.entities.Transaction.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       setShowForm(false);
@@ -432,7 +453,7 @@ export const useTransactionActions = (setShowForm, setEditingTransaction) => {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Transaction.delete(id),
+    mutationFn: (id) => localApiClient.entities.Transaction.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
     },
@@ -473,7 +494,7 @@ export const useTransactionActions = (setShowForm, setEditingTransaction) => {
 export const useCategoryData = () => {
   const { data: categories = [], isLoading } = useQuery({
     queryKey: ['categories'],
-    queryFn: () => base44.entities.Category.list(),
+    queryFn: () => localApiClient.entities.Category.list(),
     initialData: [],
   });
 
@@ -488,7 +509,7 @@ export const useCategoryActions = (setShowForm, setEditingCategory) => {
   const queryClient = useQueryClient();
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Category.create(data),
+    mutationFn: (data) => localApiClient.entities.Category.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
       setShowForm(false);
@@ -497,7 +518,7 @@ export const useCategoryActions = (setShowForm, setEditingCategory) => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Category.update(id, data),
+    mutationFn: ({ id, data }) => localApiClient.entities.Category.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
       setShowForm(false);
@@ -506,7 +527,7 @@ export const useCategoryActions = (setShowForm, setEditingCategory) => {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Category.delete(id),
+    mutationFn: (id) => localApiClient.entities.Category.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
     },
@@ -547,13 +568,13 @@ export const useCategoryActions = (setShowForm, setEditingCategory) => {
 export const useReportData = (user) => {
   const { data: transactions = [], isLoading: loadingTransactions } = useQuery({
     queryKey: ['transactions'],
-    queryFn: () => base44.entities.Transaction.list('-date'),
+    queryFn: () => localApiClient.entities.Transaction.list('-date'),
     initialData: [],
   });
 
   const { data: categories = [], isLoading: loadingCategories } = useQuery({
     queryKey: ['categories'],
-    queryFn: () => base44.entities.Category.list(),
+    queryFn: () => localApiClient.entities.Category.list(),
     initialData: [],
   });
 
@@ -561,7 +582,7 @@ export const useReportData = (user) => {
     queryKey: ['goals'],
     queryFn: async () => {
       if (!user) return [];
-      const allGoals = await base44.entities.BudgetGoal.list();
+      const allGoals = await localApiClient.entities.BudgetGoal.list();
       return allGoals.filter(g => g.user_email === user.email);
     },
     initialData: [],
@@ -612,14 +633,14 @@ export const useGoalActions = (user, goals) => {
   const queryClient = useQueryClient();
 
   const updateGoalMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.BudgetGoal.update(id, data),
+    mutationFn: ({ id, data }) => localApiClient.entities.BudgetGoal.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goals'] });
     },
   });
 
   const createGoalMutation = useMutation({
-    mutationFn: (data) => base44.entities.BudgetGoal.create(data),
+    mutationFn: (data) => localApiClient.entities.BudgetGoal.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goals'] });
     },
@@ -702,8 +723,10 @@ export const useMiniBudgetsData = (user, selectedMonth, selectedYear) => {
     queryKey: ['miniBudgets'],
     queryFn: async () => {
       if (!user) return [];
-      const all = await base44.entities.MiniBudget.list('-startDate');
-      return all.filter(mb => mb.user_email === user.email);
+      // Deprecating the use of .list()
+      // const all = await localApiClient.entities.MiniBudget.list('-startDate');
+      // return all.filter(mb => mb.user_email === user.email);
+      return await localApiClient.entities.MiniBudget.filter({ sort: '-startDate', user_email: user.email });
     },
     initialData: [],
     enabled: !!user,
@@ -751,7 +774,7 @@ export const useMiniBudgetActions = (user, transactions) => {
   const [editingBudget, setEditingBudget] = useState(null);
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.MiniBudget.create({
+    mutationFn: (data) => localApiClient.entities.MiniBudget.create({
       ...data,
       user_email: user.email,
       isSystemBudget: false
@@ -764,7 +787,7 @@ export const useMiniBudgetActions = (user, transactions) => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.MiniBudget.update(id, data),
+    mutationFn: ({ id, data }) => localApiClient.entities.MiniBudget.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['miniBudgets'] });
       setShowForm(false);
@@ -777,10 +800,10 @@ export const useMiniBudgetActions = (user, transactions) => {
       const budgetTransactions = transactions.filter(t => t.miniBudgetId === id);
       
       for (const transaction of budgetTransactions) {
-        await base44.entities.Transaction.delete(transaction.id);
+        await localApiClient.entities.Transaction.delete(transaction.id);
       }
       
-      await base44.entities.MiniBudget.delete(id);
+      await localApiClient.entities.MiniBudget.delete(id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['miniBudgets'] });
@@ -789,7 +812,7 @@ export const useMiniBudgetActions = (user, transactions) => {
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: ({ id, status }) => base44.entities.MiniBudget.update(id, { status }),
+    mutationFn: ({ id, status }) => localApiClient.entities.MiniBudget.update(id, { status }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['miniBudgets'] });
     },
@@ -842,13 +865,13 @@ export const useBudgetsData = (user, selectedMonth, selectedYear) => {
 
   const { data: transactions = [], isLoading: loadingTransactions } = useQuery({
     queryKey: ['transactions'],
-    queryFn: () => base44.entities.Transaction.list(), // Using list() as per outline, consider using '-date' for consistency
+    queryFn: () => localApiClient.entities.Transaction.list(), // Using list() as per outline, consider using '-date' for consistency
     initialData: [],
   });
 
   const { data: categories = [], isLoading: loadingCategories } = useQuery({
     queryKey: ['categories'],
-    queryFn: () => base44.entities.Category.list(),
+    queryFn: () => localApiClient.entities.Category.list(),
     initialData: [],
   });
 
@@ -856,8 +879,10 @@ export const useBudgetsData = (user, selectedMonth, selectedYear) => {
     queryKey: ['miniBudgets'],
     queryFn: async () => {
       if (!user) return [];
-      const all = await base44.entities.MiniBudget.list('-startDate');
-      return all.filter(mb => mb.user_email === user.email);
+      // Deprecating the use of .list()
+      // const all = await localApiClient.entities.MiniBudget.list('-startDate');
+      // return all.filter(mb => mb.user_email === user.email);
+      return await localApiClient.entities.MiniBudget.filter({ sort: '-startDate', user_email: user.email });
     },
     initialData: [],
     enabled: !!user,
@@ -867,12 +892,18 @@ export const useBudgetsData = (user, selectedMonth, selectedYear) => {
     queryKey: ['systemBudgets', selectedMonth, selectedYear],
     queryFn: async () => {
       if (!user) return [];
-      const all = await base44.entities.SystemBudget.list();
-      return all.filter(sb => 
-        sb.user_email === user.email &&
-        sb.startDate === monthStart && 
-        sb.endDate === monthEnd
-      );
+      // Deprecating the use of .list()
+      // const all = await localApiClient.entities.SystemBudget.list();
+      // return all.filter(sb => 
+      //   sb.user_email === user.email &&
+      //   sb.startDate === monthStart && 
+      //   sb.endDate === monthEnd
+      // );
+      return await localApiClient.entities.SystemBudget.filter({
+        user_email: user.email,
+        startDate: monthStart,
+        endDate: monthEnd
+      });
     },
     initialData: [],
     enabled: !!user,
@@ -933,7 +964,7 @@ export const useBudgetActions = (user, transactions) => {
   const [editingBudget, setEditingBudget] = useState(null);
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.MiniBudget.create(data),
+    mutationFn: (data) => localApiClient.entities.MiniBudget.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['miniBudgets'] });
       setShowForm(false);
@@ -942,7 +973,7 @@ export const useBudgetActions = (user, transactions) => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.MiniBudget.update(id, data),
+    mutationFn: ({ id, data }) => localApiClient.entities.MiniBudget.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['miniBudgets'] });
       setShowForm(false);
@@ -955,10 +986,10 @@ export const useBudgetActions = (user, transactions) => {
       const budgetTransactions = transactions.filter(t => t.miniBudgetId === id);
       
       for (const transaction of budgetTransactions) {
-        await base44.entities.Transaction.delete(transaction.id);
+        await localApiClient.entities.Transaction.delete(transaction.id);
       }
       
-      await base44.entities.MiniBudget.delete(id);
+      await localApiClient.entities.MiniBudget.delete(id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['miniBudgets'] });
@@ -967,7 +998,7 @@ export const useBudgetActions = (user, transactions) => {
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: ({ id, status }) => base44.entities.MiniBudget.update(id, { status }),
+    mutationFn: ({ id, status }) => localApiClient.entities.MiniBudget.update(id, { status }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['miniBudgets'] });
     },
