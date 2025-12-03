@@ -13,7 +13,7 @@ export const useTransactions = () => {
         queryKey: [QUERY_KEYS.TRANSACTIONS],
         // Deprecating the use of .list()
         // queryFn: () => localApiClient.entities.Transaction.list('date', 1000),
-        queryFn: () => base44.entities.Transaction.filter({ sort: 'date', limit: 1000 }),
+        queryFn: () => localApiClient.entities.Transaction.filter({ sort: 'date', limit: 1000 }),
         initialData: [],
         enabled: isAuthenticated,
     });
@@ -42,7 +42,7 @@ export const useGoals = (user) => {
             if (!user) return [];
             // Deprecating the use of .list()
             // return await localApiClient.entities.BudgetGoal.list();
-            return await base44.entities.BudgetGoal.filter({ user_email: user.email });
+            return await localApiClient.entities.BudgetGoal.filter({ user_email: user.email });
         },
         initialData: [],
         enabled: !!user,
@@ -59,7 +59,7 @@ export const useCustomBudgetsAll = (user) => {
             if (!user) return [];
             // Deprecating the use of .list()
             // return await localApiClient.entities.CustomBudget.list('-startDate');
-            return await base44.entities.CustomBudget.filter({ 
+            return await localApiClient.entities.CustomBudget.filter({ 
                 sort: '-startDate', 
                 user_email: user.email 
             });
@@ -79,7 +79,7 @@ export const useSystemBudgetsAll = (user) => {
             if (!user) return [];
             // Deprecating the use of .list()
             // return await localApiClient.entities.SystemBudget.list();
-            return await base44.entities.SystemBudget.filter({ user_email: user.email });
+            return await localApiClient.entities.SystemBudget.filter({ user_email: user.email });
         },
         initialData: [],
         enabled: !!user,
@@ -137,8 +137,8 @@ export const useAllBudgets = (user) => {
             // Deprecating the use of .list()
             // const customBudgets = await localApiClient.entities.CustomBudget.list();
             // const systemBudgets = await localApiClient.entities.SystemBudget.list();
-            const customBudgets = await base44.entities.CustomBudget.filter({ user_email: user.email });
-            const systemBudgets = await base44.entities.SystemBudget.filter({ user_email: user.email });
+            const customBudgets = await localApiClient.entities.CustomBudget.filter({ user_email: user.email });
+            const systemBudgets = await localApiClient.entities.SystemBudget.filter({ user_email: user.email });
 
             // Include ALL custom budgets (both active and completed)
             const userCustomBudgets = customBudgets;
@@ -170,7 +170,7 @@ export const useCategoryRules = (user) => {
             //     return allRules
             //         .sort((a, b) => (a.priority || 0) - (b.priority || 0));
             // },
-            return await base44.entities.CategoryRule.filter({
+            return await localApiClient.entities.CategoryRule.filter({
                 user_email: user.email,
                 sort: 'priority' // Assumes backend supports sort param
             });
