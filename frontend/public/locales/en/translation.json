@@ -24,8 +24,47 @@
     "back": "Back",
     "adding": "Adding...",
     "uncategorized": "Uncategorized",
-    "untitledTransaction": "Untitled Transaction",
-    "EMPTY_BULK_REQUEST": "No items selected for this operation"
+    "untitledTransaction": "Untitled Transaction"
+  },
+  "responses": {
+    "generic": {
+      "success": "Operation successful",
+      "error": "An error occurred",
+      "EMPTY_BULK_REQUEST": "No items selected for this operation",
+      "FORBIDDEN_ACTION": "You do not have permission to perform this action",
+      "INVALID_DATE_FORMAT": "Invalid date format provided"
+    },
+    "auth": {
+      "LOGIN_FAILED": "Failed to login",
+      "REGISTER_FAILED": "Failed to register",
+      "UNAUTHORIZED": "Not authorized, please login again"
+    },
+    "categories": {
+      "CATEGORY_NOT_FOUND": "Category not found",
+      "CATEGORY_HAS_TRANSACTIONS": "Cannot delete the following categories because they contain transactions: {{names}}",
+      "CATEGORY_CREATED": "Category created successfully",
+      "CATEGORY_UPDATED": "Category updated successfully",
+      "CATEGORY_DELETED": "Category deleted successfully",
+      "CATEGORIES_CREATED_BULK": "{{count}} categories created successfully",
+      "CATEGORIES_DELETED_BULK": "{{count}} categories deleted successfully"
+    },
+    "transactions": {
+      "TRANSACTION_NOT_FOUND": "Transaction not found",
+      "TRANSACTION_CREATED": "Transaction created successfully",
+      "TRANSACTION_UPDATED": "Transaction updated successfully",
+      "TRANSACTION_DELETED": "Transaction deleted successfully",
+      "TRANSACTIONS_CREATED_BULK": "{{count}} transactions created successfully",
+      "TRANSACTIONS_DELETED_BULK": "{{count}} transactions deleted successfully"
+    },
+    "systemBudgets": {
+      "SYSTEM_BUDGET_NOT_FOUND": "System budget not found",
+      "SYSTEM_BUDGET_CREATED": "System budget created successfully",
+      "SYSTEM_BUDGET_UPDATED": "System budget updated successfully",
+      "SYSTEM_BUDGET_DELETED": "System budget deleted successfully",
+      "SYSTEM_BUDGETS_CREATED_BULK": "{{count}} system budgets created successfully",
+      "SYSTEM_BUDGETS_UP_TO_DATE": "Budgets are already up to date",
+      "SYSTEM_BUDGETS_DELETED_BULK": "{{count}} system budgets deleted successfully"
+    }
   },
   "dashboard": {
     "title": "Dashboard",
@@ -69,11 +108,6 @@
       "name": "Name",
       "emailPlaceholder": "name@example.com",
       "namePlaceholder": "John Doe"
-    },
-    "errors": {
-      "loginFailed": "Failed to login",
-      "registerFailed": "Failed to register",
-      "generic": "Error"
     }
   },
   "budgets": {
@@ -241,15 +275,6 @@
       "CreditCard": "Debt/Payment",
       "Wallet": "General",
       "Hotel": "Hotel"
-    },
-    "errors": {
-      "CATEGORY_NOT_FOUND": "Category not found",
-      "CATEGORY_HAS_TRANSACTIONS": "Cannot delete the following categories because they contain transactions: {{names}}",
-      "CATEGORY_CREATED": "Category created successfully",
-      "CATEGORY_UPDATED": "Category updated successfully",
-      "CATEGORY_DELETED": "Category deleted successfully",
-      "CATEGORIES_CREATED_BULK": "{{count}} categories created successfully",
-      "CATEGORIES_DELETED_BULK": "{{count}} categories deleted successfully"
     }
   },
   "reports": {
@@ -423,16 +448,7 @@
       "amount": "Amount",
       "actions": "Actions"
     },
-    "empty": "No transactions found.",
-    "errors": {
-      "TRANSACTION_NOT_FOUND": "Transaction not found",
-      "TRANSACTION_CREATED": "Transaction created successfully",
-      "TRANSACTION_UPDATED": "Transaction updated successfully",
-      "TRANSACTION_DELETED": "Transaction deleted successfully",
-      "TRANSACTIONS_CREATED_BULK": "{{count}} transactions created successfully",
-      "TRANSACTIONS_DELETED_BULK": "{{count}} transactions deleted successfully",
-      "EMPTY_BULK_REQUEST": "No items selected for this operation"
-    }
+    "empty": "No transactions found."
   },
   "nav": {
     "dashboard": "Dashboard",
