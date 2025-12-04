@@ -19,18 +19,24 @@ export const getSystemBudgets = asyncHandler(async (req, res) => {
   if (startDate || endDate) {
     where.AND = [];
     if (startDate) {
-      where.AND.push({
-        endDate: {
-          gte: new Date(startDate),
-        },
-      });
+      const start = new Date(startDate);
+      if (!isNaN(start.getTime())) {
+        where.AND.push({
+          endDate: {
+            gte: start,
+          },
+        });
+      }
     }
     if (endDate) {
-      where.AND.push({
-        startDate: {
-          lte: new Date(endDate),
-        },
-      });
+      const end = new Date(endDate);
+      if (!isNaN(end.getTime())) {
+        where.AND.push({
+          startDate: {
+            lte: end,
+          },
+        });
+      }
     }
   }
 
@@ -62,7 +68,7 @@ export const getSystemBudget = asyncHandler(async (req, res) => {
   });
 
   if (!budget) {
-    throw new ApiError(404, 'System budget not found');
+    throw new ApiError(404, 'SYSTEM_BUDGET_NOT_FOUND');
   }
 
   res.json({
@@ -77,11 +83,21 @@ export const getSystemBudget = asyncHandler(async (req, res) => {
  * @access  Private
  */
 export const createSystemBudget = asyncHandler(async (req, res) => {
+  // SAFETY: Validate dates before passing to DB to avoid crashes
+  const startDate = new Date(req.body.startDate);
+  const endDate = new Date(req.body.endDate);
+
+  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+    throw new ApiError(400, 'INVALID_DATE_FORMAT');
+  }
+
   const data = {
     ...req.body,
     userId: req.user.id,
-    startDate: new Date(req.body.startDate),
-    endDate: new Date(req.body.endDate),
+    startDate,
+    endDate,
+    // SAFETY: Explicit casting to prevent string-math issues
+    budgetAmount: Number(req.body.budgetAmount),
   };
 
   const budget = await prisma.systemBudget.create({
@@ -90,7 +106,7 @@ export const createSystemBudget = asyncHandler(async (req, res) => {
 
   res.status(201).json({
     success: true,
-    message: 'System budget created successfully',
+    message: 'SYSTEM_BUDGET_CREATED',
     data: budget,
   });
 });
@@ -110,15 +126,27 @@ export const updateSystemBudget = asyncHandler(async (req, res) => {
   });
 
   if (!existingBudget) {
-    throw new ApiError(404, 'System budget not found');
+    throw new ApiError(404, 'SYSTEM_BUDGET_NOT_FOUND');
   }
 
   const updateData = { ...req.body };
+  
+  // SAFETY: Validate dates if they are being updated
   if (req.body.startDate) {
-    updateData.startDate = new Date(req.body.startDate);
+    const start = new Date(req.body.startDate);
+    if (isNaN(start.getTime())) throw new ApiError(400, 'INVALID_DATE_FORMAT');
+    updateData.startDate = start;
   }
+  
   if (req.body.endDate) {
-    updateData.endDate = new Date(req.body.endDate);
+    const end = new Date(req.body.endDate);
+    if (isNaN(end.getTime())) throw new ApiError(400, 'INVALID_DATE_FORMAT');
+    updateData.endDate = end;
+  }
+
+  // SAFETY: Cast amount
+  if (req.body.budgetAmount !== undefined) {
+    updateData.budgetAmount = Number(req.body.budgetAmount);
   }
 
   const budget = await prisma.systemBudget.update({
@@ -128,7 +156,7 @@ export const updateSystemBudget = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    message: 'System budget updated successfully',
+    message: 'SYSTEM_BUDGET_UPDATED',
     data: budget,
   });
 });
@@ -147,7 +175,7 @@ export const deleteSystemBudget = asyncHandler(async (req, res) => {
   });
 
   if (!budget) {
-    throw new ApiError(404, 'System budget not found');
+    throw new ApiError(404, 'SYSTEM_BUDGET_NOT_FOUND');
   }
 
   await prisma.systemBudget.delete({
@@ -156,6 +184,103 @@ export const deleteSystemBudget = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    message: 'System budget deleted successfully',
+    message: 'SYSTEM_BUDGET_DELETED',
+  });
+});
+
+/**
+ * @route   POST /api/system-budgets/bulk
+ * @desc    Bulk create system budgets (Idempotent: Skips existing ones)
+ * @access  Private
+ */
+export const bulkCreateSystemBudgets = asyncHandler(async (req, res) => {
+  const { budgets } = req.body;
+
+  // GUARD: Prevent crash if budgets is null/undefined
+  if (!budgets || !Array.isArray(budgets) || budgets.length === 0) {
+    throw new ApiError(400, 'EMPTY_BULK_REQUEST');
+  }
+
+  const formattedBudgets = budgets.map(b => ({
+    ...b,
+    userId: req.user.id,
+    startDate: new Date(b.startDate),
+    endDate: new Date(b.endDate),
+    budgetAmount: Number(b.budgetAmount),
+  }));
+
+  // Check for invalid dates in bulk
+  if (formattedBudgets.some(b => isNaN(b.startDate.getTime()) || isNaN(b.endDate.getTime()))) {
+    throw new ApiError(400, 'INVALID_DATE_FORMAT');
+  }
+
+const uniqueStartDates = [...new Set(candidates.map(c => c.startDate.toISOString()))];
+  
+  const existingBudgets = await prisma.systemBudget.findMany({
+    where: {
+      userId: req.user.id,
+      startDate: { in: uniqueStartDates.map(d => new Date(d)) }
+    },
+    select: {
+      startDate: true,
+      systemBudgetType: true
+    }
+  });
+
+  // Create a "Signature Set" of existing budgets for O(1) lookups
+  // Format: "YYYY-MM-DDTHH:mm:ss.sssZ|needs"
+  const existingSignatures = new Set(
+    existingBudgets.map(b => `${b.startDate.toISOString()}|${b.systemBudgetType}`)
+  );
+
+  // 3. Keep only the budgets that DO NOT exist yet
+  const newBudgets = candidates.filter(c => 
+    !existingSignatures.has(`${c.startDate.toISOString()}|${c.systemBudgetType}`)
+  );
+
+  // If everything already exists, return success with 0 count (Idempotent)
+  if (newBudgets.length === 0) {
+    return res.json({
+      success: true,
+      message: 'SYSTEM_BUDGETS_UP_TO_DATE',
+      data: { count: 0 }
+    });
+  }
+  
+  const result = await prisma.systemBudget.createMany({
+    data: formattedBudgets,
+    skipDuplicates: true,
+  });
+
+  res.status(201).json({
+    success: true,
+    message: 'SYSTEM_BUDGETS_CREATED_BULK',
+    data: { count: result.count },
+  });
+});
+
+/**
+ * @route   POST /api/system-budgets/bulk-delete
+ * @desc    Bulk delete system budgets
+ * @access  Private
+ */
+export const bulkDeleteSystemBudgets = asyncHandler(async (req, res) => {
+  const { ids } = req.body;
+
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    throw new ApiError(400, 'EMPTY_BULK_REQUEST');
+  }
+
+  const result = await prisma.systemBudget.deleteMany({
+    where: {
+      id: { in: ids },
+      userId: req.user.id,
+    },
+  });
+
+  res.json({
+    success: true,
+    message: 'SYSTEM_BUDGETS_DELETED_BULK',
+    data: { count: result.count },
   });
 });
