@@ -1,28 +1,25 @@
 import { PrismaClient } from '@prisma/client';
-import { ApiError, asyncHandler } from '../middleware/errorHandler.js';
+import { asyncHandler } from '../middleware/errorHandler.js';
 
 const prisma = new PrismaClient();
 
 /**
  * @route   GET /api/settings
- * @desc    Get user settings
+ * @desc    Get user settings (Lazy creates if missing)
  * @access  Private
  */
 export const getUserSettings = asyncHandler(async (req, res) => {
-  let settings = await prisma.userSettings.findUnique({
+  // ATOMIC: Find the settings, or create them if they don't exist.
+  // This prevents race conditions where two requests might try to create settings at once.
+  const settings = await prisma.userSettings.upsert({
     where: {
       userId: req.user.id,
     },
+    update: {}, // No changes if found
+    create: {
+      userId: req.user.id,
+    },
   });
-
-  // Create default settings if they don't exist
-  if (!settings) {
-    settings = await prisma.userSettings.create({
-      data: {
-        userId: req.user.id,
-      },
-    });
-  }
 
   res.json({
     success: true,
@@ -36,34 +33,49 @@ export const getUserSettings = asyncHandler(async (req, res) => {
  * @access  Private
  */
 export const updateUserSettings = asyncHandler(async (req, res) => {
-  // Check if settings exist
-  let settings = await prisma.userSettings.findUnique({
+  const {
+    baseCurrency,
+    currencyPosition,
+    thousandSeparator,
+    decimalSeparator,
+    decimalPlaces,
+    hideTrailingZeros,
+    dateFormat,
+    budgetViewMode,
+    fixedLifestyleMode,
+    goalMode,
+  } = req.body;
+
+  // SECURITY: Whitelist fields to prevent Mass Assignment attacks.
+  // We only put fields into this object that we explicitly want to allow updating.
+  const cleanData = {};
+
+  if (baseCurrency !== undefined) cleanData.baseCurrency = baseCurrency;
+  if (currencyPosition !== undefined) cleanData.currencyPosition = currencyPosition;
+  if (thousandSeparator !== undefined) cleanData.thousandSeparator = thousandSeparator;
+  if (decimalSeparator !== undefined) cleanData.decimalSeparator = decimalSeparator;
+  if (decimalPlaces !== undefined) cleanData.decimalPlaces = Number(decimalPlaces);
+  if (hideTrailingZeros !== undefined) cleanData.hideTrailingZeros = Boolean(hideTrailingZeros);
+  if (dateFormat !== undefined) cleanData.dateFormat = dateFormat;
+  if (budgetViewMode !== undefined) cleanData.budgetViewMode = budgetViewMode;
+  if (fixedLifestyleMode !== undefined) cleanData.fixedLifestyleMode = Boolean(fixedLifestyleMode);
+  if (goalMode !== undefined) cleanData.goalMode = Boolean(goalMode);
+
+  // ATOMIC: Update or Create in one go
+  const settings = await prisma.userSettings.upsert({
     where: {
       userId: req.user.id,
     },
+    update: cleanData,
+    create: {
+      userId: req.user.id,
+      ...cleanData,
+    },
   });
-
-  if (!settings) {
-    // Create settings if they don't exist
-    settings = await prisma.userSettings.create({
-      data: {
-        ...req.body,
-        userId: req.user.id,
-      },
-    });
-  } else {
-    // Update existing settings
-    settings = await prisma.userSettings.update({
-      where: {
-        userId: req.user.id,
-      },
-      data: req.body,
-    });
-  }
 
   res.json({
     success: true,
-    message: 'Settings updated successfully',
+    message: 'SETTINGS_UPDATED',
     data: settings,
   });
 });
