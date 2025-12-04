@@ -52,7 +52,7 @@ export const getCategory = asyncHandler(async (req, res) => {
   });
 
   if (!category) {
-    throw new ApiError(404, 'Category not found');
+    throw new ApiError(404, 'CATEGORY_NOT_FOUND');
   }
 
   res.json({
@@ -78,7 +78,7 @@ export const createCategory = asyncHandler(async (req, res) => {
 
   res.status(201).json({
     success: true,
-    message: 'Category created successfully',
+    message: 'CATEGORY_CREATED',
     data: category,
   });
 });
@@ -98,7 +98,7 @@ export const updateCategory = asyncHandler(async (req, res) => {
   });
 
   if (!existingCategory) {
-    throw new ApiError(404, 'Category not found');
+    throw new ApiError(404, 'CATEGORY_NOT_FOUND');
   }
 
   const category = await prisma.category.update({
@@ -108,7 +108,7 @@ export const updateCategory = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    message: 'Category updated successfully',
+    message: 'CATEGORY_UPDATED',
     data: category,
   });
 });
@@ -134,12 +134,12 @@ export const deleteCategory = asyncHandler(async (req, res) => {
   });
 
   if (!category) {
-    throw new ApiError(404, 'Category not found');
+    throw new ApiError(404, 'CATEGORY_NOT_FOUND');
   }
 
   // Check if category has transactions
   if (category._count.transactions > 0) {
-    throw new ApiError(400, `Cannot delete category with ${category._count.transactions} associated transactions. Please reassign or delete the transactions first.`);
+    throw new ApiError(400, 'CATEGORY_HAS_TRANSACTIONS', { names: category.name, count: category._count.transactions });
   }
 
   await prisma.category.delete({
@@ -148,7 +148,7 @@ export const deleteCategory = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    message: 'Category deleted successfully',
+    message: 'CATEGORY_DELETED',
   });
 });
 
@@ -170,7 +170,7 @@ export const getCategoryTransactions = asyncHandler(async (req, res) => {
   });
 
   if (!category) {
-    throw new ApiError(404, 'Category not found');
+    throw new ApiError(404, 'CATEGORY_NOT_FOUND');
   }
 
   const where = {
@@ -198,5 +198,77 @@ export const getCategoryTransactions = asyncHandler(async (req, res) => {
       total,
       pages: Math.ceil(total / limit),
     },
+  });
+});
+
+/**
+ * @route   POST /api/categories/bulk
+ * @desc    Bulk create categories
+ * @access  Private
+ */
+export const bulkCreateCategories = asyncHandler(async (req, res) => {
+  const { categories } = req.body;
+
+  if (!categories || !Array.isArray(categories) || categories.length === 0) {
+    throw new ApiError(400, 'EMPTY_BULK_REQUEST');
+  }
+  
+  const formattedCategories = categories.map(c => ({
+    ...c,
+    userId: req.user.id,
+  }));
+
+  const result = await prisma.category.createMany({
+    data: formattedCategories,
+    skipDuplicates: true,
+  });
+
+  res.status(201).json({
+    success: true,
+    message: 'CATEGORIES_CREATED_BULK',
+    data: { count: result.count }
+  });
+});
+
+/**
+ * @route   POST /api/categories/bulk-delete
+ * @desc    Bulk delete categories
+ * @access  Private
+ */
+export const bulkDeleteCategories = asyncHandler(async (req, res) => {
+  const { ids } = req.body;
+
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    throw new ApiError(400, 'EMPTY_BULK_REQUEST');
+  }
+  
+  // 1. Safety Check: Do ANY of these categories have transactions?
+  // We cannot trust deleteMany to handle this logic for us
+  const categoriesWithTransactions = await prisma.category.findMany({
+    where: {
+      id: { in: ids },
+      userId: req.user.id,
+      transactions: { some: {} } // Checks if at least one transaction exists
+    },
+    select: { name: true }
+  });
+
+  if (categoriesWithTransactions.length > 0) {
+    const names = categoriesWithTransactions.map(c => c.name).join(', ');
+    throw new ApiError(400, 'CATEGORY_HAS_TRANSACTIONS', { names });
+  }
+
+  // 2. Safe to delete all
+  const result = await prisma.category.deleteMany({
+    where: {
+      id: { in: ids },
+      userId: req.user.id,
+    },
+  });
+
+  res.json({
+    success: true,
+    message: 'CATEGORIES_DELETED_BULK',
+    data: { count: result.count }
   });
 });
