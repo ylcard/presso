@@ -1,567 +1,579 @@
 {
-  "welcome": "Welcome to Presso",
-  "description": "Your personal finance manager",
-  "common": {
-    "success": "Success",
-    "error": "Error",
-    "saving": "Saving...",
-    "cancel": "Cancel",
-    "create": "Create",
-    "update": "Update",
-    "delete": "Delete",
-    "edit": "Edit",
-    "add": "Add",
-    "apply": "Apply",
-    "amount": "Amount",
-    "date": "Date",
-    "month": "Month",
-    "year": "Year",
-    "notes": "Notes",
-    "title": "Title",
-    "description": "Description",
-    "viewAll": "View All",
-    "color": "Color",
-    "back": "Back",
-    "adding": "Adding...",
-    "uncategorized": "Uncategorized",
-    "untitledTransaction": "Untitled Transaction"
-  },
-  "responses": {
-    "generic": {
-      "success": "Operation successful",
-      "error": "An error occurred",
-      "EMPTY_BULK_REQUEST": "No items selected for this operation",
-      "FORBIDDEN_ACTION": "You do not have permission to perform this action",
-      "INVALID_DATE_FORMAT": "Invalid date format provided"
+    "welcome": "Welcome to Presso",
+    "description": "Your personal finance manager",
+    "common": {
+        "success": "Success",
+        "error": "Error",
+        "saving": "Saving...",
+        "cancel": "Cancel",
+        "create": "Create",
+        "update": "Update",
+        "delete": "Delete",
+        "edit": "Edit",
+        "add": "Add",
+        "apply": "Apply",
+        "amount": "Amount",
+        "date": "Date",
+        "month": "Month",
+        "year": "Year",
+        "notes": "Notes",
+        "title": "Title",
+        "description": "Description",
+        "viewAll": "View All",
+        "color": "Color",
+        "back": "Back",
+        "adding": "Adding...",
+        "uncategorized": "Uncategorized",
+        "untitledTransaction": "Untitled Transaction"
+    },
+    "responses": {
+        "generic": {
+            "success": "Operation successful",
+            "error": "An error occurred",
+            "EMPTY_BULK_REQUEST": "No items selected for this operation",
+            "FORBIDDEN_ACTION": "You do not have permission to perform this action",
+            "INVALID_DATE_FORMAT": "Invalid date format provided"
+        },
+        "auth": {
+            "LOGIN_FAILED": "Failed to login",
+            "REGISTER_FAILED": "Failed to register",
+            "UNAUTHORIZED": "Not authorized, please login again"
+        },
+        "categories": {
+            "CATEGORY_NOT_FOUND": "Category not found",
+            "CATEGORY_HAS_TRANSACTIONS": "Cannot delete the following categories because they contain transactions: {{names}}",
+            "CATEGORY_CREATED": "Category created successfully",
+            "CATEGORY_UPDATED": "Category updated successfully",
+            "CATEGORY_DELETED": "Category deleted successfully",
+            "CATEGORIES_CREATED_BULK": "{{count}} categories created successfully",
+            "CATEGORIES_DELETED_BULK": "{{count}} categories deleted successfully"
+        },
+        "transactions": {
+            "TRANSACTION_NOT_FOUND": "Transaction not found",
+            "TRANSACTION_CREATED": "Transaction created successfully",
+            "TRANSACTION_UPDATED": "Transaction updated successfully",
+            "TRANSACTION_DELETED": "Transaction deleted successfully",
+            "TRANSACTIONS_CREATED_BULK": "{{count}} transactions created successfully",
+            "TRANSACTIONS_DELETED_BULK": "{{count}} transactions deleted successfully"
+        },
+        "systemBudgets": {
+            "SYSTEM_BUDGET_NOT_FOUND": "System budget not found",
+            "SYSTEM_BUDGET_CREATED": "System budget created successfully",
+            "SYSTEM_BUDGET_UPDATED": "System budget updated successfully",
+            "SYSTEM_BUDGET_DELETED": "System budget deleted successfully",
+            "SYSTEM_BUDGETS_CREATED_BULK": "{{count}} system budgets created successfully",
+            "SYSTEM_BUDGETS_UP_TO_DATE": "Budgets are already up to date",
+            "SYSTEM_BUDGETS_DELETED_BULK": "{{count}} system budgets deleted successfully"
+        },
+        "customBudgets": {
+            "CUSTOM_BUDGET_NOT_FOUND": "Custom budget not found",
+            "CUSTOM_BUDGET_CREATED": "Custom budget created successfully",
+            "CUSTOM_BUDGET_UPDATED": "Custom budget updated successfully",
+            "CUSTOM_BUDGET_DELETED": "Custom budget deleted successfully",
+            "CUSTOM_BUDGETS_CREATED_BULK": "{{count}} custom budgets created successfully",
+            "CUSTOM_BUDGETS_DELETED_BULK": "{{count}} custom budgets deleted successfully",
+            "ALLOCATION_NOT_FOUND": "Allocation not found",
+            "ALLOCATION_ADDED": "Allocation added successfully",
+            "ALLOCATION_UPDATED": "Allocation updated successfully",
+            "ALLOCATION_DELETED": "Allocation deleted successfully"
+        }
+    },
+    "dashboard": {
+        "title": "Dashboard",
+        "welcome": "Welcome back, {{name}}!",
+        "recentTransactions": "Recent Transactions",
+        "noPaidTransactions": "No paid transactions yet. Add your first one!",
+        "remaining": {
+            "title": "Remaining Budget",
+            "left": "Left",
+            "spent": "Spent",
+            "of": "of",
+            "saved": "Saved",
+            "readyToPlan": "Ready to plan?",
+            "startPlanning": "Start Planning",
+            "targetGoals": "Target Goals",
+            "updateTargets": "Update Targets",
+            "detailed": "Detailed View",
+            "simple": "Simple View"
+        }
     },
     "auth": {
-      "LOGIN_FAILED": "Failed to login",
-      "REGISTER_FAILED": "Failed to register",
-      "UNAUTHORIZED": "Not authorized, please login again"
+        "login": {
+            "title": "Welcome Back",
+            "description": "Enter your credentials to access your budget",
+            "submit": "Login",
+            "submitting": "Logging in...",
+            "footer": "Don't have an account?",
+            "registerLink": "Register"
+        },
+        "register": {
+            "title": "Create Account",
+            "description": "Start managing your budget today",
+            "submit": "Register",
+            "submitting": "Creating account...",
+            "footer": "Already have an account?",
+            "loginLink": "Login"
+        },
+        "fields": {
+            "email": "Email",
+            "password": "Password",
+            "name": "Name",
+            "emailPlaceholder": "name@example.com",
+            "namePlaceholder": "John Doe"
+        }
+    },
+    "budgets": {
+        "title": "Budgets",
+        "subtitle": "Manage your budgets for {{date}}",
+        "system": {
+            "title": "System Budgets",
+            "description": "Automatically managed based on your budget goals. Your goals update based on your monthly income.",
+            "badge": "System"
+        },
+        "custom": {
+            "title": "Custom Budgets",
+            "create": "Create a Custom Budget",
+            "empty": "No custom budgets yet. Create your first one!",
+            "description": "Custom budgets containing lifestyle expenses.",
+            "badge": "Custom"
+        },
+        "detail": {
+            "notFound": {
+                "title": "Budget Not Found",
+                "description": "The budget you're looking for doesn't exist or has been deleted.",
+                "redirect": "Redirecting to the Budgets page..."
+            },
+            "actions": {
+                "edit": "Edit Budget",
+                "complete": "Complete",
+                "reactivate": "Reactivate",
+                "delete": "Delete",
+                "deleteConfirm": {
+                    "title": "Delete Budget",
+                    "message": "This will delete the budget and all associated expenses. This action cannot be undone."
+                }
+            },
+            "cards": {
+                "budget": "Budget",
+                "expenses": "Expenses",
+                "remaining": "Remaining",
+                "description": "Description",
+                "directExpenses": "Direct Expenses",
+                "expensesSubtitle": "Expenses not part of any custom budget",
+                "noExpenses": "No expenses yet. Add your first one!",
+                "noDirectExpenses": "No direct expenses yet. Add your first one!"
+            },
+            "status": {
+                "completed": "Completed"
+            }
+        },
+        "card": {
+            "activate": "Activate Now",
+            "startDateArrived": "This budget's start date has arrived",
+            "overLimit": "Over Limit",
+            "underLimit": "Under Limit",
+            "surplus": "Surplus",
+            "shortfall": "Shortfall",
+            "over": "Over",
+            "target": "Target",
+            "budget": "Budget",
+            "actual": "Actual",
+            "paid": "Paid",
+            "unpaid": "Unpaid",
+            "netFlow": "Net Flow",
+            "potentialSavings": "(Potential Savings)"
+        },
+        "form": {
+            "createTitle": "Create Budget",
+            "editTitle": "Edit Budget",
+            "nameLabel": "Budget Name",
+            "namePlaceholder": "e.g., Manchester Trip",
+            "dateRangeLabel": "Date Range",
+            "limitLabel": "Budget Limit",
+            "colorLabel": "Color",
+            "descriptionLabel": "Description (Optional)",
+            "descriptionPlaceholder": "Add details about this budget..."
+        }
+    },
+    "allocations": {
+        "title": "Budget Allocations",
+        "description": "Allocate portions of your budget to specific categories",
+        "allocateFunds": "Allocate Funds",
+        "unallocatedFunds": "Unallocated Funds",
+        "remainingFunds": "Remaining Funds",
+        "emptyState": "No allocations yet. Add your first one!",
+        "deleteConfirm": {
+            "title": "Delete Allocation",
+            "message": "Are you sure you want to delete this allocation? This action cannot be undone."
+        }
     },
     "categories": {
-      "CATEGORY_NOT_FOUND": "Category not found",
-      "CATEGORY_HAS_TRANSACTIONS": "Cannot delete the following categories because they contain transactions: {{names}}",
-      "CATEGORY_CREATED": "Category created successfully",
-      "CATEGORY_UPDATED": "Category updated successfully",
-      "CATEGORY_DELETED": "Category deleted successfully",
-      "CATEGORIES_CREATED_BULK": "{{count}} categories created successfully",
-      "CATEGORIES_DELETED_BULK": "{{count}} categories deleted successfully"
+        "title": "Categories",
+        "subtitle": "Organize your transactions with custom categories",
+        "add": "Add Category",
+        "edit": "Edit Category",
+        "delete": "Delete Category",
+        "deleteConfirm": {
+            "title": "Delete Category",
+            "message": "Are you sure you want to delete this category? Associated transactions will not be deleted."
+        },
+        "form": {
+            "createTitle": "Create Category",
+            "editTitle": "Edit Category",
+            "nameLabel": "Category Name",
+            "namePlaceholder": "e.g., Groceries, Entertainment",
+            "iconLabel": "Icon Selection",
+            "searchPlaceholder": "Search icons (e.g. food, home)...",
+            "noIconsFound": "No icons found for \"{{query}}\"",
+            "colorLabel": "Color",
+            "priorityLabel": "Priority"
+        },
+        "grid": {
+            "title": "Your Categories",
+            "allTitle": "All Categories ({{count}})",
+            "empty": "No categories yet. Create your first one!"
+        },
+        "priorities": {
+            "needs": {
+                "label": "Essentials",
+                "description": "Essential expenses"
+            },
+            "wants": {
+                "label": "Lifestyle",
+                "description": "Lifestyle expenses"
+            },
+            "savings": {
+                "label": "Savings",
+                "description": "Savings after expenses"
+            }
+        },
+        "icons": {
+            "Home": "Housing",
+            "House": "Home Maintenance",
+            "ShoppingCart": "Groceries",
+            "ShoppingBasket": "Errands",
+            "Coffee": "Coffee",
+            "Car": "Car",
+            "CarTaxiFront": "Taxi/Rideshare",
+            "Fuel": "Fuel",
+            "Bus": "Public Transport",
+            "Plane": "Travel",
+            "Utensils": "Dining Out",
+            "Beer": "Alcohol",
+            "Pizza": "Fast Food",
+            "Shirt": "Clothing",
+            "Store": "Shopping",
+            "Heart": "Health",
+            "Cross": "Hospital",
+            "Pill": "Pharmacy",
+            "Zap": "Utilities",
+            "Wifi": "Internet",
+            "Droplets": "Water",
+            "Laptop": "Tech",
+            "Smartphone": "Mobile",
+            "Gift": "Gifts",
+            "Music": "Music",
+            "Guitar": "Hobbies",
+            "Drama": "Arts & Culture",
+            "Podcast": "Podcast",
+            "Tv": "TV/Streaming",
+            "Gamepad2": "Gaming",
+            "Dumbbell": "Fitness",
+            "Book": "Education",
+            "Briefcase": "Work",
+            "DollarSign": "Income",
+            "HandCoins": "Fees/Charges",
+            "PiggyBank": "Savings",
+            "CreditCard": "Debt/Payment",
+            "Wallet": "General",
+            "Hotel": "Hotel"
+        }
+    },
+    "reports": {
+        "title": "Financial Reports",
+        "subtitle": "Performance analysis",
+        "kpi": {
+            "income": "Income",
+            "expenses": "Expenses",
+            "savings": "Savings",
+            "rate": "Savings Rate",
+            "needs": "Needs",
+            "wants": "Wants"
+        },
+        "healthScore": {
+            "title": "Financial Health Score",
+            "excellent": "Excellent",
+            "good": "Good",
+            "fair": "Fair",
+            "needsWork": "Needs Work",
+            "description": "Your score is based on your {{rate}}% savings rate, budget efficiency, and month-over-month improvement.",
+            "savingsRate": "Savings Rate",
+            "target": "(Target: 20%)",
+            "solvency": "Solvency",
+            "trend": "Trend",
+            "spentLess": "Spent {{amount}} less than last month"
+        },
+        "charts": {
+            "projection": "Financial Horizon",
+            "breakdown": "Monthly Breakdown",
+            "breakdownDesc": "Overview by category",
+            "priority": "Actual vs Target by Priority",
+            "trend": "Trend Analysis",
+            "noExpenses": "No expenses to show yet",
+            "ofExp": "of Exp",
+            "ofInc": "of Inc",
+            "percentIncome": "% of Income",
+            "actual": "Actual",
+            "target": "Target",
+            "savingsProj": "Savings Proj.",
+            "overspendRisk": "Overspend Risk",
+            "onTrackSave": "On track to save {{amount}} this month.",
+            "projectedOverspend": "Projected to overspend by {{amount}}.",
+            "sixMonthAvg": "6M Avg",
+            "lastMonth": "Last Month",
+            "thisMonth": "This Month",
+            "nextMonth": "Next Month",
+            "projected": "Projected",
+            "targetLabel": "Target",
+            "safeBaseline": "*Based on Safe Baseline",
+            "insufficientData": "Insufficient Data",
+            "insufficientDataDesc": "Need activity in at least {{count}} months to visualize a trend.",
+            "oneMonth": "one month",
+            "twoMonths": "two months",
+            "in": "In:",
+            "out": "Out:",
+            "net": "Net:"
+        },
+        "stats": {
+            "savingsRate": "Savings Rate",
+            "vsLastMonth": "{{value}}% vs last month",
+            "netFlow": "Net Flow",
+            "projEndOfMonth": "Proj. End of Month: {{amount}}",
+            "closed": "Closed",
+            "efficiencyBonus": "Efficiency Bonus",
+            "unspentNeedsWants": "Unspent Needs & Wants"
+        }
+    },
+    "settings": {
+        "title": "Settings",
+        "subtitle": "Manage your preferences and financial goals",
+        "appPreferences": {
+            "title": "Application Preferences",
+            "description": "Manage currency formatting and budget allocation goals"
+        },
+        "currency": {
+            "title": "Currency & Formatting",
+            "label": "Currency",
+            "position": "Position",
+            "viewMode": "View Mode",
+            "thousandSeparator": "Thousand Separator",
+            "decimalSeparator": "Decimal Separator",
+            "decimalPlaces": "Decimal Places",
+            "hideTrailingZeros": "Hide Trailing Zeros",
+            "preview": "Preview",
+            "positionBefore": "Before",
+            "positionAfter": "After",
+            "viewModeBars": "Bars",
+            "viewModeCards": "Cards",
+            "separatorComma": "Comma",
+            "separatorPeriod": "Period",
+            "separatorSpace": "Space"
+        },
+        "goals": {
+            "title": "Goal Allocation",
+            "description": "Define how your monthly income is split between Needs, Wants, and Savings.",
+            "modes": {
+                "percentage": "Percentage",
+                "absolute": "Absolute Values"
+            },
+            "inflation": {
+                "title": "Inflation Protection",
+                "description": "Prevents lifestyle creep. If income spikes, budgets are calculated on the lower of your current vs average income."
+            },
+            "descriptions": {
+                "needs": "Essential expenses",
+                "wants": "Discretionary spending",
+                "savings": "Savings and investments"
+            },
+            "totalAllocated": "Total Allocated",
+            "priorities": {
+                "needs": "Essentials",
+                "wants": "Lifestyle",
+                "savings": "Savings"
+            }
+        },
+        "actions": {
+            "reset": "Reset to Defaults",
+            "logout": "Log Out",
+            "discard": "Discard Changes",
+            "save": "Save Settings"
+        },
+        "toast": {
+            "changesDiscarded": "Changes Discarded",
+            "changesDiscardedDesc": "Your changes have been discarded.",
+            "resetApplied": "Reset Applied",
+            "resetAppliedDesc": "Settings have been reset to defaults.",
+            "savedSuccess": "Settings saved successfully.",
+            "saveFailed": "Failed to save settings."
+        },
+        "confirmReset": "Are you sure you want to reset all settings to default?"
     },
     "transactions": {
-      "TRANSACTION_NOT_FOUND": "Transaction not found",
-      "TRANSACTION_CREATED": "Transaction created successfully",
-      "TRANSACTION_UPDATED": "Transaction updated successfully",
-      "TRANSACTION_DELETED": "Transaction deleted successfully",
-      "TRANSACTIONS_CREATED_BULK": "{{count}} transactions created successfully",
-      "TRANSACTIONS_DELETED_BULK": "{{count}} transactions deleted successfully"
+        "title": "Transactions",
+        "subtitle": "Track your income and expenses",
+        "addExpense": "Add Expense",
+        "editTransaction": "Edit Transaction",
+        "quickAdd": "Quick Add Expense",
+        "quickAddIncome": "Quick Add Income",
+        "incomeSource": "Income Source",
+        "incomeSourcePlaceholder": "e.g., Salary, Freelance",
+        "paidDate": "Paid on {{date}}",
+        "actions": {
+            "addIncome": "Add Income",
+            "addExpense": "Add Expense",
+            "deleteSelected": "Delete Transactions"
+        },
+        "delete": {
+            "title": "Delete Transactions",
+            "message": "Are you sure you want to delete {{count}} selected transactions? This action cannot be undone.",
+            "confirmSingle": "Are you sure you want to delete this transaction? This action cannot be undone.",
+            "successMessage": "Deleted {{count}} transactions.",
+            "errorMessage": "Failed to delete some transactions."
+        },
+        "filters": {
+            "search": "Search transactions...",
+            "allCategories": "All Categories",
+            "allBudgets": "All Budgets",
+            "allStatus": "All Status",
+            "paid": "Paid",
+            "unpaid": "Unpaid",
+            "allTypes": "All Types",
+            "income": "Income",
+            "expense": "Expense",
+            "cash": "Cash",
+            "card": "Card"
+        },
+        "table": {
+            "date": "Date",
+            "payee": "Payee",
+            "category": "Category",
+            "amount": "Amount",
+            "actions": "Actions"
+        },
+        "empty": "No transactions found."
     },
-    "systemBudgets": {
-      "SYSTEM_BUDGET_NOT_FOUND": "System budget not found",
-      "SYSTEM_BUDGET_CREATED": "System budget created successfully",
-      "SYSTEM_BUDGET_UPDATED": "System budget updated successfully",
-      "SYSTEM_BUDGET_DELETED": "System budget deleted successfully",
-      "SYSTEM_BUDGETS_CREATED_BULK": "{{count}} system budgets created successfully",
-      "SYSTEM_BUDGETS_UP_TO_DATE": "Budgets are already up to date",
-      "SYSTEM_BUDGETS_DELETED_BULK": "{{count}} system budgets deleted successfully"
-    }
-  },
-  "dashboard": {
-    "title": "Dashboard",
-    "welcome": "Welcome back, {{name}}!",
-    "recentTransactions": "Recent Transactions",
-    "noPaidTransactions": "No paid transactions yet. Add your first one!",
-    "remaining": {
-      "title": "Remaining Budget",
-      "left": "Left",
-      "spent": "Spent",
-      "of": "of",
-      "saved": "Saved",
-      "readyToPlan": "Ready to plan?",
-      "startPlanning": "Start Planning",
-      "targetGoals": "Target Goals",
-      "updateTargets": "Update Targets",
-      "detailed": "Detailed View",
-      "simple": "Simple View"
-    }
-  },
-  "auth": {
-    "login": {
-      "title": "Welcome Back",
-      "description": "Enter your credentials to access your budget",
-      "submit": "Login",
-      "submitting": "Logging in...",
-      "footer": "Don't have an account?",
-      "registerLink": "Register"
+    "nav": {
+        "dashboard": "Dashboard",
+        "transactions": "Transactions",
+        "budgets": "Budgets",
+        "categories": "Categories",
+        "reports": "Reports",
+        "settings": "Settings"
     },
-    "register": {
-      "title": "Create Account",
-      "description": "Start managing your budget today",
-      "submit": "Register",
-      "submitting": "Creating account...",
-      "footer": "Already have an account?",
-      "loginLink": "Login"
-    },
-    "fields": {
-      "email": "Email",
-      "password": "Password",
-      "name": "Name",
-      "emailPlaceholder": "name@example.com",
-      "namePlaceholder": "John Doe"
-    }
-  },
-  "budgets": {
-    "title": "Budgets",
-    "subtitle": "Manage your budgets for {{date}}",
-    "system": {
-      "title": "System Budgets",
-      "description": "Automatically managed based on your budget goals. Your goals update based on your monthly income.",
-      "badge": "System"
-    },
-    "custom": {
-      "title": "Custom Budgets",
-      "create": "Create a Custom Budget",
-      "empty": "No custom budgets yet. Create your first one!",
-      "description": "Custom budgets containing lifestyle expenses.",
-      "badge": "Custom"
-    },
-    "detail": {
-      "notFound": {
-        "title": "Budget Not Found",
-        "description": "The budget you're looking for doesn't exist or has been deleted.",
-        "redirect": "Redirecting to the Budgets page..."
-      },
-      "actions": {
-        "edit": "Edit Budget",
-        "complete": "Complete",
-        "reactivate": "Reactivate",
-        "delete": "Delete",
-        "deleteConfirm": {
-          "title": "Delete Budget",
-          "message": "This will delete the budget and all associated expenses. This action cannot be undone."
+    "components": {
+        "budgetBars": {
+            "systemBudgets": "System Budgets",
+            "cardView": "Card View",
+            "barView": "Bar View",
+            "savingsTargetNotMet": "Savings Target Not Met",
+            "shortMessage": "You're short {{amount}} of your savings goal.",
+            "targetActual": "Target: {{target}}, Actual: {{actual}}",
+            "noCustomBudgets": "No Custom Budgets",
+            "noCustomBudgetsDesc": "You haven't set up any custom budgets for this month yet. Create one to track specific spending categories.",
+            "createFirstBudget": "Create First Budget",
+            "newBudget": "New Budget"
+        },
+        "remainingBudget": {
+            "readyToPlan": "Ready to plan for {{month}}?",
+            "readyToPlanDesc": "Start by adding your expected income to see your savings potential and unlock your budget goals.",
+            "overLimit": "Over Limit",
+            "saved": "Saved",
+            "spentOf": "Spent <1>{{spent}}</1> of <3>{{income}}</3>",
+            "noIncome": "No income recorded.",
+            "efficiency": "Efficiency: +{{amount}}",
+            "left": "Left: {{amount}}",
+            "paid": "Paid",
+            "plan": "Plan",
+            "goals": "Goals",
+            "targetGoals": "Target Goals",
+            "updateTargets": "Update Targets"
+        },
+        "transactionForm": {
+            "title": "Title",
+            "titlePlaceholder": "e.g., Salary, Groceries, Coffee",
+            "amount": "Amount",
+            "paidWithCash": "Paid with cash",
+            "date": "Date",
+            "paymentDate": "Payment Date",
+            "markAsPaid": "Mark as paid",
+            "category": "Category",
+            "financialPriority": "Financial Priority",
+            "selectPriority": "Select priority",
+            "budgetAllocation": "Budget Allocation",
+            "selectBudget": "Select budget...",
+            "searchBudgets": "Search budgets...",
+            "noBudgetFound": "No relevant budget found.",
+            "notes": "Notes",
+            "notesPlaceholder": "Additional details...",
+            "fetchRate": "Fetch Rate",
+            "rate": "Rate: {{rate}} (from {{date}})",
+            "noRate": "No rate",
+            "loading": "Loading...",
+            "needs": "Needs",
+            "wants": "Wants",
+            "savings": "Savings"
+        },
+        "datePicker": {
+            "pickDate": "Pick a date"
+        },
+        "userNotRegistered": {
+            "title": "Access Restricted",
+            "description": "You are not registered to use this application. Please contact the app administrator to request access.",
+            "helpTitle": "If you believe this is an error, you can:",
+            "help1": "Verify you are logged in with the correct account",
+            "help2": "Contact the app administrator for access",
+            "help3": "Try logging out and back in again"
         }
-      },
-      "cards": {
-        "budget": "Budget",
-        "expenses": "Expenses",
-        "remaining": "Remaining",
-        "description": "Description",
-        "directExpenses": "Direct Expenses",
-        "expensesSubtitle": "Expenses not part of any custom budget",
-        "noExpenses": "No expenses yet. Add your first one!",
-        "noDirectExpenses": "No direct expenses yet. Add your first one!"
-      },
-      "status": {
-        "completed": "Completed"
-      }
     },
-    "card": {
-      "activate": "Activate Now",
-      "startDateArrived": "This budget's start date has arrived",
-      "overLimit": "Over Limit",
-      "underLimit": "Under Limit",
-      "surplus": "Surplus",
-      "shortfall": "Shortfall",
-      "over": "Over",
-      "target": "Target",
-      "budget": "Budget",
-      "actual": "Actual",
-      "paid": "Paid",
-      "unpaid": "Unpaid",
-      "netFlow": "Net Flow",
-      "potentialSavings": "(Potential Savings)"
-    },
-    "form": {
-      "createTitle": "Create Budget",
-      "editTitle": "Edit Budget",
-      "nameLabel": "Budget Name",
-      "namePlaceholder": "e.g., Manchester Trip",
-      "dateRangeLabel": "Date Range",
-      "limitLabel": "Budget Limit",
-      "colorLabel": "Color",
-      "descriptionLabel": "Description (Optional)",
-      "descriptionPlaceholder": "Add details about this budget..."
+    "import": {
+        "title": "Import Data",
+        "dragDrop": "Drag and drop your file here, or click to select",
+        "selectFile": "Select File",
+        "uploadTitle": "Upload Transaction History",
+        "importDesc": "Import your bank statements or transaction history from CSV or PDF files.",
+        "importData": "Import Data",
+        "steps": {
+            "upload": "Upload",
+            "review": "Review",
+            "finish": "Finish"
+        },
+        "requirements": {
+            "title": "File Requirements:",
+            "csv": "CSV files must have headers",
+            "csvHeaders": "Date, Amount, Description/Payee",
+            "csvFields": "Optional: Category, Notes",
+            "pdf": "PDF files from supported banks",
+            "pdfType": "Standard bank statement format",
+            "pdfData": "Text-based PDFs (not scanned images)"
+        },
+        "processingPdf": "Processing PDF...",
+        "extractingData": "Extracting transaction data...",
+        "reviewData": "Review Data",
+        "importTransactions": "Import {{count}} Transactions",
+        "deleteSelected": "Delete Selected",
+        "toast": {
+            "fileParsed": "File Parsed",
+            "rowsFound": "Found {{count}} rows.",
+            "uploading": "Uploading File",
+            "uploadingDesc": "Sending file to server...",
+            "analyzing": "Analyzing",
+            "analyzingDesc": "Extracting data from file...",
+            "pdfSuccess": "Successfully processed {{count}} transactions.",
+            "imported": "Successfully imported {{count}} transactions."
+        },
+        "errors": {
+            "pdfFailed": "PDF Processing Failed",
+            "importFailed": "Import Failed"
+        }
     }
-  },
-  "allocations": {
-    "title": "Budget Allocations",
-    "description": "Allocate portions of your budget to specific categories",
-    "allocateFunds": "Allocate Funds",
-    "unallocatedFunds": "Unallocated Funds",
-    "remainingFunds": "Remaining Funds",
-    "emptyState": "No allocations yet. Add your first one!",
-    "deleteConfirm": {
-      "title": "Delete Allocation",
-      "message": "Are you sure you want to delete this allocation? This action cannot be undone."
-    }
-  },
-  "categories": {
-    "title": "Categories",
-    "subtitle": "Organize your transactions with custom categories",
-    "add": "Add Category",
-    "edit": "Edit Category",
-    "delete": "Delete Category",
-    "deleteConfirm": {
-      "title": "Delete Category",
-      "message": "Are you sure you want to delete this category? Associated transactions will not be deleted."
-    },
-    "form": {
-      "createTitle": "Create Category",
-      "editTitle": "Edit Category",
-      "nameLabel": "Category Name",
-      "namePlaceholder": "e.g., Groceries, Entertainment",
-      "iconLabel": "Icon Selection",
-      "searchPlaceholder": "Search icons (e.g. food, home)...",
-      "noIconsFound": "No icons found for \"{{query}}\"",
-      "colorLabel": "Color",
-      "priorityLabel": "Priority"
-    },
-    "grid": {
-      "title": "Your Categories",
-      "allTitle": "All Categories ({{count}})",
-      "empty": "No categories yet. Create your first one!"
-    },
-    "priorities": {
-      "needs": {
-        "label": "Essentials",
-        "description": "Essential expenses"
-      },
-      "wants": {
-        "label": "Lifestyle",
-        "description": "Lifestyle expenses"
-      },
-      "savings": {
-        "label": "Savings",
-        "description": "Savings after expenses"
-      }
-    },
-    "icons": {
-      "Home": "Housing",
-      "House": "Home Maintenance",
-      "ShoppingCart": "Groceries",
-      "ShoppingBasket": "Errands",
-      "Coffee": "Coffee",
-      "Car": "Car",
-      "CarTaxiFront": "Taxi/Rideshare",
-      "Fuel": "Fuel",
-      "Bus": "Public Transport",
-      "Plane": "Travel",
-      "Utensils": "Dining Out",
-      "Beer": "Alcohol",
-      "Pizza": "Fast Food",
-      "Shirt": "Clothing",
-      "Store": "Shopping",
-      "Heart": "Health",
-      "Cross": "Hospital",
-      "Pill": "Pharmacy",
-      "Zap": "Utilities",
-      "Wifi": "Internet",
-      "Droplets": "Water",
-      "Laptop": "Tech",
-      "Smartphone": "Mobile",
-      "Gift": "Gifts",
-      "Music": "Music",
-      "Guitar": "Hobbies",
-      "Drama": "Arts & Culture",
-      "Podcast": "Podcast",
-      "Tv": "TV/Streaming",
-      "Gamepad2": "Gaming",
-      "Dumbbell": "Fitness",
-      "Book": "Education",
-      "Briefcase": "Work",
-      "DollarSign": "Income",
-      "HandCoins": "Fees/Charges",
-      "PiggyBank": "Savings",
-      "CreditCard": "Debt/Payment",
-      "Wallet": "General",
-      "Hotel": "Hotel"
-    }
-  },
-  "reports": {
-    "title": "Financial Reports",
-    "subtitle": "Performance analysis",
-    "kpi": {
-      "income": "Income",
-      "expenses": "Expenses",
-      "savings": "Savings",
-      "rate": "Savings Rate",
-      "needs": "Needs",
-      "wants": "Wants"
-    },
-    "healthScore": {
-      "title": "Financial Health Score",
-      "excellent": "Excellent",
-      "good": "Good",
-      "fair": "Fair",
-      "needsWork": "Needs Work",
-      "description": "Your score is based on your {{rate}}% savings rate, budget efficiency, and month-over-month improvement.",
-      "savingsRate": "Savings Rate",
-      "target": "(Target: 20%)",
-      "solvency": "Solvency",
-      "trend": "Trend",
-      "spentLess": "Spent {{amount}} less than last month"
-    },
-    "charts": {
-      "projection": "Financial Horizon",
-      "breakdown": "Monthly Breakdown",
-      "breakdownDesc": "Overview by category",
-      "priority": "Actual vs Target by Priority",
-      "trend": "Trend Analysis",
-      "noExpenses": "No expenses to show yet",
-      "ofExp": "of Exp",
-      "ofInc": "of Inc",
-      "percentIncome": "% of Income",
-      "actual": "Actual",
-      "target": "Target",
-      "savingsProj": "Savings Proj.",
-      "overspendRisk": "Overspend Risk",
-      "onTrackSave": "On track to save {{amount}} this month.",
-      "projectedOverspend": "Projected to overspend by {{amount}}.",
-      "sixMonthAvg": "6M Avg",
-      "lastMonth": "Last Month",
-      "thisMonth": "This Month",
-      "nextMonth": "Next Month",
-      "projected": "Projected",
-      "targetLabel": "Target",
-      "safeBaseline": "*Based on Safe Baseline",
-      "insufficientData": "Insufficient Data",
-      "insufficientDataDesc": "Need activity in at least {{count}} months to visualize a trend.",
-      "oneMonth": "one month",
-      "twoMonths": "two months",
-      "in": "In:",
-      "out": "Out:",
-      "net": "Net:"
-    },
-    "stats": {
-      "savingsRate": "Savings Rate",
-      "vsLastMonth": "{{value}}% vs last month",
-      "netFlow": "Net Flow",
-      "projEndOfMonth": "Proj. End of Month: {{amount}}",
-      "closed": "Closed",
-      "efficiencyBonus": "Efficiency Bonus",
-      "unspentNeedsWants": "Unspent Needs & Wants"
-    }
-  },
-  "settings": {
-    "title": "Settings",
-    "subtitle": "Manage your preferences and financial goals",
-    "appPreferences": {
-      "title": "Application Preferences",
-      "description": "Manage currency formatting and budget allocation goals"
-    },
-    "currency": {
-      "title": "Currency & Formatting",
-      "label": "Currency",
-      "position": "Position",
-      "viewMode": "View Mode",
-      "thousandSeparator": "Thousand Separator",
-      "decimalSeparator": "Decimal Separator",
-      "decimalPlaces": "Decimal Places",
-      "hideTrailingZeros": "Hide Trailing Zeros",
-      "preview": "Preview",
-      "positionBefore": "Before",
-      "positionAfter": "After",
-      "viewModeBars": "Bars",
-      "viewModeCards": "Cards",
-      "separatorComma": "Comma",
-      "separatorPeriod": "Period",
-      "separatorSpace": "Space"
-    },
-    "goals": {
-      "title": "Goal Allocation",
-      "description": "Define how your monthly income is split between Needs, Wants, and Savings.",
-      "modes": {
-        "percentage": "Percentage",
-        "absolute": "Absolute Values"
-      },
-      "inflation": {
-        "title": "Inflation Protection",
-        "description": "Prevents lifestyle creep. If income spikes, budgets are calculated on the lower of your current vs average income."
-      },
-      "descriptions": {
-        "needs": "Essential expenses",
-        "wants": "Discretionary spending",
-        "savings": "Savings and investments"
-      },
-      "totalAllocated": "Total Allocated",
-      "priorities": {
-        "needs": "Essentials",
-        "wants": "Lifestyle",
-        "savings": "Savings"
-      }
-    },
-    "actions": {
-      "reset": "Reset to Defaults",
-      "logout": "Log Out",
-      "discard": "Discard Changes",
-      "save": "Save Settings"
-    },
-    "toast": {
-      "changesDiscarded": "Changes Discarded",
-      "changesDiscardedDesc": "Your changes have been discarded.",
-      "resetApplied": "Reset Applied",
-      "resetAppliedDesc": "Settings have been reset to defaults.",
-      "savedSuccess": "Settings saved successfully.",
-      "saveFailed": "Failed to save settings."
-    },
-    "confirmReset": "Are you sure you want to reset all settings to default?"
-  },
-  "transactions": {
-    "title": "Transactions",
-    "subtitle": "Track your income and expenses",
-    "addExpense": "Add Expense",
-    "editTransaction": "Edit Transaction",
-    "quickAdd": "Quick Add Expense",
-    "quickAddIncome": "Quick Add Income",
-    "incomeSource": "Income Source",
-    "incomeSourcePlaceholder": "e.g., Salary, Freelance",
-    "paidDate": "Paid on {{date}}",
-    "actions": {
-      "addIncome": "Add Income",
-      "addExpense": "Add Expense",
-      "deleteSelected": "Delete Transactions"
-    },
-    "delete": {
-      "title": "Delete Transactions",
-      "message": "Are you sure you want to delete {{count}} selected transactions? This action cannot be undone.",
-      "confirmSingle": "Are you sure you want to delete this transaction? This action cannot be undone.",
-      "successMessage": "Deleted {{count}} transactions.",
-      "errorMessage": "Failed to delete some transactions."
-    },
-    "filters": {
-      "search": "Search transactions...",
-      "allCategories": "All Categories",
-      "allBudgets": "All Budgets",
-      "allStatus": "All Status",
-      "paid": "Paid",
-      "unpaid": "Unpaid",
-      "allTypes": "All Types",
-      "income": "Income",
-      "expense": "Expense",
-      "cash": "Cash",
-      "card": "Card"
-    },
-    "table": {
-      "date": "Date",
-      "payee": "Payee",
-      "category": "Category",
-      "amount": "Amount",
-      "actions": "Actions"
-    },
-    "empty": "No transactions found."
-  },
-  "nav": {
-    "dashboard": "Dashboard",
-    "transactions": "Transactions",
-    "budgets": "Budgets",
-    "categories": "Categories",
-    "reports": "Reports",
-    "settings": "Settings"
-  },
-  "components": {
-    "budgetBars": {
-      "systemBudgets": "System Budgets",
-      "cardView": "Card View",
-      "barView": "Bar View",
-      "savingsTargetNotMet": "Savings Target Not Met",
-      "shortMessage": "You're short {{amount}} of your savings goal.",
-      "targetActual": "Target: {{target}}, Actual: {{actual}}",
-      "noCustomBudgets": "No Custom Budgets",
-      "noCustomBudgetsDesc": "You haven't set up any custom budgets for this month yet. Create one to track specific spending categories.",
-      "createFirstBudget": "Create First Budget",
-      "newBudget": "New Budget"
-    },
-    "remainingBudget": {
-      "readyToPlan": "Ready to plan for {{month}}?",
-      "readyToPlanDesc": "Start by adding your expected income to see your savings potential and unlock your budget goals.",
-      "overLimit": "Over Limit",
-      "saved": "Saved",
-      "spentOf": "Spent <1>{{spent}}</1> of <3>{{income}}</3>",
-      "noIncome": "No income recorded.",
-      "efficiency": "Efficiency: +{{amount}}",
-      "left": "Left: {{amount}}",
-      "paid": "Paid",
-      "plan": "Plan",
-      "goals": "Goals",
-      "targetGoals": "Target Goals",
-      "updateTargets": "Update Targets"
-    },
-    "transactionForm": {
-      "title": "Title",
-      "titlePlaceholder": "e.g., Salary, Groceries, Coffee",
-      "amount": "Amount",
-      "paidWithCash": "Paid with cash",
-      "date": "Date",
-      "paymentDate": "Payment Date",
-      "markAsPaid": "Mark as paid",
-      "category": "Category",
-      "financialPriority": "Financial Priority",
-      "selectPriority": "Select priority",
-      "budgetAllocation": "Budget Allocation",
-      "selectBudget": "Select budget...",
-      "searchBudgets": "Search budgets...",
-      "noBudgetFound": "No relevant budget found.",
-      "notes": "Notes",
-      "notesPlaceholder": "Additional details...",
-      "fetchRate": "Fetch Rate",
-      "rate": "Rate: {{rate}} (from {{date}})",
-      "noRate": "No rate",
-      "loading": "Loading...",
-      "needs": "Needs",
-      "wants": "Wants",
-      "savings": "Savings"
-    },
-    "datePicker": {
-      "pickDate": "Pick a date"
-    },
-    "userNotRegistered": {
-      "title": "Access Restricted",
-      "description": "You are not registered to use this application. Please contact the app administrator to request access.",
-      "helpTitle": "If you believe this is an error, you can:",
-      "help1": "Verify you are logged in with the correct account",
-      "help2": "Contact the app administrator for access",
-      "help3": "Try logging out and back in again"
-    }
-  },
-  "import": {
-    "title": "Import Data",
-    "dragDrop": "Drag and drop your file here, or click to select",
-    "selectFile": "Select File",
-    "uploadTitle": "Upload Transaction History",
-    "importDesc": "Import your bank statements or transaction history from CSV or PDF files.",
-    "importData": "Import Data",
-    "steps": {
-      "upload": "Upload",
-      "review": "Review",
-      "finish": "Finish"
-    },
-    "requirements": {
-      "title": "File Requirements:",
-      "csv": "CSV files must have headers",
-      "csvHeaders": "Date, Amount, Description/Payee",
-      "csvFields": "Optional: Category, Notes",
-      "pdf": "PDF files from supported banks",
-      "pdfType": "Standard bank statement format",
-      "pdfData": "Text-based PDFs (not scanned images)"
-    },
-    "processingPdf": "Processing PDF...",
-    "extractingData": "Extracting transaction data...",
-    "reviewData": "Review Data",
-    "importTransactions": "Import {{count}} Transactions",
-    "deleteSelected": "Delete Selected",
-    "toast": {
-      "fileParsed": "File Parsed",
-      "rowsFound": "Found {{count}} rows.",
-      "uploading": "Uploading File",
-      "uploadingDesc": "Sending file to server...",
-      "analyzing": "Analyzing",
-      "analyzingDesc": "Extracting data from file...",
-      "pdfSuccess": "Successfully processed {{count}} transactions.",
-      "imported": "Successfully imported {{count}} transactions."
-    },
-    "errors": {
-      "pdfFailed": "PDF Processing Failed",
-      "importFailed": "Import Failed"
-    }
-  }
 }
