@@ -434,3 +434,62 @@ export const getTransactionStats = asyncHandler(async (req, res) => {
     },
   });
 });
+
+/**
+ * @route   POST /api/transactions/bulk
+ * @desc    Bulk create transactions
+ * @access  Private
+ */
+export const bulkCreateTransactions = asyncHandler(async (req, res) => {
+  const { transactions } = req.body; // Expects an array of transaction objects
+
+  if (!Array.isArray(transactions) || transactions.length === 0) {
+    throw new ApiError(400, 'No transactions provided');
+  }
+
+  // Format data to ensure strict type compliance
+  const formattedTransactions = transactions.map(t => ({
+    ...t,
+    userId: req.user.id,
+    date: new Date(t.date),
+    paidDate: t.paidDate ? new Date(t.paidDate) : null,
+    amount: Number(t.amount),
+    // We explicitly ignore cashWallet logic here as requested
+  }));
+
+  const result = await prisma.transaction.createMany({
+    data: formattedTransactions,
+    skipDuplicates: true,
+  });
+
+  res.status(201).json({
+    success: true,
+    message: `${result.count} transactions created successfully`,
+    data: { count: result.count },
+  });
+});
+
+/**
+ * @route   POST /api/transactions/bulk-delete
+ * @desc    Bulk delete transactions
+ * @access  Private
+ */
+export const bulkDeleteTransactions = asyncHandler(async (req, res) => {
+  const { ids } = req.body;
+
+  if (!Array.isArray(ids) || ids.length === 0) {
+    throw new ApiError(400, 'No transaction IDs provided');
+  }
+
+  const result = await prisma.transaction.deleteMany({
+    where: {
+      id: { in: ids },
+      userId: req.user.id,
+    },
+  });
+
+  res.json({
+    success: true,
+    message: `${result.count} transactions deleted successfully`,
+  });
+});
