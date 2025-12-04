@@ -76,6 +76,9 @@
             "ALLOCATION_ADDED": "Allocation added successfully",
             "ALLOCATION_UPDATED": "Allocation updated successfully",
             "ALLOCATION_DELETED": "Allocation deleted successfully"
+    },
+    "settings": {
+      "SETTINGS_UPDATED": "Settings updated successfully"
         }
     },
     "dashboard": {
