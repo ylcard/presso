@@ -73,7 +73,7 @@ export const getCustomBudget = asyncHandler(async (req, res) => {
   });
 
   if (!budget) {
-    throw new ApiError(404, 'Custom budget not found');
+    throw new ApiError(404, 'CUSTOM_BUDGET_NOT_FOUND');
   }
 
   res.json({
@@ -88,11 +88,20 @@ export const getCustomBudget = asyncHandler(async (req, res) => {
  * @access  Private
  */
 export const createCustomBudget = asyncHandler(async (req, res) => {
+  // SAFETY: Validate dates
+  const startDate = new Date(req.body.startDate);
+  const endDate = new Date(req.body.endDate);
+
+  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+    throw new ApiError(400, 'INVALID_DATE_FORMAT');
+  }
+
   const data = {
     ...req.body,
     userId: req.user.id,
-    startDate: new Date(req.body.startDate),
-    endDate: new Date(req.body.endDate),
+    startDate,
+    endDate,
+    allocatedAmount: Number(req.body.allocatedAmount), // Safety Cast
   };
 
   const budget = await prisma.customBudget.create({
@@ -108,7 +117,7 @@ export const createCustomBudget = asyncHandler(async (req, res) => {
 
   res.status(201).json({
     success: true,
-    message: 'Custom budget created successfully',
+    message: 'CUSTOM_BUDGET_CREATED',
     data: budget,
   });
 });
@@ -119,7 +128,6 @@ export const createCustomBudget = asyncHandler(async (req, res) => {
  * @access  Private
  */
 export const updateCustomBudget = asyncHandler(async (req, res) => {
-  // Check if budget exists and belongs to user
   const existingBudget = await prisma.customBudget.findFirst({
     where: {
       id: req.params.id,
@@ -128,15 +136,24 @@ export const updateCustomBudget = asyncHandler(async (req, res) => {
   });
 
   if (!existingBudget) {
-    throw new ApiError(404, 'Custom budget not found');
+    throw new ApiError(404, 'CUSTOM_BUDGET_NOT_FOUND');
   }
 
   const updateData = { ...req.body };
+  
+  // SAFETY: Validate inputs if they exist
   if (req.body.startDate) {
-    updateData.startDate = new Date(req.body.startDate);
+    const start = new Date(req.body.startDate);
+    if (isNaN(start.getTime())) throw new ApiError(400, 'INVALID_DATE_FORMAT');
+    updateData.startDate = start;
   }
   if (req.body.endDate) {
-    updateData.endDate = new Date(req.body.endDate);
+    const end = new Date(req.body.endDate);
+    if (isNaN(end.getTime())) throw new ApiError(400, 'INVALID_DATE_FORMAT');
+    updateData.endDate = end;
+  }
+  if (req.body.allocatedAmount !== undefined) {
+    updateData.allocatedAmount = Number(req.body.allocatedAmount);
   }
 
   const budget = await prisma.customBudget.update({
@@ -153,7 +170,7 @@ export const updateCustomBudget = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    message: 'Custom budget updated successfully',
+    message: 'CUSTOM_BUDGET_UPDATED',
     data: budget,
   });
 });
@@ -172,17 +189,16 @@ export const deleteCustomBudget = asyncHandler(async (req, res) => {
   });
 
   if (!budget) {
-    throw new ApiError(404, 'Custom budget not found');
+    throw new ApiError(404, 'CUSTOM_BUDGET_NOT_FOUND');
   }
 
-  // Delete will cascade to allocations
   await prisma.customBudget.delete({
     where: { id: req.params.id },
   });
 
   res.json({
     success: true,
-    message: 'Custom budget deleted successfully',
+    message: 'CUSTOM_BUDGET_DELETED',
   });
 });
 
@@ -192,7 +208,6 @@ export const deleteCustomBudget = asyncHandler(async (req, res) => {
  * @access  Private
  */
 export const getCustomBudgetAllocations = asyncHandler(async (req, res) => {
-  // Verify budget belongs to user
   const budget = await prisma.customBudget.findFirst({
     where: {
       id: req.params.id,
@@ -201,7 +216,7 @@ export const getCustomBudgetAllocations = asyncHandler(async (req, res) => {
   });
 
   if (!budget) {
-    throw new ApiError(404, 'Custom budget not found');
+    throw new ApiError(404, 'CUSTOM_BUDGET_NOT_FOUND');
   }
 
   const allocations = await prisma.customBudgetAllocation.findMany({
@@ -227,7 +242,6 @@ export const getCustomBudgetAllocations = asyncHandler(async (req, res) => {
 export const addCustomBudgetAllocation = asyncHandler(async (req, res) => {
   const { categoryId, allocatedAmount } = req.body;
 
-  // Verify budget belongs to user
   const budget = await prisma.customBudget.findFirst({
     where: {
       id: req.params.id,
@@ -236,10 +250,9 @@ export const addCustomBudgetAllocation = asyncHandler(async (req, res) => {
   });
 
   if (!budget) {
-    throw new ApiError(404, 'Custom budget not found');
+    throw new ApiError(404, 'CUSTOM_BUDGET_NOT_FOUND');
   }
 
-  // Verify category belongs to user
   const category = await prisma.category.findFirst({
     where: {
       id: categoryId,
@@ -248,14 +261,14 @@ export const addCustomBudgetAllocation = asyncHandler(async (req, res) => {
   });
 
   if (!category) {
-    throw new ApiError(404, 'Category not found');
+    throw new ApiError(404, 'CATEGORY_NOT_FOUND');
   }
 
   const allocation = await prisma.customBudgetAllocation.create({
     data: {
       customBudgetId: req.params.id,
       categoryId,
-      allocatedAmount,
+      allocatedAmount: Number(allocatedAmount), // Safety Cast
     },
     include: {
       category: true,
@@ -264,7 +277,7 @@ export const addCustomBudgetAllocation = asyncHandler(async (req, res) => {
 
   res.status(201).json({
     success: true,
-    message: 'Allocation added successfully',
+    message: 'ALLOCATION_ADDED',
     data: allocation,
   });
 });
@@ -277,7 +290,6 @@ export const addCustomBudgetAllocation = asyncHandler(async (req, res) => {
 export const updateCustomBudgetAllocation = asyncHandler(async (req, res) => {
   const { budgetId, allocationId } = req.params;
 
-  // Verify budget belongs to user
   const budget = await prisma.customBudget.findFirst({
     where: {
       id: budgetId,
@@ -286,10 +298,9 @@ export const updateCustomBudgetAllocation = asyncHandler(async (req, res) => {
   });
 
   if (!budget) {
-    throw new ApiError(404, 'Custom budget not found');
+    throw new ApiError(404, 'CUSTOM_BUDGET_NOT_FOUND');
   }
 
-  // Verify allocation exists for this budget
   const existingAllocation = await prisma.customBudgetAllocation.findFirst({
     where: {
       id: allocationId,
@@ -298,12 +309,17 @@ export const updateCustomBudgetAllocation = asyncHandler(async (req, res) => {
   });
 
   if (!existingAllocation) {
-    throw new ApiError(404, 'Allocation not found');
+    throw new ApiError(404, 'ALLOCATION_NOT_FOUND');
+  }
+
+  const data = { ...req.body };
+  if (data.allocatedAmount !== undefined) {
+    data.allocatedAmount = Number(data.allocatedAmount);
   }
 
   const allocation = await prisma.customBudgetAllocation.update({
     where: { id: allocationId },
-    data: req.body,
+    data,
     include: {
       category: true,
     },
@@ -311,7 +327,7 @@ export const updateCustomBudgetAllocation = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    message: 'Allocation updated successfully',
+    message: 'ALLOCATION_UPDATED',
     data: allocation,
   });
 });
@@ -324,7 +340,6 @@ export const updateCustomBudgetAllocation = asyncHandler(async (req, res) => {
 export const deleteCustomBudgetAllocation = asyncHandler(async (req, res) => {
   const { budgetId, allocationId } = req.params;
 
-  // Verify budget belongs to user
   const budget = await prisma.customBudget.findFirst({
     where: {
       id: budgetId,
@@ -333,10 +348,9 @@ export const deleteCustomBudgetAllocation = asyncHandler(async (req, res) => {
   });
 
   if (!budget) {
-    throw new ApiError(404, 'Custom budget not found');
+    throw new ApiError(404, 'CUSTOM_BUDGET_NOT_FOUND');
   }
 
-  // Verify allocation exists for this budget
   const allocation = await prisma.customBudgetAllocation.findFirst({
     where: {
       id: allocationId,
@@ -345,7 +359,7 @@ export const deleteCustomBudgetAllocation = asyncHandler(async (req, res) => {
   });
 
   if (!allocation) {
-    throw new ApiError(404, 'Allocation not found');
+    throw new ApiError(404, 'ALLOCATION_NOT_FOUND');
   }
 
   await prisma.customBudgetAllocation.delete({
@@ -354,6 +368,68 @@ export const deleteCustomBudgetAllocation = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    message: 'Allocation deleted successfully',
+    message: 'ALLOCATION_DELETED',
+  });
+});
+
+/**
+ * @route   POST /api/custom-budgets/bulk
+ * @desc    Bulk create custom budgets
+ * @access  Private
+ */
+export const bulkCreateCustomBudgets = asyncHandler(async (req, res) => {
+  const { budgets } = req.body;
+
+  // GUARD: Prevent crash
+  if (!budgets || !Array.isArray(budgets) || budgets.length === 0) {
+    throw new ApiError(400, 'EMPTY_BULK_REQUEST');
+  }
+
+  const formattedBudgets = budgets.map(b => ({
+    ...b,
+    userId: req.user.id,
+    startDate: new Date(b.startDate),
+    endDate: new Date(b.endDate),
+    allocatedAmount: Number(b.allocatedAmount),
+  }));
+
+  if (formattedBudgets.some(b => isNaN(b.startDate.getTime()) || isNaN(b.endDate.getTime()))) {
+    throw new ApiError(400, 'INVALID_DATE_FORMAT');
+  }
+
+  const result = await prisma.customBudget.createMany({
+    data: formattedBudgets,
+  });
+
+  res.status(201).json({
+    success: true,
+    message: 'CUSTOM_BUDGETS_CREATED_BULK',
+    data: { count: result.count },
+  });
+});
+
+/**
+ * @route   POST /api/custom-budgets/bulk-delete
+ * @desc    Bulk delete custom budgets
+ * @access  Private
+ */
+export const bulkDeleteCustomBudgets = asyncHandler(async (req, res) => {
+  const { ids } = req.body;
+
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    throw new ApiError(400, 'EMPTY_BULK_REQUEST');
+  }
+
+  const result = await prisma.customBudget.deleteMany({
+    where: {
+      id: { in: ids },
+      userId: req.user.id,
+    },
+  });
+
+  res.json({
+    success: true,
+    message: 'CUSTOM_BUDGETS_DELETED_BULK',
+    data: { count: result.count },
   });
 });
