@@ -79,6 +79,15 @@
     },
     "settings": {
       "SETTINGS_UPDATED": "Settings updated successfully"
+    },
+    "exchangeRates": {
+      "EXCHANGE_RATE_NOT_FOUND": "Exchange rate not found",
+      "EXCHANGE_RATE_CREATED": "Exchange rate created successfully",
+      "EXCHANGE_RATE_UPDATED": "Exchange rate updated successfully",
+      "EXCHANGE_RATE_DELETED": "Exchange rate deleted successfully",
+      "EXCHANGE_RATES_BULK_PROCESSED": "{{count}} exchange rates processed successfully",
+      "INVALID_RATE_FORMAT": "Invalid rate format",
+      "MISSING_REQUIRED_FIELDS": "Missing required fields"
         }
     },
     "dashboard": {
