@@ -129,7 +129,7 @@ export const getTransaction = asyncHandler(async (req, res) => {
   });
 
   if (!transaction) {
-    throw new ApiError(404, 'Transaction not found');
+    throw new ApiError(404, 'TRANSACTION_NOT_FOUND');
   }
 
   res.json({
@@ -144,32 +144,17 @@ export const getTransaction = asyncHandler(async (req, res) => {
  * @access  Private
  */
 export const createTransaction = asyncHandler(async (req, res) => {
+  // SAFETY: Explicitly cast amount to Number to prevent data integrity issues
   const data = {
     ...req.body,
     userId: req.user.id,
     date: new Date(req.body.date),
     paidDate: req.body.paidDate ? new Date(req.body.paidDate) : null,
+    amount: Number(req.body.amount), 
   };
 
-  // If it's a cash transaction, update cash wallet
-  if (data.isCashTransaction && data.type === 'expense' && data.isPaid) {
-    const cashWallet = await prisma.cashWallet.findUnique({
-      where: { userId: req.user.id },
-    });
-
-    if (cashWallet && cashWallet.amount < data.amount) {
-      throw new ApiError(400, 'Insufficient cash wallet balance');
-    }
-
-    await prisma.cashWallet.update({
-      where: { userId: req.user.id },
-      data: {
-        amount: {
-          decrement: data.amount,
-        },
-      },
-    });
-  }
+  // NOTE: Cash Wallet logic removed as feature is deprecated.
+  // We still allow 'isCashTransaction' to be saved for record-keeping if provided.
 
   const transaction = await prisma.transaction.create({
     data,
@@ -181,7 +166,7 @@ export const createTransaction = asyncHandler(async (req, res) => {
 
   res.status(201).json({
     success: true,
-    message: 'Transaction created successfully',
+    message: 'TRANSACTION_CREATED',
     data: transaction,
   });
 });
@@ -201,65 +186,7 @@ export const updateTransaction = asyncHandler(async (req, res) => {
   });
 
   if (!existingTransaction) {
-    throw new ApiError(404, 'Transaction not found');
-  }
-
-  // Handle cash wallet updates if transaction involves cash
-  const wasCashPaid = existingTransaction.isCashTransaction && existingTransaction.isPaid && existingTransaction.type === 'expense';
-  const willBeCashPaid = (req.body.isCashTransaction ?? existingTransaction.isCashTransaction) &&
-                         (req.body.isPaid ?? existingTransaction.isPaid) &&
-                         (req.body.type ?? existingTransaction.type) === 'expense';
-
-  if (wasCashPaid && !willBeCashPaid) {
-    // Reverting a cash payment - add money back to wallet
-    await prisma.cashWallet.update({
-      where: { userId: req.user.id },
-      data: {
-        amount: {
-          increment: existingTransaction.amount,
-        },
-      },
-    });
-  } else if (!wasCashPaid && willBeCashPaid) {
-    // New cash payment - deduct from wallet
-    const newAmount = req.body.amount ?? existingTransaction.amount;
-    const cashWallet = await prisma.cashWallet.findUnique({
-      where: { userId: req.user.id },
-    });
-
-    if (cashWallet && cashWallet.amount < newAmount) {
-      throw new ApiError(400, 'Insufficient cash wallet balance');
-    }
-
-    await prisma.cashWallet.update({
-      where: { userId: req.user.id },
-      data: {
-        amount: {
-          decrement: newAmount,
-        },
-      },
-    });
-  } else if (wasCashPaid && willBeCashPaid) {
-    // Amount changed on existing cash payment
-    if (req.body.amount && req.body.amount !== existingTransaction.amount) {
-      const difference = req.body.amount - existingTransaction.amount;
-      const cashWallet = await prisma.cashWallet.findUnique({
-        where: { userId: req.user.id },
-      });
-
-      if (difference > 0 && cashWallet && cashWallet.amount < difference) {
-        throw new ApiError(400, 'Insufficient cash wallet balance');
-      }
-
-      await prisma.cashWallet.update({
-        where: { userId: req.user.id },
-        data: {
-          amount: {
-            decrement: difference,
-          },
-        },
-      });
-    }
+    throw new ApiError(404, 'TRANSACTION_NOT_FOUND');
   }
 
   const updateData = {
@@ -274,6 +201,13 @@ export const updateTransaction = asyncHandler(async (req, res) => {
     updateData.paidDate = new Date(req.body.paidDate);
   }
 
+  // SAFETY: Ensure amount is stored as number if it's being updated
+  if (req.body.amount !== undefined) {
+    updateData.amount = Number(req.body.amount);
+  }
+
+  // NOTE: Cash Wallet refunds/deductions logic removed.
+
   const transaction = await prisma.transaction.update({
     where: { id: req.params.id },
     data: updateData,
@@ -285,7 +219,7 @@ export const updateTransaction = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    message: 'Transaction updated successfully',
+    message: 'TRANSACTION_UPDATED',
     data: transaction,
   });
 });
@@ -304,20 +238,10 @@ export const deleteTransaction = asyncHandler(async (req, res) => {
   });
 
   if (!transaction) {
-    throw new ApiError(404, 'Transaction not found');
+    throw new ApiError(404, 'TRANSACTION_NOT_FOUND');
   }
 
-  // If it was a paid cash expense, refund to wallet
-  if (transaction.isCashTransaction && transaction.isPaid && transaction.type === 'expense') {
-    await prisma.cashWallet.update({
-      where: { userId: req.user.id },
-      data: {
-        amount: {
-          increment: transaction.amount,
-        },
-      },
-    });
-  }
+  // NOTE: Cash Wallet refund logic removed.
 
   await prisma.transaction.delete({
     where: { id: req.params.id },
@@ -325,7 +249,7 @@ export const deleteTransaction = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    message: 'Transaction deleted successfully',
+    message: 'TRANSACTION_DELETED',
   });
 });
 
@@ -443,8 +367,9 @@ export const getTransactionStats = asyncHandler(async (req, res) => {
 export const bulkCreateTransactions = asyncHandler(async (req, res) => {
   const { transactions } = req.body; // Expects an array of transaction objects
 
-  if (!Array.isArray(transactions) || transactions.length === 0) {
-    throw new ApiError(400, 'No transactions provided');
+  // GUARD: Prevent crash if transactions is null or not an array
+  if (!transactions || !Array.isArray(transactions) || transactions.length === 0) {
+    throw new ApiError(400, 'EMPTY_BULK_REQUEST');
   }
 
   // Format data to ensure strict type compliance
@@ -454,7 +379,7 @@ export const bulkCreateTransactions = asyncHandler(async (req, res) => {
     date: new Date(t.date),
     paidDate: t.paidDate ? new Date(t.paidDate) : null,
     amount: Number(t.amount),
-    // We explicitly ignore cashWallet logic here as requested
+    // Cash wallet logic ignored
   }));
 
   const result = await prisma.transaction.createMany({
@@ -464,7 +389,7 @@ export const bulkCreateTransactions = asyncHandler(async (req, res) => {
 
   res.status(201).json({
     success: true,
-    message: `${result.count} transactions created successfully`,
+    message: 'TRANSACTIONS_CREATED_BULK',
     data: { count: result.count },
   });
 });
@@ -477,8 +402,9 @@ export const bulkCreateTransactions = asyncHandler(async (req, res) => {
 export const bulkDeleteTransactions = asyncHandler(async (req, res) => {
   const { ids } = req.body;
 
-  if (!Array.isArray(ids) || ids.length === 0) {
-    throw new ApiError(400, 'No transaction IDs provided');
+  // GUARD: Prevent crash if ids is null or not an array
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    throw new ApiError(400, 'EMPTY_BULK_REQUEST');
   }
 
   const result = await prisma.transaction.deleteMany({
@@ -490,6 +416,7 @@ export const bulkDeleteTransactions = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    message: `${result.count} transactions deleted successfully`,
+    message: 'TRANSACTIONS_DELETED_BULK',
+    data: { count: result.count },
   });
 });
