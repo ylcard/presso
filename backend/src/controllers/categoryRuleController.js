@@ -44,7 +44,7 @@ export const getCategoryRule = asyncHandler(async (req, res) => {
   });
 
   if (!rule) {
-    throw new ApiError(404, 'Category rule not found');
+    throw new ApiError(404, 'CATEGORY_RULE_NOT_FOUND');
   }
 
   res.json({
@@ -61,6 +61,11 @@ export const getCategoryRule = asyncHandler(async (req, res) => {
 export const createCategoryRule = asyncHandler(async (req, res) => {
   const { categoryId, keywords, priority } = req.body;
 
+  // SAFETY: Validate keywords format (must be array of strings)
+  if (!keywords || !Array.isArray(keywords) || keywords.length === 0) {
+    throw new ApiError(400, 'INVALID_KEYWORDS_FORMAT');
+  }
+
   // Verify category belongs to user
   const category = await prisma.category.findFirst({
     where: {
@@ -70,7 +75,7 @@ export const createCategoryRule = asyncHandler(async (req, res) => {
   });
 
   if (!category) {
-    throw new ApiError(404, 'Category not found');
+    throw new ApiError(404, 'CATEGORY_NOT_FOUND');
   }
 
   const rule = await prisma.categoryRule.create({
@@ -78,7 +83,7 @@ export const createCategoryRule = asyncHandler(async (req, res) => {
       userId: req.user.id,
       categoryId,
       keywords,
-      priority: priority || 0,
+      priority: Number(priority) || 0,
     },
     include: {
       category: true,
@@ -87,7 +92,7 @@ export const createCategoryRule = asyncHandler(async (req, res) => {
 
   res.status(201).json({
     success: true,
-    message: 'Category rule created successfully',
+    message: 'CATEGORY_RULE_CREATED',
     data: rule,
   });
 });
@@ -107,10 +112,12 @@ export const updateCategoryRule = asyncHandler(async (req, res) => {
   });
 
   if (!existingRule) {
-    throw new ApiError(404, 'Category rule not found');
+    throw new ApiError(404, 'CATEGORY_RULE_NOT_FOUND');
   }
 
-  // If updating categoryId, verify new category belongs to user
+  const updateData = {};
+
+  // Validate and assign fields
   if (req.body.categoryId) {
     const category = await prisma.category.findFirst({
       where: {
@@ -120,13 +127,25 @@ export const updateCategoryRule = asyncHandler(async (req, res) => {
     });
 
     if (!category) {
-      throw new ApiError(404, 'Category not found');
+      throw new ApiError(404, 'CATEGORY_NOT_FOUND');
     }
+    updateData.categoryId = req.body.categoryId;
+  }
+
+  if (req.body.keywords) {
+    if (!Array.isArray(req.body.keywords)) {
+      throw new ApiError(400, 'INVALID_KEYWORDS_FORMAT');
+    }
+    updateData.keywords = req.body.keywords;
+  }
+
+  if (req.body.priority !== undefined) {
+    updateData.priority = Number(req.body.priority);
   }
 
   const rule = await prisma.categoryRule.update({
     where: { id: req.params.id },
-    data: req.body,
+    data: updateData,
     include: {
       category: true,
     },
@@ -134,7 +153,7 @@ export const updateCategoryRule = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    message: 'Category rule updated successfully',
+    message: 'CATEGORY_RULE_UPDATED',
     data: rule,
   });
 });
@@ -153,7 +172,7 @@ export const deleteCategoryRule = asyncHandler(async (req, res) => {
   });
 
   if (!rule) {
-    throw new ApiError(404, 'Category rule not found');
+    throw new ApiError(404, 'CATEGORY_RULE_NOT_FOUND');
   }
 
   await prisma.categoryRule.delete({
@@ -162,6 +181,68 @@ export const deleteCategoryRule = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    message: 'Category rule deleted successfully',
+    message: 'CATEGORY_RULE_DELETED',
+  });
+});
+
+/**
+ * @route   POST /api/category-rules/bulk
+ * @desc    Bulk create category rules
+ * @access  Private
+ */
+export const bulkCreateCategoryRules = asyncHandler(async (req, res) => {
+  const { rules } = req.body;
+
+  if (!rules || !Array.isArray(rules) || rules.length === 0) {
+    throw new ApiError(400, 'EMPTY_BULK_REQUEST');
+  }
+
+  // Format and validate items
+  const formattedRules = rules.map(r => {
+    if (!r.categoryId || !Array.isArray(r.keywords)) {
+      throw new ApiError(400, 'INVALID_RULE_DATA');
+    }
+    return {
+      userId: req.user.id,
+      categoryId: r.categoryId,
+      keywords: r.keywords,
+      priority: Number(r.priority) || 0,
+    };
+  });
+
+  const result = await prisma.categoryRule.createMany({
+    data: formattedRules,
+  });
+
+  res.status(201).json({
+    success: true,
+    message: 'CATEGORY_RULES_CREATED_BULK',
+    data: { count: result.count },
+  });
+});
+
+/**
+ * @route   POST /api/category-rules/bulk-delete
+ * @desc    Bulk delete category rules
+ * @access  Private
+ */
+export const bulkDeleteCategoryRules = asyncHandler(async (req, res) => {
+  const { ids } = req.body;
+
+  if (!ids || !Array.isArray(ids) || ids.length === 0) {
+    throw new ApiError(400, 'EMPTY_BULK_REQUEST');
+  }
+
+  const result = await prisma.categoryRule.deleteMany({
+    where: {
+      id: { in: ids },
+      userId: req.user.id,
+    },
+  });
+
+  res.json({
+    success: true,
+    message: 'CATEGORY_RULES_DELETED_BULK',
+    data: { count: result.count },
   });
 });
