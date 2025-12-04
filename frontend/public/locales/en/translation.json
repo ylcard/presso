@@ -24,7 +24,8 @@
     "back": "Back",
     "adding": "Adding...",
     "uncategorized": "Uncategorized",
-    "untitledTransaction": "Untitled Transaction"
+    "untitledTransaction": "Untitled Transaction",
+    "EMPTY_BULK_REQUEST": "No items selected for this operation"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -72,15 +73,7 @@
     "errors": {
       "loginFailed": "Failed to login",
       "registerFailed": "Failed to register",
-      "generic": "Error",
-      "CATEGORY_NOT_FOUND": "Category not found",
-      "CATEGORY_HAS_TRANSACTIONS": "Cannot delete the following categories because they contain transactions: {{names}}",
-      "CATEGORY_CREATED": "Category created successfully",
-      "CATEGORY_UPDATED": "Category updated successfully",
-      "CATEGORY_DELETED": "Category deleted successfully",
-      "CATEGORIES_CREATED_BULK": "{{count}} categories created successfully",
-      "CATEGORIES_DELETED_BULK": "{{count}} categories deleted successfully",
-      "EMPTY_BULK_REQUEST": "No items selected for this operation"
+      "generic": "Error"
     }
   },
   "budgets": {
@@ -248,6 +241,15 @@
       "CreditCard": "Debt/Payment",
       "Wallet": "General",
       "Hotel": "Hotel"
+    },
+    "errors": {
+      "CATEGORY_NOT_FOUND": "Category not found",
+      "CATEGORY_HAS_TRANSACTIONS": "Cannot delete the following categories because they contain transactions: {{names}}",
+      "CATEGORY_CREATED": "Category created successfully",
+      "CATEGORY_UPDATED": "Category updated successfully",
+      "CATEGORY_DELETED": "Category deleted successfully",
+      "CATEGORIES_CREATED_BULK": "{{count}} categories created successfully",
+      "CATEGORIES_DELETED_BULK": "{{count}} categories deleted successfully"
     }
   },
   "reports": {
@@ -421,7 +423,16 @@
       "amount": "Amount",
       "actions": "Actions"
     },
-    "empty": "No transactions found."
+    "empty": "No transactions found.",
+    "errors": {
+      "TRANSACTION_NOT_FOUND": "Transaction not found",
+      "TRANSACTION_CREATED": "Transaction created successfully",
+      "TRANSACTION_UPDATED": "Transaction updated successfully",
+      "TRANSACTION_DELETED": "Transaction deleted successfully",
+      "TRANSACTIONS_CREATED_BULK": "{{count}} transactions created successfully",
+      "TRANSACTIONS_DELETED_BULK": "{{count}} transactions deleted successfully",
+      "EMPTY_BULK_REQUEST": "No items selected for this operation"
+    }
   },
   "nav": {
     "dashboard": "Dashboard",
